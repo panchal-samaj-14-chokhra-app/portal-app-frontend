@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input/input"
 import { Label } from "@/components/ui/label/label"
 import { Alert, AlertDescription } from "@/components/ui/alert/alert"
-import { LanguageSwitcher } from "@/components/language-switcher"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -26,7 +25,7 @@ export default function LoginPage() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("from") || "/dashboard"
+  const callbackUrl = searchParams.get("from") || "/village" // Default to village if no callback
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,7 +42,14 @@ export default function LoginPage() {
       if (result?.error) {
         setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।")
       } else {
-        router.push(callbackUrl)
+        // Redirect based on user role or callback URL
+        if (formData.email === "admin@panchalsamaj.org") {
+          router.push("/admin")
+        } else if (formData.email === "chokhra@panchalsamaj.org") {
+          router.push("/chokhra")
+        } else {
+          router.push(callbackUrl)
+        }
       }
     } catch (error) {
       setError("लॉगिन में त्रुटि हुई। कृपया पुनः प्रयास करें।")
@@ -57,7 +63,7 @@ export default function LoginPage() {
       {/* Header */}
       <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className="flex items-center space-x-4">
               <Image
                 src="/images/main-logo.png"
@@ -71,7 +77,6 @@ export default function LoginPage() {
                 <p className="text-orange-100 text-sm md:text-lg">डिजिटल जनगणना 2025 - एडमिन लॉगिन</p>
               </div>
             </div>
-            <LanguageSwitcher currentLocale="hin" />
           </div>
         </div>
       </header>
@@ -87,7 +92,9 @@ export default function LoginPage() {
               <br />
               <strong>एडमिन:</strong> admin@panchalsamaj.org / admin123
               <br />
-              <strong>गांव एडमिन:</strong> village@panchalsamaj.org / village123
+              <strong>चोखरा:</strong> chokhra@panchalsamaj.org / chokhra123
+              <br />
+              <strong>गांव:</strong> village@panchalsamaj.org / village123
             </AlertDescription>
           </Alert>
 

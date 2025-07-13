@@ -1,8 +1,32 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import type { NextAuthOptions } from "next-auth"
 
-const authOptions: NextAuthOptions = {
+// Demo users with roles
+const users = [
+  {
+    id: "1",
+    email: "admin@panchalsamaj.org",
+    password: "admin123",
+    name: "मुकेश पंचाल",
+    role: "admin",
+  },
+  {
+    id: "2",
+    email: "chokhra@panchalsamaj.org",
+    password: "chokhra123",
+    name: "राम पंचाल",
+    role: "chokhra",
+  },
+  {
+    id: "3",
+    email: "village@panchalsamaj.org",
+    password: "village123",
+    name: "श्याम पंचाल",
+    role: "village",
+  },
+]
+
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -11,75 +35,47 @@ const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Demo credentials for testing
-        const validCredentials = [
-          {
-            id: "1",
-            email: "admin@panchalsamaj.org",
-            password: "admin123",
-            name: "मुकेश पंचाल",
-            role: "chokhra_admin",
-            chokhra: "लोहारिया",
-          },
-          {
-            id: "2",
-            email: "village@panchalsamaj.org",
-            password: "village123",
-            name: "राम पंचाल",
-            role: "village_admin",
-            village: "गांव 1",
-            chokhra: "लोहारिया",
-          },
-        ]
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
 
-        if (credentials?.email && credentials?.password) {
-          const user = validCredentials.find(
-            (u) => u.email === credentials.email && u.password === credentials.password,
-          )
+        const user = users.find((user) => user.email === credentials.email && user.password === credentials.password)
 
-          if (user) {
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              chokhra: user.chokhra,
-              village: user.village || null,
-            }
+        if (user) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
           }
         }
+
         return null
       },
     }),
   ],
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.chokhra = user.chokhra
-        token.village = user.village
       }
       return token
     },
     async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.sub as string
-        session.user.role = token.role as string
-        session.user.chokhra = token.chokhra as string
-        session.user.village = token.village as string | null
+      if (token) {
+        session.user.id = token.sub
+        session.user.role = token.role
       }
       return session
     },
   },
+  pages: {
+    signIn: "/login",
+  },
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-development",
-}
+  secret: process.env.NEXTAUTH_SECRET,
+})
 
-const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }
