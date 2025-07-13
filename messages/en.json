@@ -1,0 +1,66 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email Address",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "loginButton": "Sign In",
+    "loggingIn": "Signing in...",
+    "invalidCredentials": "Invalid email or password. Please try again.",
+    "loginError": "Login error occurred. Please try again.",
+    "backToHome": "Back to Home"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "familyRegistration": "Family Registration",
+    "memberManagement": "Member Management",
+    "villageManagement": "Village Management",
+    "reports": "Reports",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "help": "Help",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "title": "Panchal Samaj 14 Chokhra",
+    "subtitle": "Digital Census 2025 - Admin Portal",
+    "welcome": "Welcome",
+    "totalFamilies": "Total Families",
+    "totalMembers": "Total Members",
+    "totalVillages": "Total Villages",
+    "recentActivity": "Recent Activity"
+  },
+  "help": {
+    "title": "Help & Support",
+    "subtitle": "Get assistance with the census portal",
+    "contactInfo": "Contact Information",
+    "adminName": "Admin Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "address": "Organization Address",
+    "faq": "Frequently Asked Questions",
+    "supportHours": "Support Hours",
+    "technicalSupport": "Technical Support"
+  }
+}

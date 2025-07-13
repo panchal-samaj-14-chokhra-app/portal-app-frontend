@@ -1,0 +1,66 @@
+{
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "त्रुटि",
+    "success": "सफलता",
+    "cancel": "रद्द करें",
+    "save": "सहेजें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं",
+    "search": "खोजें",
+    "filter": "फिल्टर",
+    "export": "निर्यात",
+    "import": "आयात",
+    "back": "वापस",
+    "next": "अगला",
+    "previous": "पिछला",
+    "submit": "जमा करें",
+    "reset": "रीसेट",
+    "close": "बंद करें"
+  },
+  "auth": {
+    "login": "लॉगिन",
+    "logout": "लॉगआउट",
+    "email": "ईमेल पता",
+    "password": "पासवर्ड",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "resetPassword": "पासवर्ड रीसेट करें",
+    "loginButton": "लॉगिन करें",
+    "loggingIn": "लॉगिन हो रहा है...",
+    "invalidCredentials": "गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।",
+    "loginError": "लॉगिन में त्रुटि हुई। कृपया पुनः प्रयास करें।",
+    "backToHome": "मुख्य पेज पर वापस जाएं"
+  },
+  "navigation": {
+    "dashboard": "डैशबोर्ड",
+    "familyRegistration": "परिवार पंजीकरण",
+    "memberManagement": "सदस्य प्रबंधन",
+    "villageManagement": "गांव प्रबंधन",
+    "reports": "रिपोर्ट",
+    "analytics": "विश्लेषण",
+    "settings": "सेटिंग्स",
+    "help": "सहायता",
+    "profile": "प्रोफाइल"
+  },
+  "dashboard": {
+    "title": "पंचाल समाज 14 चोखरा",
+    "subtitle": "डिजिटल जनगणना 2025 - एडमिन पोर्टल",
+    "welcome": "स्वागत है",
+    "totalFamilies": "कुल परिवार",
+    "totalMembers": "कुल सदस्य",
+    "totalVillages": "कुल गांव",
+    "recentActivity": "हाल की गतिविधि"
+  },
+  "help": {
+    "title": "सहायता और समर्थन",
+    "subtitle": "जनगणना पोर्टल के साथ सहायता प्राप्त करें",
+    "contactInfo": "संपर्क जानकारी",
+    "adminName": "एडमिन नाम",
+    "email": "ईमेल",
+    "phone": "फोन नंबर",
+    "address": "संगठन का पता",
+    "faq": "अक्सर पूछे जाने वाले प्रश्न",
+    "supportHours": "सहायता समय",
+    "technicalSupport": "तकनीकी सहायता"
+  }
+}
