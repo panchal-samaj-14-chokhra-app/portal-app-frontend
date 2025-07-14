@@ -21,6 +21,8 @@ import {
   Mail,
   Globe,
   MapPin,
+  FileText,
+  Calendar,
 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
@@ -37,6 +39,7 @@ interface FamilyMember {
   id: string
   name: string
   aadhaarNumber: string
+  dateOfBirth: string
   age: number
   gender: "male" | "female" | "other"
   relation: string
@@ -93,12 +96,14 @@ interface FamilyData {
   currentAddress: string
   permanentAddress: string
   economicStatus: string
+  status: "draft" | "submitted"
   members: FamilyMember[]
 }
 
 const initialMember: Omit<FamilyMember, "id"> = {
   name: "",
   aadhaarNumber: "",
+  dateOfBirth: "",
   age: 0,
   gender: "male",
   relation: "",
@@ -159,16 +164,34 @@ export default function AddFamilyPage() {
     currentAddress: "",
     permanentAddress: "",
     economicStatus: "bpl",
+    status: "draft",
     members: [{ ...initialMember, id: "member-1", isMukhiya: true }],
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
     if (!session) router.push("/login")
   }, [session, status, router])
+
+  // Function to calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): number => {
+    if (!dateOfBirth) return 0
+
+    const today = new Date()
+    const birthDate = new Date(dateOfBirth)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+
+    return Math.max(0, age)
+  }
 
   if (status === "loading") {
     return (
@@ -223,6 +246,13 @@ export default function AddFamilyPage() {
             const updatedMembers = prev.members.map((m) => ({ ...m, isMukhiya: false }))
             return { ...updatedMembers.find((m) => m.id === memberId)!, [field]: value }
           }
+
+          // If updating date of birth, also update age
+          if (field === "dateOfBirth") {
+            const age = calculateAge(value)
+            return { ...member, [field]: value, age }
+          }
+
           return { ...member, [field]: value }
         }
         return member
@@ -230,47 +260,61 @@ export default function AddFamilyPage() {
     }))
   }
 
-  const validateForm = (): boolean => {
+  const validateForm = (isDraft = false): boolean => {
     const newErrors: Record<string, string> = {}
 
-    // Check if there's exactly one Mukhiya
-    const mukhiyaCount = familyData.members.filter((m) => m.isMukhiya).length
-    if (mukhiyaCount === 0) {
-      newErrors.mukhiya = "कम से कम एक मुखिया होना आवश्यक है"
-    } else if (mukhiyaCount > 1) {
-      newErrors.mukhiya = "केवल एक मुखिया हो सकता है"
+    // For draft, we can be more lenient with validation
+    if (!isDraft) {
+      // Check if there's exactly one Mukhiya
+      const mukhiyaCount = familyData.members.filter((m) => m.isMukhiya).length
+      if (mukhiyaCount === 0) {
+        newErrors.mukhiya = "कम से कम एक मुखिया होना आवश्यक है"
+      } else if (mukhiyaCount > 1) {
+        newErrors.mukhiya = "केवल एक मुखिया हो सकता है"
+      }
+
+      // Check for unique Aadhaar numbers
+      const aadhaarNumbers = familyData.members.map((m) => m.aadhaarNumber).filter(Boolean)
+      const duplicateAadhaar = aadhaarNumbers.find((num, index) => aadhaarNumbers.indexOf(num) !== index)
+      if (duplicateAadhaar) {
+        newErrors.aadhaar = `आधार नंबर ${duplicateAadhaar} डुप्लिकेट है`
+      }
+
+      // Check for unique mobile numbers
+      const mobileNumbers = familyData.members.map((m) => m.mobileNumber).filter(Boolean)
+      const duplicateMobile = mobileNumbers.find((num, index) => mobileNumbers.indexOf(num) !== index)
+      if (duplicateMobile) {
+        newErrors.mobile = `मोबाइल नंबर ${duplicateMobile} डुप्लिकेट है`
+      }
+
+      // Check required fields for each member
+      familyData.members.forEach((member, index) => {
+        if (!member.name.trim()) {
+          newErrors[`member-${index}-name`] = "नाम आवश्यक है"
+        }
+        if (!member.aadhaarNumber.trim()) {
+          newErrors[`member-${index}-aadhaar`] = "आधार नंबर आवश्यक है"
+        }
+        if (!member.dateOfBirth) {
+          newErrors[`member-${index}-dob`] = "जन्म तिथि आवश्यक है"
+        }
+      })
     }
 
-    // Check for unique Aadhaar numbers
-    const aadhaarNumbers = familyData.members.map((m) => m.aadhaarNumber).filter(Boolean)
-    const duplicateAadhaar = aadhaarNumbers.find((num, index) => aadhaarNumbers.indexOf(num) !== index)
-    if (duplicateAadhaar) {
-      newErrors.aadhaar = `आधार नंबर ${duplicateAadhaar} डुप्लिकेट है`
-    }
-
-    // Check for unique mobile numbers
-    const mobileNumbers = familyData.members.map((m) => m.mobileNumber).filter(Boolean)
-    const duplicateMobile = mobileNumbers.find((num, index) => mobileNumbers.indexOf(num) !== index)
-    if (duplicateMobile) {
-      newErrors.mobile = `मोबाइल नंबर ${duplicateMobile} डुप्लिकेट है`
-    }
-
-    // Check required fields for each member
+    // Validate format for filled fields (both draft and final)
     familyData.members.forEach((member, index) => {
-      if (!member.name.trim()) {
-        newErrors[`member-${index}-name`] = "नाम आवश्यक है"
-      }
-      if (!member.aadhaarNumber.trim()) {
-        newErrors[`member-${index}-aadhaar`] = "आधार नंबर आवश्यक है"
-      }
-      if (member.age <= 0) {
-        newErrors[`member-${index}-age`] = "वैध उम्र दर्ज करें"
-      }
       if (member.mobileNumber && !/^[6-9]\d{9}$/.test(member.mobileNumber)) {
         newErrors[`member-${index}-mobile`] = "वैध मोबाइल नंबर दर्ज करें"
       }
       if (member.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)) {
         newErrors[`member-${index}-email`] = "वैध ईमेल पता दर्ज करें"
+      }
+      if (member.dateOfBirth) {
+        const birthDate = new Date(member.dateOfBirth)
+        const today = new Date()
+        if (birthDate > today) {
+          newErrors[`member-${index}-dob`] = "जन्म तिथि भविष्य में नहीं हो सकती"
+        }
       }
     })
 
@@ -278,8 +322,28 @@ export default function AddFamilyPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  const handleSaveAsDraft = async () => {
+    if (!validateForm(true)) {
+      alert("कृपया फॉर्मेट त्रुटियों को ठीक करें")
+      return
+    }
+
+    setSavingDraft(true)
+    try {
+      // Simulate API call to save as draft
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      alert("परिवार का डेटा ड्राफ्ट के रूप में सहेजा गया!")
+      router.push(`/village/${villageId}`)
+    } catch (error) {
+      alert("ड्राफ्ट सहेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।")
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
   const handleSubmit = async () => {
-    if (!validateForm()) {
+    if (!validateForm(false)) {
       alert("कृपया सभी त्रुटियों को ठीक करें")
       return
     }
@@ -506,19 +570,31 @@ export default function AddFamilyPage() {
                             )}
                           </div>
                           <div>
-                            <Label className="hindi-text">उम्र *</Label>
+                            <Label className="hindi-text flex items-center">
+                              <Calendar className="w-4 h-4 mr-1" />
+                              जन्म तिथि *
+                            </Label>
+                            <Input
+                              type="date"
+                              value={member.dateOfBirth}
+                              onChange={(e) => updateMember(member.id, "dateOfBirth", e.target.value)}
+                              className={errors[`member-${index}-dob`] ? "border-red-500" : ""}
+                              max={new Date().toISOString().split("T")[0]}
+                            />
+                            {errors[`member-${index}-dob`] && (
+                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-dob`]}</p>
+                            )}
+                          </div>
+                          <div>
+                            <Label className="hindi-text">उम्र</Label>
                             <Input
                               type="number"
                               value={member.age || ""}
-                              onChange={(e) => updateMember(member.id, "age", Number.parseInt(e.target.value) || 0)}
-                              placeholder="उम्र दर्ज करें"
-                              min="0"
-                              max="120"
-                              className={errors[`member-${index}-age`] ? "border-red-500" : ""}
+                              readOnly
+                              placeholder="जन्म तिथि से गणना होगी"
+                              className="bg-gray-50 cursor-not-allowed"
                             />
-                            {errors[`member-${index}-age`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-age`]}</p>
-                            )}
+                            <p className="text-xs text-gray-500 mt-1 hindi-text">जन्म तिथि के आधार पर स्वचालित गणना</p>
                           </div>
                           <div>
                             <Label className="hindi-text flex items-center">
@@ -1265,10 +1341,28 @@ export default function AddFamilyPage() {
           </CardContent>
         </Card>
 
-        {/* Submit Button */}
-        <div className="flex justify-center gap-4">
+        {/* Submit Buttons */}
+        <div className="flex justify-center gap-4 flex-wrap">
           <Button onClick={() => router.push(`/village/${villageId}`)} variant="outline" className="bg-transparent">
             <span className="hindi-text">रद्द करें</span>
+          </Button>
+          <Button
+            onClick={handleSaveAsDraft}
+            disabled={savingDraft}
+            variant="outline"
+            className="border-orange-300 text-orange-600 hover:bg-orange-50 min-w-[180px] bg-transparent"
+          >
+            {savingDraft ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                <span className="hindi-text">ड्राफ्ट सहेजा जा रहा है...</span>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                <span className="hindi-text">ड्राफ्ट के रूप में सहेजें</span>
+              </div>
+            )}
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="bg-orange-500 hover:bg-orange-600 min-w-[200px]">
             {loading ? (
