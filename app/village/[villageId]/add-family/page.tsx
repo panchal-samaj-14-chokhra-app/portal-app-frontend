@@ -17,6 +17,10 @@ import {
   Smartphone,
   UserCheck,
   AlertCircle,
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
@@ -41,24 +45,34 @@ interface FamilyMember {
   caste: string
   disability: boolean
   bloodGroup: string
+  mobileNumber: string
+  email: string
   permanentAddress: string
   currentAddress: string
+  isCurrentAddressInIndia: boolean
+  currentCountry: string
   village: string
   pincode: string
   district: string
   state: string
   isStudent: boolean
   educationLevel: string
+  currentClass: string
   enrollmentStatus: string
   dropoutReason?: string
   schoolName?: string
+  higherEducationType: string
   isEmployed: boolean
   occupation: string
   monthlyIncome: number
   incomeSource: string
+  isIncomeSourceInIndia: boolean
+  incomeSourceCountry: string
+  serviceType: string
   landOwned: number
   livestock: string
   houseType: string
+  houseOwnership: string
   hasElectricity: boolean
   waterSource: string
   hasToilet: boolean
@@ -93,23 +107,33 @@ const initialMember: Omit<FamilyMember, "id"> = {
   caste: "general",
   disability: false,
   bloodGroup: "",
+  mobileNumber: "",
+  email: "",
   permanentAddress: "",
   currentAddress: "",
+  isCurrentAddressInIndia: true,
+  currentCountry: "",
   village: "",
   pincode: "",
   district: "",
   state: "",
   isStudent: false,
   educationLevel: "",
+  currentClass: "",
   enrollmentStatus: "",
   schoolName: "",
+  higherEducationType: "",
   isEmployed: false,
   occupation: "",
   monthlyIncome: 0,
   incomeSource: "",
+  isIncomeSourceInIndia: true,
+  incomeSourceCountry: "",
+  serviceType: "",
   landOwned: 0,
   livestock: "",
   houseType: "kutcha",
+  houseOwnership: "owned",
   hasElectricity: false,
   waterSource: "tap",
   hasToilet: false,
@@ -129,7 +153,7 @@ export default function AddFamilyPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
-  const villageId = params.id as string
+  const villageId = params.villageId as string
 
   const [familyData, setFamilyData] = useState<FamilyData>({
     currentAddress: "",
@@ -151,7 +175,7 @@ export default function AddFamilyPage() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-orange-700">लोड हो रहा है...</p>
+          <p className="text-orange-700 hindi-text">लोड हो रहा है...</p>
         </div>
       </div>
     )
@@ -224,6 +248,13 @@ export default function AddFamilyPage() {
       newErrors.aadhaar = `आधार नंबर ${duplicateAadhaar} डुप्लिकेट है`
     }
 
+    // Check for unique mobile numbers
+    const mobileNumbers = familyData.members.map((m) => m.mobileNumber).filter(Boolean)
+    const duplicateMobile = mobileNumbers.find((num, index) => mobileNumbers.indexOf(num) !== index)
+    if (duplicateMobile) {
+      newErrors.mobile = `मोबाइल नंबर ${duplicateMobile} डुप्लिकेट है`
+    }
+
     // Check required fields for each member
     familyData.members.forEach((member, index) => {
       if (!member.name.trim()) {
@@ -234,6 +265,12 @@ export default function AddFamilyPage() {
       }
       if (member.age <= 0) {
         newErrors[`member-${index}-age`] = "वैध उम्र दर्ज करें"
+      }
+      if (member.mobileNumber && !/^[6-9]\d{9}$/.test(member.mobileNumber)) {
+        newErrors[`member-${index}-mobile`] = "वैध मोबाइल नंबर दर्ज करें"
+      }
+      if (member.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)) {
+        newErrors[`member-${index}-email`] = "वैध ईमेल पता दर्ज करें"
       }
     })
 
@@ -276,7 +313,7 @@ export default function AddFamilyPage() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                वापस
+                <span className="hindi-text">वापस</span>
               </Button>
               <Image
                 src="/images/main-logo.png"
@@ -286,8 +323,8 @@ export default function AddFamilyPage() {
                 className="rounded-full shadow-lg"
               />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">नया परिवार जोड़ें</h1>
-                <p className="text-orange-100 text-sm">परिवार पंजीकरण फॉर्म</p>
+                <h1 className="text-xl md:text-2xl font-bold text-white hindi-text">नया परिवार जोड़ें</h1>
+                <p className="text-orange-100 text-sm hindi-text">परिवार पंजीकरण फॉर्म</p>
               </div>
             </div>
           </div>
@@ -297,12 +334,13 @@ export default function AddFamilyPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Error Alerts */}
-        {(errors.mukhiya || errors.aadhaar) && (
+        {(errors.mukhiya || errors.aadhaar || errors.mobile) && (
           <Alert className="mb-6 border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              {errors.mukhiya && <div>{errors.mukhiya}</div>}
-              {errors.aadhaar && <div>{errors.aadhaar}</div>}
+              {errors.mukhiya && <div className="hindi-text">{errors.mukhiya}</div>}
+              {errors.aadhaar && <div className="hindi-text">{errors.aadhaar}</div>}
+              {errors.mobile && <div className="hindi-text">{errors.mobile}</div>}
             </AlertDescription>
           </Alert>
         )}
@@ -310,16 +348,18 @@ export default function AddFamilyPage() {
         {/* Family Level Information */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center hindi-text">
               <Home className="w-5 h-5 mr-2" />
               परिवार की जानकारी
             </CardTitle>
-            <CardDescription>परिवार स्तर की बुनियादी जानकारी</CardDescription>
+            <CardDescription className="hindi-text">परिवार स्तर की बुनियादी जानकारी</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="currentAddress">वर्तमान पता *</Label>
+                <Label htmlFor="currentAddress" className="hindi-text">
+                  वर्तमान पता *
+                </Label>
                 <Textarea
                   id="currentAddress"
                   value={familyData.currentAddress}
@@ -329,7 +369,9 @@ export default function AddFamilyPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="permanentAddress">स्थायी पता *</Label>
+                <Label htmlFor="permanentAddress" className="hindi-text">
+                  स्थायी पता *
+                </Label>
                 <Textarea
                   id="permanentAddress"
                   value={familyData.permanentAddress}
@@ -340,7 +382,9 @@ export default function AddFamilyPage() {
               </div>
             </div>
             <div>
-              <Label htmlFor="economicStatus">आर्थिक स्थिति</Label>
+              <Label htmlFor="economicStatus" className="hindi-text">
+                आर्थिक स्थिति
+              </Label>
               <Select
                 value={familyData.economicStatus}
                 onValueChange={(value) => setFamilyData((prev) => ({ ...prev, economicStatus: value }))}
@@ -364,23 +408,23 @@ export default function AddFamilyPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center">
+                <CardTitle className="flex items-center hindi-text">
                   <User className="w-5 h-5 mr-2" />
                   परिवार के सदस्य ({familyData.members.length})
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="hindi-text">
                   सभी परिवारिक सदस्यों की विस्तृत जानकारी
                   {mukhiyaCount === 1 && (
                     <Badge className="ml-2 bg-green-100 text-green-700">
                       <UserCheck className="w-3 h-3 mr-1" />
-                      मुखिया चुना गया
+                      <span className="hindi-text">मुखिया चुना गया</span>
                     </Badge>
                   )}
                 </CardDescription>
               </div>
               <Button onClick={addMember} className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
-                सदस्य जोड़ें
+                <span className="hindi-text">सदस्य जोड़ें</span>
               </Button>
             </div>
           </CardHeader>
@@ -397,7 +441,7 @@ export default function AddFamilyPage() {
                           {member.isMukhiya && (
                             <Badge className="bg-orange-100 text-orange-700">
                               <UserCheck className="w-3 h-3 mr-1" />
-                              मुखिया
+                              <span className="hindi-text">मुखिया</span>
                             </Badge>
                           )}
                         </div>
@@ -429,13 +473,13 @@ export default function AddFamilyPage() {
                     <div className="space-y-6">
                       {/* Personal Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
                           <User className="w-4 h-4 mr-2" />
                           व्यक्तिगत जानकारी
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
-                            <Label>पूरा नाम *</Label>
+                            <Label className="hindi-text">पूरा नाम *</Label>
                             <Input
                               value={member.name}
                               onChange={(e) => updateMember(member.id, "name", e.target.value)}
@@ -443,11 +487,11 @@ export default function AddFamilyPage() {
                               className={errors[`member-${index}-name`] ? "border-red-500" : ""}
                             />
                             {errors[`member-${index}-name`] && (
-                              <p className="text-red-500 text-sm mt-1">{errors[`member-${index}-name`]}</p>
+                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-name`]}</p>
                             )}
                           </div>
                           <div>
-                            <Label>आधार नंबर *</Label>
+                            <Label className="hindi-text">आधार नंबर *</Label>
                             <Input
                               value={member.aadhaarNumber}
                               onChange={(e) => updateMember(member.id, "aadhaarNumber", e.target.value)}
@@ -456,11 +500,13 @@ export default function AddFamilyPage() {
                               className={errors[`member-${index}-aadhaar`] ? "border-red-500" : ""}
                             />
                             {errors[`member-${index}-aadhaar`] && (
-                              <p className="text-red-500 text-sm mt-1">{errors[`member-${index}-aadhaar`]}</p>
+                              <p className="text-red-500 text-sm mt-1 hindi-text">
+                                {errors[`member-${index}-aadhaar`]}
+                              </p>
                             )}
                           </div>
                           <div>
-                            <Label>उम्र *</Label>
+                            <Label className="hindi-text">उम्र *</Label>
                             <Input
                               type="number"
                               value={member.age || ""}
@@ -471,11 +517,43 @@ export default function AddFamilyPage() {
                               className={errors[`member-${index}-age`] ? "border-red-500" : ""}
                             />
                             {errors[`member-${index}-age`] && (
-                              <p className="text-red-500 text-sm mt-1">{errors[`member-${index}-age`]}</p>
+                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-age`]}</p>
                             )}
                           </div>
                           <div>
-                            <Label>लिंग</Label>
+                            <Label className="hindi-text flex items-center">
+                              <Phone className="w-4 h-4 mr-1" />
+                              मोबाइल नंबर
+                            </Label>
+                            <Input
+                              value={member.mobileNumber}
+                              onChange={(e) => updateMember(member.id, "mobileNumber", e.target.value)}
+                              placeholder="10 अंकों का मोबाइल नंबर"
+                              maxLength={10}
+                              className={errors[`member-${index}-mobile`] ? "border-red-500" : ""}
+                            />
+                            {errors[`member-${index}-mobile`] && (
+                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-mobile`]}</p>
+                            )}
+                          </div>
+                          <div>
+                            <Label className="hindi-text flex items-center">
+                              <Mail className="w-4 h-4 mr-1" />
+                              ईमेल पता
+                            </Label>
+                            <Input
+                              type="email"
+                              value={member.email}
+                              onChange={(e) => updateMember(member.id, "email", e.target.value)}
+                              placeholder="example@email.com"
+                              className={errors[`member-${index}-email`] ? "border-red-500" : ""}
+                            />
+                            {errors[`member-${index}-email`] && (
+                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-email`]}</p>
+                            )}
+                          </div>
+                          <div>
+                            <Label className="hindi-text">लिंग</Label>
                             <Select
                               value={member.gender}
                               onValueChange={(value) => updateMember(member.id, "gender", value)}
@@ -491,7 +569,7 @@ export default function AddFamilyPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label>रिश्ता</Label>
+                            <Label className="hindi-text">रिश्ता</Label>
                             <Input
                               value={member.relation}
                               onChange={(e) => updateMember(member.id, "relation", e.target.value)}
@@ -499,7 +577,7 @@ export default function AddFamilyPage() {
                             />
                           </div>
                           <div>
-                            <Label>वैवाहिक स्थिति</Label>
+                            <Label className="hindi-text">वैवाहिक स्थिति</Label>
                             <Select
                               value={member.maritalStatus}
                               onValueChange={(value) => updateMember(member.id, "maritalStatus", value)}
@@ -516,7 +594,7 @@ export default function AddFamilyPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label>धर्म</Label>
+                            <Label className="hindi-text">धर्म</Label>
                             <Select
                               value={member.religion}
                               onValueChange={(value) => updateMember(member.id, "religion", value)}
@@ -536,7 +614,7 @@ export default function AddFamilyPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label>जाति</Label>
+                            <Label className="hindi-text">जाति</Label>
                             <Select
                               value={member.caste}
                               onValueChange={(value) => updateMember(member.id, "caste", value)}
@@ -553,7 +631,7 @@ export default function AddFamilyPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label>ब्लड ग्रुप</Label>
+                            <Label className="hindi-text">ब्लड ग्रुप</Label>
                             <Select
                               value={member.bloodGroup}
                               onValueChange={(value) => updateMember(member.id, "bloodGroup", value)}
@@ -581,7 +659,9 @@ export default function AddFamilyPage() {
                               checked={member.disability}
                               onCheckedChange={(checked) => updateMember(member.id, "disability", checked)}
                             />
-                            <Label htmlFor={`disability-${member.id}`}>विकलांगता है</Label>
+                            <Label htmlFor={`disability-${member.id}`} className="hindi-text">
+                              विकलांगता है
+                            </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -589,7 +669,7 @@ export default function AddFamilyPage() {
                               checked={member.isMukhiya}
                               onCheckedChange={(checked) => updateMember(member.id, "isMukhiya", checked)}
                             />
-                            <Label htmlFor={`mukhiya-${member.id}`} className="font-medium text-orange-700">
+                            <Label htmlFor={`mukhiya-${member.id}`} className="font-medium text-orange-700 hindi-text">
                               मुखिया है
                             </Label>
                           </div>
@@ -598,66 +678,96 @@ export default function AddFamilyPage() {
 
                       {/* Address Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
-                          <Home className="w-4 h-4 mr-2" />
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                          <MapPin className="w-4 h-4 mr-2" />
                           पता की जानकारी
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>स्थायी पता</Label>
-                            <Textarea
-                              value={member.permanentAddress}
-                              onChange={(e) => updateMember(member.id, "permanentAddress", e.target.value)}
-                              placeholder="स्थायी पता दर्ज करें"
-                            />
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label className="hindi-text">स्थायी पता</Label>
+                              <Textarea
+                                value={member.permanentAddress}
+                                onChange={(e) => updateMember(member.id, "permanentAddress", e.target.value)}
+                                placeholder="स्थायी पता दर्ज करें"
+                              />
+                            </div>
+                            <div>
+                              <Label className="hindi-text">वर्तमान पता</Label>
+                              <Textarea
+                                value={member.currentAddress}
+                                onChange={(e) => updateMember(member.id, "currentAddress", e.target.value)}
+                                placeholder="वर्तमान पता दर्ज करें"
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label>वर्तमान पता</Label>
-                            <Textarea
-                              value={member.currentAddress}
-                              onChange={(e) => updateMember(member.id, "currentAddress", e.target.value)}
-                              placeholder="वर्तमान पता दर्ज करें"
+
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`currentAddressIndia-${member.id}`}
+                              checked={member.isCurrentAddressInIndia}
+                              onCheckedChange={(checked) => updateMember(member.id, "isCurrentAddressInIndia", checked)}
                             />
+                            <Label htmlFor={`currentAddressIndia-${member.id}`} className="hindi-text">
+                              वर्तमान पता भारत में है
+                            </Label>
                           </div>
-                          <div>
-                            <Label>गांव का नाम</Label>
-                            <Input
-                              value={member.village}
-                              onChange={(e) => updateMember(member.id, "village", e.target.value)}
-                              placeholder="गांव का नाम"
-                            />
-                          </div>
-                          <div>
-                            <Label>पिनकोड</Label>
-                            <Input
-                              value={member.pincode}
-                              onChange={(e) => updateMember(member.id, "pincode", e.target.value)}
-                              placeholder="पिनकोड"
-                              maxLength={6}
-                            />
-                          </div>
-                          <div>
-                            <Label>जिला</Label>
-                            <Input
-                              value={member.district}
-                              onChange={(e) => updateMember(member.id, "district", e.target.value)}
-                              placeholder="जिला"
-                            />
-                          </div>
-                          <div>
-                            <Label>राज्य</Label>
-                            <Input
-                              value={member.state}
-                              onChange={(e) => updateMember(member.id, "state", e.target.value)}
-                              placeholder="राज्य"
-                            />
+
+                          {!member.isCurrentAddressInIndia && (
+                            <div>
+                              <Label className="hindi-text flex items-center">
+                                <Globe className="w-4 h-4 mr-1" />
+                                देश का नाम
+                              </Label>
+                              <Input
+                                value={member.currentCountry}
+                                onChange={(e) => updateMember(member.id, "currentCountry", e.target.value)}
+                                placeholder="देश का नाम दर्ज करें"
+                              />
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <Label className="hindi-text">गांव का नाम</Label>
+                              <Input
+                                value={member.village}
+                                onChange={(e) => updateMember(member.id, "village", e.target.value)}
+                                placeholder="गांव का नाम"
+                              />
+                            </div>
+                            <div>
+                              <Label className="hindi-text">पिनकोड</Label>
+                              <Input
+                                value={member.pincode}
+                                onChange={(e) => updateMember(member.id, "pincode", e.target.value)}
+                                placeholder="पिनकोड"
+                                maxLength={6}
+                              />
+                            </div>
+                            <div>
+                              <Label className="hindi-text">जिला</Label>
+                              <Input
+                                value={member.district}
+                                onChange={(e) => updateMember(member.id, "district", e.target.value)}
+                                placeholder="जिला"
+                              />
+                            </div>
+                            <div>
+                              <Label className="hindi-text">राज्य</Label>
+                              <Input
+                                value={member.state}
+                                onChange={(e) => updateMember(member.id, "state", e.target.value)}
+                                placeholder="राज्य"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       {/* Education Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
                           <GraduationCap className="w-4 h-4 mr-2" />
                           शिक्षा की जानकारी
                         </h4>
@@ -668,11 +778,13 @@ export default function AddFamilyPage() {
                               checked={member.isStudent}
                               onCheckedChange={(checked) => updateMember(member.id, "isStudent", checked)}
                             />
-                            <Label htmlFor={`student-${member.id}`}>छात्र/छात्रा है</Label>
+                            <Label htmlFor={`student-${member.id}`} className="hindi-text">
+                              छात्र/छात्रा है
+                            </Label>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
-                              <Label>शिक्षा का स्तर</Label>
+                              <Label className="hindi-text">शिक्षा का स्तर</Label>
                               <Select
                                 value={member.educationLevel}
                                 onValueChange={(value) => updateMember(member.id, "educationLevel", value)}
@@ -691,8 +803,62 @@ export default function AddFamilyPage() {
                                 </SelectContent>
                               </Select>
                             </div>
+
+                            {member.isStudent && (
+                              <div>
+                                <Label className="hindi-text">वर्तमान कक्षा</Label>
+                                <Select
+                                  value={member.currentClass}
+                                  onValueChange={(value) => updateMember(member.id, "currentClass", value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="कक्षा चुनें" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1">कक्षा 1</SelectItem>
+                                    <SelectItem value="2">कक्षा 2</SelectItem>
+                                    <SelectItem value="3">कक्षा 3</SelectItem>
+                                    <SelectItem value="4">कक्षा 4</SelectItem>
+                                    <SelectItem value="5">कक्षा 5</SelectItem>
+                                    <SelectItem value="6">कक्षा 6</SelectItem>
+                                    <SelectItem value="7">कक्षा 7</SelectItem>
+                                    <SelectItem value="8">कक्षा 8</SelectItem>
+                                    <SelectItem value="9">कक्षा 9</SelectItem>
+                                    <SelectItem value="10">कक्षा 10</SelectItem>
+                                    <SelectItem value="11">कक्षा 11</SelectItem>
+                                    <SelectItem value="12">कक्षा 12</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+
                             <div>
-                              <Label>नामांकन स्थिति</Label>
+                              <Label className="hindi-text">उच्च शिक्षा का प्रकार</Label>
+                              <Select
+                                value={member.higherEducationType}
+                                onValueChange={(value) => updateMember(member.id, "higherEducationType", value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="उच्च शिक्षा का प्रकार चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">कोई नहीं</SelectItem>
+                                  <SelectItem value="medical">मेडिकल</SelectItem>
+                                  <SelectItem value="engineering">इंजीनियरिंग</SelectItem>
+                                  <SelectItem value="technical">तकनीकी</SelectItem>
+                                  <SelectItem value="diploma">डिप्लोमा</SelectItem>
+                                  <SelectItem value="arts">कला</SelectItem>
+                                  <SelectItem value="commerce">वाणिज्य</SelectItem>
+                                  <SelectItem value="science">विज्ञान</SelectItem>
+                                  <SelectItem value="law">कानून</SelectItem>
+                                  <SelectItem value="management">प्रबंधन</SelectItem>
+                                  <SelectItem value="other">अन्य</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text">नामांकन स्थिति</Label>
                               <Select
                                 value={member.enrollmentStatus}
                                 onValueChange={(value) => updateMember(member.id, "enrollmentStatus", value)}
@@ -708,9 +874,10 @@ export default function AddFamilyPage() {
                                 </SelectContent>
                               </Select>
                             </div>
+
                             {member.enrollmentStatus === "dropped" && (
                               <div>
-                                <Label>छोड़ने का कारण</Label>
+                                <Label className="hindi-text">छोड़ने का कारण</Label>
                                 <Input
                                   value={member.dropoutReason || ""}
                                   onChange={(e) => updateMember(member.id, "dropoutReason", e.target.value)}
@@ -718,9 +885,10 @@ export default function AddFamilyPage() {
                                 />
                               </div>
                             )}
+
                             {(member.isStudent || member.enrollmentStatus === "enrolled") && (
                               <div>
-                                <Label>स्कूल/कॉलेज का नाम</Label>
+                                <Label className="hindi-text">स्कूल/कॉलेज का नाम</Label>
                                 <Input
                                   value={member.schoolName || ""}
                                   onChange={(e) => updateMember(member.id, "schoolName", e.target.value)}
@@ -734,7 +902,7 @@ export default function AddFamilyPage() {
 
                       {/* Employment Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
                           <Briefcase className="w-4 h-4 mr-2" />
                           रोजगार की जानकारी
                         </h4>
@@ -745,11 +913,13 @@ export default function AddFamilyPage() {
                               checked={member.isEmployed}
                               onCheckedChange={(checked) => updateMember(member.id, "isEmployed", checked)}
                             />
-                            <Label htmlFor={`employed-${member.id}`}>रोजगार में है</Label>
+                            <Label htmlFor={`employed-${member.id}`} className="hindi-text">
+                              रोजगार में है
+                            </Label>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
-                              <Label>व्यवसाय का प्रकार</Label>
+                              <Label className="hindi-text">व्यवसाय का प्रकार</Label>
                               <Select
                                 value={member.occupation}
                                 onValueChange={(value) => updateMember(member.id, "occupation", value)}
@@ -771,8 +941,35 @@ export default function AddFamilyPage() {
                                 </SelectContent>
                               </Select>
                             </div>
+
                             <div>
-                              <Label>मासिक आय (₹)</Label>
+                              <Label className="hindi-text">सेवा का प्रकार</Label>
+                              <Select
+                                value={member.serviceType}
+                                onValueChange={(value) => updateMember(member.id, "serviceType", value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="सेवा का प्रकार चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">कोई नहीं</SelectItem>
+                                  <SelectItem value="healthcare">स्वास्थ्य सेवा</SelectItem>
+                                  <SelectItem value="education">शिक्षा</SelectItem>
+                                  <SelectItem value="transport">परिवहन</SelectItem>
+                                  <SelectItem value="construction">निर्माण</SelectItem>
+                                  <SelectItem value="retail">खुदरा व्यापार</SelectItem>
+                                  <SelectItem value="hospitality">आतिथ्य</SelectItem>
+                                  <SelectItem value="finance">वित्त</SelectItem>
+                                  <SelectItem value="technology">प्रौद्योगिकी</SelectItem>
+                                  <SelectItem value="manufacturing">विनिर्माण</SelectItem>
+                                  <SelectItem value="agriculture">कृषि</SelectItem>
+                                  <SelectItem value="other">अन्य</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text">मासिक आय (₹)</Label>
                               <Input
                                 type="number"
                                 value={member.monthlyIncome || ""}
@@ -783,8 +980,9 @@ export default function AddFamilyPage() {
                                 min="0"
                               />
                             </div>
+
                             <div>
-                              <Label>आय का मुख्य स्रोत</Label>
+                              <Label className="hindi-text">आय का मुख्य स्रोत</Label>
                               <Select
                                 value={member.incomeSource}
                                 onValueChange={(value) => updateMember(member.id, "incomeSource", value)}
@@ -803,8 +1001,34 @@ export default function AddFamilyPage() {
                                 </SelectContent>
                               </Select>
                             </div>
+
+                            <div className="flex items-center space-x-2 col-span-full">
+                              <Checkbox
+                                id={`incomeSourceIndia-${member.id}`}
+                                checked={member.isIncomeSourceInIndia}
+                                onCheckedChange={(checked) => updateMember(member.id, "isIncomeSourceInIndia", checked)}
+                              />
+                              <Label htmlFor={`incomeSourceIndia-${member.id}`} className="hindi-text">
+                                आय का स्रोत भारत में है
+                              </Label>
+                            </div>
+
+                            {!member.isIncomeSourceInIndia && (
+                              <div>
+                                <Label className="hindi-text flex items-center">
+                                  <Globe className="w-4 h-4 mr-1" />
+                                  आय स्रोत देश का नाम
+                                </Label>
+                                <Input
+                                  value={member.incomeSourceCountry}
+                                  onChange={(e) => updateMember(member.id, "incomeSourceCountry", e.target.value)}
+                                  placeholder="देश का नाम दर्ज करें"
+                                />
+                              </div>
+                            )}
+
                             <div>
-                              <Label>भूमि स्वामित्व (एकड़)</Label>
+                              <Label className="hindi-text">भूमि स्वामित्व (एकड़)</Label>
                               <Input
                                 type="number"
                                 value={member.landOwned || ""}
@@ -817,7 +1041,7 @@ export default function AddFamilyPage() {
                               />
                             </div>
                             <div>
-                              <Label>पशुधन</Label>
+                              <Label className="hindi-text">पशुधन</Label>
                               <Input
                                 value={member.livestock}
                                 onChange={(e) => updateMember(member.id, "livestock", e.target.value)}
@@ -830,13 +1054,13 @@ export default function AddFamilyPage() {
 
                       {/* Housing Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
                           <Home className="w-4 h-4 mr-2" />
                           आवास की जानकारी
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div>
-                            <Label>घर का प्रकार</Label>
+                            <Label className="hindi-text">घर का प्रकार</Label>
                             <Select
                               value={member.houseType}
                               onValueChange={(value) => updateMember(member.id, "houseType", value)}
@@ -851,8 +1075,28 @@ export default function AddFamilyPage() {
                               </SelectContent>
                             </Select>
                           </div>
+
                           <div>
-                            <Label>पानी का स्रोत</Label>
+                            <Label className="hindi-text">घर का स्वामित्व</Label>
+                            <Select
+                              value={member.houseOwnership}
+                              onValueChange={(value) => updateMember(member.id, "houseOwnership", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="owned">स्वयं का</SelectItem>
+                                <SelectItem value="rented">किराए का</SelectItem>
+                                <SelectItem value="family">पारिवारिक</SelectItem>
+                                <SelectItem value="government">सरकारी</SelectItem>
+                                <SelectItem value="other">अन्य</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="hindi-text">पानी का स्रोत</Label>
                             <Select
                               value={member.waterSource}
                               onValueChange={(value) => updateMember(member.id, "waterSource", value)}
@@ -870,7 +1114,7 @@ export default function AddFamilyPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label>खाना पकाने का ईंधन</Label>
+                            <Label className="hindi-text">खाना पकाने का ईंधन</Label>
                             <Select
                               value={member.cookingFuel}
                               onValueChange={(value) => updateMember(member.id, "cookingFuel", value)}
@@ -895,7 +1139,9 @@ export default function AddFamilyPage() {
                               checked={member.hasElectricity}
                               onCheckedChange={(checked) => updateMember(member.id, "hasElectricity", checked)}
                             />
-                            <Label htmlFor={`electricity-${member.id}`}>बिजली की सुविधा</Label>
+                            <Label htmlFor={`electricity-${member.id}`} className="hindi-text">
+                              बिजली की सुविधा
+                            </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -903,14 +1149,16 @@ export default function AddFamilyPage() {
                               checked={member.hasToilet}
                               onCheckedChange={(checked) => updateMember(member.id, "hasToilet", checked)}
                             />
-                            <Label htmlFor={`toilet-${member.id}`}>शौचालय की सुविधा</Label>
+                            <Label htmlFor={`toilet-${member.id}`} className="hindi-text">
+                              शौचालय की सुविधा
+                            </Label>
                           </div>
                         </div>
                       </div>
 
                       {/* Health Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
                           <Heart className="w-4 h-4 mr-2" />
                           स्वास्थ्य की जानकारी
                         </h4>
@@ -922,7 +1170,9 @@ export default function AddFamilyPage() {
                                 checked={member.hasHealthIssues}
                                 onCheckedChange={(checked) => updateMember(member.id, "hasHealthIssues", checked)}
                               />
-                              <Label htmlFor={`health-issues-${member.id}`}>स्वास्थ्य समस्या है</Label>
+                              <Label htmlFor={`health-issues-${member.id}`} className="hindi-text">
+                                स्वास्थ्य समस्या है
+                              </Label>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Checkbox
@@ -930,7 +1180,9 @@ export default function AddFamilyPage() {
                                 checked={member.isVaccinated}
                                 onCheckedChange={(checked) => updateMember(member.id, "isVaccinated", checked)}
                               />
-                              <Label htmlFor={`vaccinated-${member.id}`}>टीकाकरण हुआ है</Label>
+                              <Label htmlFor={`vaccinated-${member.id}`} className="hindi-text">
+                                टीकाकरण हुआ है
+                              </Label>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Checkbox
@@ -938,12 +1190,14 @@ export default function AddFamilyPage() {
                                 checked={member.hasHealthInsurance}
                                 onCheckedChange={(checked) => updateMember(member.id, "hasHealthInsurance", checked)}
                               />
-                              <Label htmlFor={`health-insurance-${member.id}`}>स्वास्थ्य बीमा है</Label>
+                              <Label htmlFor={`health-insurance-${member.id}`} className="hindi-text">
+                                स्वास्थ्य बीमा है
+                              </Label>
                             </div>
                           </div>
                           {member.hasHealthIssues && (
                             <div>
-                              <Label>पुरानी बीमारी (यदि कोई हो)</Label>
+                              <Label className="hindi-text">पुरानी बीमारी (यदि कोई हो)</Label>
                               <Input
                                 value={member.chronicDisease || ""}
                                 onChange={(e) => updateMember(member.id, "chronicDisease", e.target.value)}
@@ -956,7 +1210,7 @@ export default function AddFamilyPage() {
 
                       {/* Digital Access */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
                           <Smartphone className="w-4 h-4 mr-2" />
                           डिजिटल पहुंच और बैंकिंग
                         </h4>
@@ -967,7 +1221,9 @@ export default function AddFamilyPage() {
                               checked={member.hasSmartphone}
                               onCheckedChange={(checked) => updateMember(member.id, "hasSmartphone", checked)}
                             />
-                            <Label htmlFor={`smartphone-${member.id}`}>स्मार्टफोन है</Label>
+                            <Label htmlFor={`smartphone-${member.id}`} className="hindi-text">
+                              स्मार्टफोन है
+                            </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -975,7 +1231,9 @@ export default function AddFamilyPage() {
                               checked={member.hasInternet}
                               onCheckedChange={(checked) => updateMember(member.id, "hasInternet", checked)}
                             />
-                            <Label htmlFor={`internet-${member.id}`}>इंटरनेट की सुविधा</Label>
+                            <Label htmlFor={`internet-${member.id}`} className="hindi-text">
+                              इंटरनेट की सुविधा
+                            </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -983,7 +1241,9 @@ export default function AddFamilyPage() {
                               checked={member.hasBankAccount}
                               onCheckedChange={(checked) => updateMember(member.id, "hasBankAccount", checked)}
                             />
-                            <Label htmlFor={`bank-account-${member.id}`}>बैंक खाता है</Label>
+                            <Label htmlFor={`bank-account-${member.id}`} className="hindi-text">
+                              बैंक खाता है
+                            </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -991,7 +1251,9 @@ export default function AddFamilyPage() {
                               checked={member.hasJanDhan}
                               onCheckedChange={(checked) => updateMember(member.id, "hasJanDhan", checked)}
                             />
-                            <Label htmlFor={`jan-dhan-${member.id}`}>जन धन योजना में नामांकित</Label>
+                            <Label htmlFor={`jan-dhan-${member.id}`} className="hindi-text">
+                              जन धन योजना में नामांकित
+                            </Label>
                           </div>
                         </div>
                       </div>
@@ -1006,18 +1268,18 @@ export default function AddFamilyPage() {
         {/* Submit Button */}
         <div className="flex justify-center gap-4">
           <Button onClick={() => router.push(`/village/${villageId}`)} variant="outline" className="bg-transparent">
-            रद्द करें
+            <span className="hindi-text">रद्द करें</span>
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="bg-orange-500 hover:bg-orange-600 min-w-[200px]">
             {loading ? (
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                सहेजा जा रहा है...
+                <span className="hindi-text">सहेजा जा रहा है...</span>
               </div>
             ) : (
               <div className="flex items-center">
                 <Save className="w-4 h-4 mr-2" />
-                परिवार पंजीकृत करें
+                <span className="hindi-text">परिवार पंजीकृत करें</span>
               </div>
             )}
           </Button>
