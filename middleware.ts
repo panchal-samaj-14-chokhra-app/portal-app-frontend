@@ -4,67 +4,70 @@ import { NextResponse } from "next/server"
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token
-    const isAuth = !!token
-    const pathname = req.nextUrl.pathname
+    const { pathname } = req.nextUrl
 
-    // Define public routes
+    // Public routes that don't require authentication
     const publicRoutes = ["/", "/login", "/help", "/reset-password"]
-    const isPublicRoute =
-      publicRoutes.includes(pathname) ||
-      pathname.startsWith("/api/auth") ||
-      pathname.startsWith("/_next") ||
-      pathname.startsWith("/images")
 
-    // Define protected routes
-    const protectedRoutes = ["/village", "/chokhra", "/admin"]
-    const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
-
-    // If user is authenticated and trying to access login page, redirect based on role
-    if (pathname === "/login" && isAuth) {
-      // Redirect based on user role or default to village
-      const userRole = token?.role || "village"
-      if (userRole === "admin") {
-        return NextResponse.redirect(new URL("/admin", req.url))
-      } else if (userRole === "chokhra") {
-        return NextResponse.redirect(new URL("/chokhra", req.url))
-      } else {
-        return NextResponse.redirect(new URL("/village", req.url))
-      }
-    }
-
-    // Allow access to public routes
-    if (isPublicRoute) {
+    if (publicRoutes.includes(pathname)) {
       return NextResponse.next()
     }
 
-    // If user is not authenticated and trying to access protected routes, redirect to login
-    if (!isAuth && isProtectedRoute) {
-      let from = pathname
-      if (req.nextUrl.search) {
-        from += req.nextUrl.search
-      }
-      return NextResponse.redirect(new URL(`/login?from=${encodeURIComponent(from)}`, req.url))
+    // If no token and trying to access protected route
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.url))
     }
 
-    return NextResponse.next()
+    // Role-based access control
+    const userRole = token.role as string
+
+    // Admin can access everything
+    if (userRole === "admin") {
+      return NextResponse.next()
+    }
+
+    // Chokhra can access chokhra and village routes
+    if (userRole === "chokhra" && (pathname.startsWith("/chokhra") || pathname.startsWith("/village"))) {
+      return NextResponse.next()
+    }
+
+    // Village can only access village routes
+    if (userRole === "village" && pathname.startsWith("/village")) {
+      return NextResponse.next()
+    }
+
+    // If user doesn't have permission, redirect to their appropriate dashboard
+    if (userRole === "village") {
+      return NextResponse.redirect(new URL("/village", req.url))
+    }
+    if (userRole === "chokhra") {
+      return NextResponse.redirect(new URL("/chokhra", req.url))
+    }
+    if (userRole === "admin") {
+      return NextResponse.redirect(new URL("/admin", req.url))
+    }
+
+    // Default redirect to login
+    return NextResponse.redirect(new URL("/login", req.url))
   },
   {
     callbacks: {
-      authorized: () => true, // Let the middleware function handle the logic
+      authorized: ({ token, req }) => {
+        const { pathname } = req.nextUrl
+        const publicRoutes = ["/", "/login", "/help", "/reset-password"]
+
+        // Allow public routes
+        if (publicRoutes.includes(pathname)) {
+          return true
+        }
+
+        // Require token for protected routes
+        return !!token
+      },
     },
   },
 )
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (NextAuth API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images (public images)
-     */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|images).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|images|placeholder).*)"],
 }
