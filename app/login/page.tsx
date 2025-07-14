@@ -25,7 +25,7 @@ export default function LoginPage() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("from") || "/village" // Default to village if no callback
+  const callbackUrl = searchParams.get("from") || "/village"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,11 +42,14 @@ export default function LoginPage() {
       if (result?.error) {
         setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।")
       } else {
-        // Redirect based on user role or callback URL
+        // Redirect based on user role
         if (formData.email === "admin@panchalsamaj.org") {
           router.push("/admin")
         } else if (formData.email === "chokhra@panchalsamaj.org") {
           router.push("/chokhra")
+        } else if (formData.email === "village@panchalsamaj.org") {
+          // Redirect village user to specific village ID
+          router.push("/village/village-1")
         } else {
           router.push(callbackUrl)
         }

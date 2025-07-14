@@ -10,6 +10,17 @@ export default withAuth(
     const publicRoutes = ["/", "/login", "/help", "/reset-password"]
 
     if (publicRoutes.includes(pathname)) {
+      // If user is authenticated and trying to access login page, redirect based on role
+      if (pathname === "/login" && token) {
+        const userRole = token.role as string
+        if (userRole === "admin") {
+          return NextResponse.redirect(new URL("/admin", req.url))
+        } else if (userRole === "chokhra") {
+          return NextResponse.redirect(new URL("/chokhra", req.url))
+        } else if (userRole === "village") {
+          return NextResponse.redirect(new URL("/village/village-1", req.url))
+        }
+      }
       return NextResponse.next()
     }
 
@@ -38,7 +49,7 @@ export default withAuth(
 
     // If user doesn't have permission, redirect to their appropriate dashboard
     if (userRole === "village") {
-      return NextResponse.redirect(new URL("/village", req.url))
+      return NextResponse.redirect(new URL("/village/village-1", req.url))
     }
     if (userRole === "chokhra") {
       return NextResponse.redirect(new URL("/chokhra", req.url))
