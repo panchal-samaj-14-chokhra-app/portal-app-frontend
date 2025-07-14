@@ -60,7 +60,10 @@ interface FamilyMember {
   state: string
   isStudent: boolean
   educationLevel: string
+  classCompleted: string
   currentClass: string
+  collegeCourse: string
+  institutionName: string
   enrollmentStatus: string
   dropoutReason?: string
   schoolName?: string
@@ -107,7 +110,7 @@ const initialMember: Omit<FamilyMember, "id"> = {
   age: 0,
   gender: "male",
   relation: "",
-  maritalStatus: "single",
+  maritalStatus: "unmarried",
   religion: "hindu",
   caste: "general",
   disability: false,
@@ -124,7 +127,10 @@ const initialMember: Omit<FamilyMember, "id"> = {
   state: "",
   isStudent: false,
   educationLevel: "",
+  classCompleted: "",
   currentClass: "",
+  collegeCourse: "",
+  institutionName: "",
   enrollmentStatus: "",
   schoolName: "",
   higherEducationType: "",
@@ -646,11 +652,33 @@ export default function AddFamilyPage() {
                           </div>
                           <div>
                             <Label className="hindi-text">रिश्ता</Label>
-                            <Input
+                            <Select
                               value={member.relation}
-                              onChange={(e) => updateMember(member.id, "relation", e.target.value)}
-                              placeholder="मुखिया से रिश्ता"
-                            />
+                              onValueChange={(value) => updateMember(member.id, "relation", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="रिश्ता चुनें" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="self">स्वयं</SelectItem>
+                                <SelectItem value="spouse">पति/पत्नी</SelectItem>
+                                <SelectItem value="son">पुत्र</SelectItem>
+                                <SelectItem value="daughter">पुत्री</SelectItem>
+                                <SelectItem value="father">पिता</SelectItem>
+                                <SelectItem value="mother">माता</SelectItem>
+                                <SelectItem value="brother">भाई</SelectItem>
+                                <SelectItem value="sister">बहन</SelectItem>
+                                <SelectItem value="grandfather">दादा/नाना</SelectItem>
+                                <SelectItem value="grandmother">दादी/नानी</SelectItem>
+                                <SelectItem value="uncle">चाचा/मामा</SelectItem>
+                                <SelectItem value="aunt">चाची/मामी</SelectItem>
+                                <SelectItem value="nephew">भतीजा/भांजा</SelectItem>
+                                <SelectItem value="niece">भतीजी/भांजी</SelectItem>
+                                <SelectItem value="son_in_law">दामाद</SelectItem>
+                                <SelectItem value="daughter_in_law">बहू</SelectItem>
+                                <SelectItem value="other">अन्य</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div>
                             <Label className="hindi-text">वैवाहिक स्थिति</Label>
@@ -662,10 +690,13 @@ export default function AddFamilyPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="single">अविवाहित</SelectItem>
+                                <SelectItem value="unmarried">अविवाहित</SelectItem>
                                 <SelectItem value="married">विवाहित</SelectItem>
                                 <SelectItem value="widowed">विधवा/विधुर</SelectItem>
                                 <SelectItem value="divorced">तलाकशुदा</SelectItem>
+                                <SelectItem value="separated">अलग रह रहे</SelectItem>
+                                <SelectItem value="engaged">सगाई हो गई</SelectItem>
+                                <SelectItem value="remarried">पुनर्विवाह</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -855,9 +886,10 @@ export default function AddFamilyPage() {
                               onCheckedChange={(checked) => updateMember(member.id, "isStudent", checked)}
                             />
                             <Label htmlFor={`student-${member.id}`} className="hindi-text">
-                              छात्र/छात्रा है
+                              वर्तमान में छात्र/छात्रा है
                             </Label>
                           </div>
+
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
                               <Label className="hindi-text">शिक्षा का स्तर</Label>
@@ -870,12 +902,42 @@ export default function AddFamilyPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="illiterate">निरक्षर</SelectItem>
-                                  <SelectItem value="primary">प्राथमिक</SelectItem>
-                                  <SelectItem value="secondary">माध्यमिक</SelectItem>
-                                  <SelectItem value="higher_secondary">उच्च माध्यमिक</SelectItem>
-                                  <SelectItem value="graduate">स्नातक</SelectItem>
+                                  <SelectItem value="primary">प्राथमिक (कक्षा 1-5)</SelectItem>
+                                  <SelectItem value="middle">मध्य (कक्षा 6-8)</SelectItem>
+                                  <SelectItem value="secondary">माध्यमिक (कक्षा 9-10)</SelectItem>
+                                  <SelectItem value="higher_secondary">उच्च माध्यमिक (कक्षा 11-12)</SelectItem>
+                                  <SelectItem value="undergraduate">स्नातक</SelectItem>
                                   <SelectItem value="postgraduate">स्नातकोत्तर</SelectItem>
-                                  <SelectItem value="professional">व्यावसायिक</SelectItem>
+                                  <SelectItem value="doctorate">डॉक्टरेट</SelectItem>
+                                  <SelectItem value="diploma">डिप्लोमा</SelectItem>
+                                  <SelectItem value="certificate">प्रमाणपत्र कोर्स</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text">पूर्ण की गई कक्षा</Label>
+                              <Select
+                                value={member.classCompleted}
+                                onValueChange={(value) => updateMember(member.id, "classCompleted", value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="पूर्ण की गई कक्षा चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">कोई नहीं</SelectItem>
+                                  <SelectItem value="1">कक्षा 1</SelectItem>
+                                  <SelectItem value="2">कक्षा 2</SelectItem>
+                                  <SelectItem value="3">कक्षा 3</SelectItem>
+                                  <SelectItem value="4">कक्षा 4</SelectItem>
+                                  <SelectItem value="5">कक्षा 5</SelectItem>
+                                  <SelectItem value="6">कक्षा 6</SelectItem>
+                                  <SelectItem value="7">कक्षा 7</SelectItem>
+                                  <SelectItem value="8">कक्षा 8</SelectItem>
+                                  <SelectItem value="9">कक्षा 9</SelectItem>
+                                  <SelectItem value="10">कक्षा 10</SelectItem>
+                                  <SelectItem value="11">कक्षा 11</SelectItem>
+                                  <SelectItem value="12">कक्षा 12</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -888,7 +950,7 @@ export default function AddFamilyPage() {
                                   onValueChange={(value) => updateMember(member.id, "currentClass", value)}
                                 >
                                   <SelectTrigger>
-                                    <SelectValue placeholder="कक्षा चुनें" />
+                                    <SelectValue placeholder="वर्तमान कक्षा चुनें" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="1">कक्षा 1</SelectItem>
@@ -909,25 +971,111 @@ export default function AddFamilyPage() {
                             )}
 
                             <div>
-                              <Label className="hindi-text">उच्च शिक्षा का प्रकार</Label>
+                              <Label className="hindi-text">कॉलेज कोर्स (यदि कोई हो)</Label>
                               <Select
-                                value={member.higherEducationType}
-                                onValueChange={(value) => updateMember(member.id, "higherEducationType", value)}
+                                value={member.collegeCourse}
+                                onValueChange={(value) => updateMember(member.id, "collegeCourse", value)}
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="उच्च शिक्षा का प्रकार चुनें" />
+                                  <SelectValue placeholder="कॉलेज कोर्स चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">कोई नहीं</SelectItem>
-                                  <SelectItem value="medical">मेडिकल</SelectItem>
-                                  <SelectItem value="engineering">इंजीनियरिंग</SelectItem>
-                                  <SelectItem value="technical">तकनीकी</SelectItem>
-                                  <SelectItem value="diploma">डिप्लोमा</SelectItem>
-                                  <SelectItem value="arts">कला</SelectItem>
-                                  <SelectItem value="commerce">वाणिज्य</SelectItem>
-                                  <SelectItem value="science">विज्ञान</SelectItem>
-                                  <SelectItem value="law">कानून</SelectItem>
-                                  <SelectItem value="management">प्रबंधन</SelectItem>
+
+                                  {/* Engineering Courses */}
+                                  <SelectItem value="btech_computer">B.Tech Computer Science</SelectItem>
+                                  <SelectItem value="btech_mechanical">B.Tech Mechanical</SelectItem>
+                                  <SelectItem value="btech_electrical">B.Tech Electrical</SelectItem>
+                                  <SelectItem value="btech_civil">B.Tech Civil</SelectItem>
+                                  <SelectItem value="btech_electronics">B.Tech Electronics</SelectItem>
+                                  <SelectItem value="be_computer">BE Computer Science</SelectItem>
+                                  <SelectItem value="be_mechanical">BE Mechanical</SelectItem>
+                                  <SelectItem value="be_electrical">BE Electrical</SelectItem>
+                                  <SelectItem value="be_civil">BE Civil</SelectItem>
+
+                                  {/* Medical Courses */}
+                                  <SelectItem value="mbbs">MBBS</SelectItem>
+                                  <SelectItem value="bds">BDS (Dental)</SelectItem>
+                                  <SelectItem value="bams">BAMS (Ayurveda)</SelectItem>
+                                  <SelectItem value="bhms">BHMS (Homeopathy)</SelectItem>
+                                  <SelectItem value="bums">BUMS (Unani)</SelectItem>
+                                  <SelectItem value="bpt">BPT (Physiotherapy)</SelectItem>
+                                  <SelectItem value="nursing_bsc">B.Sc Nursing</SelectItem>
+                                  <SelectItem value="nursing_gnm">GNM Nursing</SelectItem>
+                                  <SelectItem value="nursing_anm">ANM Nursing</SelectItem>
+                                  <SelectItem value="pharmacy">B.Pharmacy</SelectItem>
+                                  <SelectItem value="md">MD (Doctor of Medicine)</SelectItem>
+                                  <SelectItem value="ms">MS (Master of Surgery)</SelectItem>
+
+                                  {/* Arts & Humanities */}
+                                  <SelectItem value="ba">BA (Bachelor of Arts)</SelectItem>
+                                  <SelectItem value="ma">MA (Master of Arts)</SelectItem>
+                                  <SelectItem value="ba_english">BA English</SelectItem>
+                                  <SelectItem value="ba_hindi">BA Hindi</SelectItem>
+                                  <SelectItem value="ba_history">BA History</SelectItem>
+                                  <SelectItem value="ba_political_science">BA Political Science</SelectItem>
+                                  <SelectItem value="ba_sociology">BA Sociology</SelectItem>
+                                  <SelectItem value="ba_psychology">BA Psychology</SelectItem>
+
+                                  {/* Commerce */}
+                                  <SelectItem value="bcom">B.Com</SelectItem>
+                                  <SelectItem value="mcom">M.Com</SelectItem>
+                                  <SelectItem value="bba">BBA</SelectItem>
+                                  <SelectItem value="mba">MBA</SelectItem>
+                                  <SelectItem value="ca">CA (Chartered Accountant)</SelectItem>
+                                  <SelectItem value="cs">CS (Company Secretary)</SelectItem>
+                                  <SelectItem value="cma">CMA (Cost Management Accountant)</SelectItem>
+
+                                  {/* Science */}
+                                  <SelectItem value="bsc">B.Sc</SelectItem>
+                                  <SelectItem value="msc">M.Sc</SelectItem>
+                                  <SelectItem value="bsc_physics">B.Sc Physics</SelectItem>
+                                  <SelectItem value="bsc_chemistry">B.Sc Chemistry</SelectItem>
+                                  <SelectItem value="bsc_mathematics">B.Sc Mathematics</SelectItem>
+                                  <SelectItem value="bsc_biology">B.Sc Biology</SelectItem>
+                                  <SelectItem value="bsc_it">B.Sc IT</SelectItem>
+                                  <SelectItem value="bca">BCA (Computer Applications)</SelectItem>
+                                  <SelectItem value="mca">MCA (Computer Applications)</SelectItem>
+
+                                  {/* Law */}
+                                  <SelectItem value="llb">LLB</SelectItem>
+                                  <SelectItem value="llm">LLM</SelectItem>
+                                  <SelectItem value="ba_llb">BA LLB</SelectItem>
+                                  <SelectItem value="bcom_llb">B.Com LLB</SelectItem>
+
+                                  {/* Education */}
+                                  <SelectItem value="bed">B.Ed</SelectItem>
+                                  <SelectItem value="med">M.Ed</SelectItem>
+                                  <SelectItem value="deled">D.El.Ed</SelectItem>
+                                  <SelectItem value="btc">BTC</SelectItem>
+
+                                  {/* Diploma Courses */}
+                                  <SelectItem value="diploma_mechanical">Diploma Mechanical</SelectItem>
+                                  <SelectItem value="diploma_electrical">Diploma Electrical</SelectItem>
+                                  <SelectItem value="diploma_civil">Diploma Civil</SelectItem>
+                                  <SelectItem value="diploma_computer">Diploma Computer</SelectItem>
+                                  <SelectItem value="diploma_electronics">Diploma Electronics</SelectItem>
+
+                                  {/* Vocational Courses */}
+                                  <SelectItem value="iti_fitter">ITI Fitter</SelectItem>
+                                  <SelectItem value="iti_electrician">ITI Electrician</SelectItem>
+                                  <SelectItem value="iti_welder">ITI Welder</SelectItem>
+                                  <SelectItem value="iti_mechanic">ITI Mechanic</SelectItem>
+                                  <SelectItem value="iti_computer">ITI Computer</SelectItem>
+
+                                  {/* Agriculture */}
+                                  <SelectItem value="bsc_agriculture">B.Sc Agriculture</SelectItem>
+                                  <SelectItem value="msc_agriculture">M.Sc Agriculture</SelectItem>
+                                  <SelectItem value="diploma_agriculture">Diploma Agriculture</SelectItem>
+
+                                  {/* Other Professional Courses */}
+                                  <SelectItem value="hotel_management">Hotel Management</SelectItem>
+                                  <SelectItem value="fashion_design">Fashion Design</SelectItem>
+                                  <SelectItem value="interior_design">Interior Design</SelectItem>
+                                  <SelectItem value="journalism">Journalism</SelectItem>
+                                  <SelectItem value="mass_communication">Mass Communication</SelectItem>
+                                  <SelectItem value="social_work">Social Work</SelectItem>
+                                  <SelectItem value="library_science">Library Science</SelectItem>
                                   <SelectItem value="other">अन्य</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -947,8 +1095,20 @@ export default function AddFamilyPage() {
                                   <SelectItem value="dropped">छोड़ दिया</SelectItem>
                                   <SelectItem value="completed">पूर्ण</SelectItem>
                                   <SelectItem value="never_enrolled">कभी नामांकित नहीं</SelectItem>
+                                  <SelectItem value="pursuing">अध्ययनरत</SelectItem>
+                                  <SelectItem value="passed">उत्तीर्ण</SelectItem>
+                                  <SelectItem value="failed">अनुत्तीर्ण</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text">संस्थान का नाम</Label>
+                              <Input
+                                value={member.institutionName}
+                                onChange={(e) => updateMember(member.id, "institutionName", e.target.value)}
+                                placeholder="स्कूल/कॉलेज/विश्वविद्यालय का नाम"
+                              />
                             </div>
 
                             {member.enrollmentStatus === "dropped" && (
@@ -958,17 +1118,6 @@ export default function AddFamilyPage() {
                                   value={member.dropoutReason || ""}
                                   onChange={(e) => updateMember(member.id, "dropoutReason", e.target.value)}
                                   placeholder="छोड़ने का कारण बताएं"
-                                />
-                              </div>
-                            )}
-
-                            {(member.isStudent || member.enrollmentStatus === "enrolled") && (
-                              <div>
-                                <Label className="hindi-text">स्कूल/कॉलेज का नाम</Label>
-                                <Input
-                                  value={member.schoolName || ""}
-                                  onChange={(e) => updateMember(member.id, "schoolName", e.target.value)}
-                                  placeholder="संस्थान का नाम"
                                 />
                               </div>
                             )}
