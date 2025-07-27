@@ -1,119 +1,108 @@
 "use client"
 
+import { useState } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Users, Home, Phone, Mail, Plus, Search, Eye, Edit, Trash2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { MapPin, Users, Home, Plus, Search, Edit, Trash2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-
-// Mock data - replace with actual API call
-const mockVillageData = {
-  id: "1",
-  name: "Village Alpha",
-  chokhla: "Chokhla Central",
-  totalFamilies: 45,
-  totalMembers: 180,
-  headPerson: {
-    name: "Rajesh Panchal",
-    phone: "+91 98765 43210",
-    email: "rajesh.panchal@example.com",
-  },
-  families: [
-    {
-      id: "1",
-      familyHead: "John Panchal",
-      members: 4,
-      address: "123 Main Street",
-      phone: "+91 98765 43210",
-      status: "active",
-    },
-    {
-      id: "2",
-      familyHead: "David Panchal",
-      members: 3,
-      address: "456 Oak Avenue",
-      phone: "+91 98765 43211",
-      status: "active",
-    },
-    {
-      id: "3",
-      familyHead: "Michael Panchal",
-      members: 5,
-      address: "789 Pine Road",
-      phone: "+91 98765 43212",
-      status: "active",
-    },
-    {
-      id: "4",
-      familyHead: "Robert Panchal",
-      members: 2,
-      address: "321 Elm Street",
-      phone: "+91 98765 43213",
-      status: "inactive",
-    },
-    {
-      id: "5",
-      familyHead: "William Panchal",
-      members: 6,
-      address: "654 Maple Drive",
-      phone: "+91 98765 43214",
-      status: "active",
-    },
-  ],
-}
+import { useVillageDetails, useDeleteFamilyUsingID } from "@/data-hooks/mutation-query/useQueryAndMutation"
 
 export default function VillageDetailPage() {
   const params = useParams()
   const villageId = params.villageId as string
+  const [searchTerm, setSearchTerm] = useState("")
 
-  // In a real app, you would fetch data based on villageId
-  const village = mockVillageData
+  const { data: villageResponse, isLoading, error } = useVillageDetails(villageId)
+  const village = villageResponse?.data
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800"
-      case "inactive":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+  const deleteFamilyMutation = useDeleteFamilyUsingID()
+
+  const handleDeleteFamily = async (familyId: string) => {
+    try {
+      await deleteFamilyMutation.mutateAsync(familyId)
+    } catch (error) {
+      console.error("Error deleting family:", error)
     }
   }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-32 bg-gray-200 rounded"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !village) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Village Not Found</h2>
+          <p className="text-gray-600 mb-6">The requested village could not be found.</p>
+          <Link href="/admin/superadmin">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const filteredFamilies =
+    village.families?.filter(
+      (family) =>
+        family.headName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        family.address.toLowerCase().includes(searchTerm.toLowerCase()),
+    ) || []
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center space-x-4">
           <Link href="/admin/superadmin">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              Back
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{village.name}</h1>
-            <p className="text-muted-foreground">Part of {village.chokhla}</p>
+            <h1 className="text-3xl font-bold text-gray-900">{village.name}</h1>
+            <p className="text-gray-600">
+              Code: {village.code} | Chokhla: {village.chokhla?.name}
+            </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Village
+        <Link href={`/admin/village/${villageId}/add-family`}>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Family
           </Button>
-          <Link href={`/admin/village/${villageId}/add-family`}>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Family
-            </Button>
-          </Link>
-        </div>
+        </Link>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Families</CardTitle>
@@ -136,55 +125,35 @@ export default function VillageDetailPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Families</CardTitle>
-            <Home className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Average Family Size</CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{village.families.filter((f) => f.status === "active").length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Family Size</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Math.round(village.totalMembers / village.totalFamilies)}</div>
+            <div className="text-2xl font-bold">
+              {village.totalFamilies > 0 ? Math.round(village.totalMembers / village.totalFamilies) : 0}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Village Head Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Village Head</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{village.headPerson.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{village.headPerson.phone}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>{village.headPerson.email}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Search */}
+      <div className="flex items-center space-x-2">
+        <Search className="h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search families..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
 
       {/* Families List */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <CardTitle>Families in {village.name}</CardTitle>
             <Link href={`/admin/village/${villageId}/add-family`}>
-              <Button>
+              <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Family
               </Button>
@@ -192,45 +161,74 @@ export default function VillageDetailPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search families..." className="max-w-sm" />
-            </div>
-            <div className="space-y-2">
-              {village.families.map((family) => (
-                <div key={family.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <h3 className="font-medium">{family.familyHead}</h3>
-                    <div className="flex gap-4 text-sm text-muted-foreground">
-                      <span>Members: {family.members}</span>
-                      <span>Address: {family.address}</span>
-                      <span>Phone: {family.phone}</span>
+          {filteredFamilies.length > 0 ? (
+            <div className="space-y-4">
+              {filteredFamilies.map((family) => (
+                <div key={family.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <h3 className="font-semibold text-lg">{family.headName}</h3>
+                        <p className="text-sm text-gray-600">{family.address}</p>
+                        {family.phone && <p className="text-sm text-gray-500">Phone: {family.phone}</p>}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Badge variant="secondary">{family.totalMembers} Members</Badge>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={getStatusColor(family.status)}>{family.status}</Badge>
-                    <Link href={`/admin/village/${villageId}/family/${family.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                    </Link>
-                    <Link href={`/admin/village/${villageId}/family/${family.id}/edit`}>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                    </Link>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Link href={`/admin/village/${villageId}/family/${family.id}`}>
+                        <Button variant="outline" size="sm">
+                          View
+                        </Button>
+                      </Link>
+                      <Link href={`/admin/village/${villageId}/family/${family.id}/edit`}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Family</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete {family.headName}'s family? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteFamily(family.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-600">
+                {searchTerm ? "No families found matching your search." : "No families found in this village."}
+              </p>
+              <Link href={`/admin/village/${villageId}/add-family`}>
+                <Button className="mt-4">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Family
+                </Button>
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

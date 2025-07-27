@@ -6,14 +6,13 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/providers/auth-provider"
 import { QueryProvider } from "@/lib/providers/query-provider"
 import { IntlProvider } from "@/lib/providers/intl-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Panchal Samaj Census Portal",
-  description: "Digital census management system for Panchal Samaj community",
-  keywords: ["census", "panchal samaj", "community", "family management"],
+  description: "Census management system for Panchal Samaj community",
     generator: 'v0.dev'
 }
 
@@ -25,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <QueryProvider>
               <IntlProvider>
