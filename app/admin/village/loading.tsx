@@ -1,9 +1,40 @@
-export default function VillageLoading() {
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+
+export default function VillagesLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600 hindi-text">गांव की जानकारी लोड हो रही है...</p>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header Skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-64 animate-pulse"></div>
+        </div>
+        <div className="h-9 bg-gray-200 rounded w-32 animate-pulse"></div>
+      </div>
+
+      {/* Search and Filter Skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="h-10 bg-gray-200 rounded w-64 animate-pulse"></div>
+        <div className="h-9 bg-gray-200 rounded w-24 animate-pulse"></div>
+      </div>
+
+      {/* Villages Grid Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+                <div className="h-9 bg-gray-200 rounded w-full animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   )

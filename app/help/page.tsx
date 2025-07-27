@@ -1,268 +1,235 @@
 "use client"
 
-import Image from "next/image"
-import Link from "next/link"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
-  ArrowLeft,
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
   HelpCircle,
-  MessageCircle,
-  FileText,
   Users,
+  Home,
+  Phone,
+  Mail,
+  BookOpen,
+  Video,
+  MessageCircle,
+  Download,
   Settings,
   Shield,
+  Database,
 } from "lucide-react"
-import { Button } from "@/components/ui/button/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
-import { Separator } from "@/components/ui/separator/separator"
-import { Badge } from "@/components/ui/badge/badge"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion/accordion"
 
 export default function HelpPage() {
-  const contactInfo = {
-    adminName: "मुकेश पंचाल",
-    email: "admin@panchalsamaj.org",
-    phone: "+91-9876543210",
-    address: "123, Village Services Office, Main Road, District Name, State, India",
-  }
+  const faqs = [
+    {
+      question: "How do I add a new family to a village?",
+      answer:
+        "Navigate to the village page, click on 'Add Family' button, fill in the family details including head of family information, and add family members. Make sure to provide accurate contact information.",
+    },
+    {
+      question: "How can I edit family member information?",
+      answer:
+        "Go to the family detail page, click on the 'Edit' button next to the member you want to modify, update the information in the form, and save the changes.",
+    },
+    {
+      question: "What is a Chokhla and how is it different from a Village?",
+      answer:
+        "A Chokhla is a larger administrative unit that contains multiple villages. It's used for organizing and managing villages in a hierarchical structure within the Panchal Samaj community.",
+    },
+    {
+      question: "How do I search for a specific family or member?",
+      answer:
+        "Use the search functionality available on village pages and family listings. You can search by family name, head of family name, or member names.",
+    },
+    {
+      question: "Can I export family data?",
+      answer:
+        "Yes, you can export family and member data in various formats. Look for the export options in the village or family management sections.",
+    },
+    {
+      question: "How do I reset my password?",
+      answer:
+        "Click on 'Forgot Password' on the login page, enter your email address, and follow the instructions sent to your email to reset your password.",
+    },
+    {
+      question: "What permissions do I need to manage families?",
+      answer:
+        "Your permissions depend on your role. Village administrators can manage families in their assigned villages, while super administrators have access to all villages and chokhlas.",
+    },
+    {
+      question: "How do I add a new village to a chokhla?",
+      answer:
+        "Super administrators can add new villages by going to the chokhla management section, selecting the appropriate chokhla, and using the 'Add Village' option.",
+    },
+  ]
 
-  const faqData = [
+  const quickActions = [
     {
-      question: "मैं अपना पासवर्ड कैसे रीसेट करूं?",
-      answer:
-        "लॉगिन पेज पर 'पासवर्ड भूल गए?' लिंक पर क्लिक करें और अपना ईमेल पता दर्ज करें। आपको पासवर्ड रीसेट करने के लिए एक लिंक भेजा जाएगा।",
+      title: "Add New Family",
+      description: "Learn how to register a new family",
+      icon: Users,
+      badge: "Common",
     },
     {
-      question: "नया परिवार कैसे पंजीकृत करें?",
-      answer: "डैशबोर्ड से 'परिवार पंजीकरण' सेक्शन में जाएं, 'नया परिवार जोड़ें' बटन पर क्लिक करें और सभी आवश्यक जानकारी भरें।",
+      title: "Manage Villages",
+      description: "Village administration guide",
+      icon: Home,
+      badge: "Admin",
     },
     {
-      question: "सदस्य की जानकारी कैसे अपडेट करें?",
-      answer: "सदस्य प्रबंधन सेक्शन में जाएं, संबंधित सदस्य को खोजें और 'संपादित करें' बटन पर क्लिक करके जानकारी अपडेट करें।",
+      title: "User Permissions",
+      description: "Understanding roles and access",
+      icon: Shield,
+      badge: "Important",
     },
     {
-      question: "डेटा एक्सपोर्ट कैसे करें?",
-      answer:
-        "रिपोर्ट सेक्शन में जाएं, अपनी आवश्यक रिपोर्ट चुनें और 'एक्सपोर्ट' बटन पर क्लिक करें। आप Excel या PDF फॉर्मेट में डेटा डाउनलोड कर सकते हैं।",
-    },
-    {
-      question: "सिस्टम में कोई समस्या आने पर क्या करें?",
-      answer:
-        "तकनीकी समस्याओं के लिए नीचे दिए गए संपर्क विवरण का उपयोग करके सहायता टीम से संपर्क करें। समस्या का विस्तृत विवरण प्रदान करें।",
-    },
-    {
-      question: "डेटा की सुरक्षा कैसे सुनिश्चित की जाती है?",
-      answer:
-        "हमारा सिस्टम उच्च स्तरीय एन्क्रिप्शन और सुरक्षा प्रोटोकॉल का उपयोग करता है। सभी डेटा सुरक्षित सर्वर पर संग्रहीत किया जाता है।",
+      title: "Data Export",
+      description: "Export and backup data",
+      icon: Download,
+      badge: "Feature",
     },
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Image
-                src="/images/main-logo.png"
-                alt="Panchal Samaj Logo"
-                width={60}
-                height={60}
-                className="rounded-full shadow-lg"
-              />
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white">सहायता और समर्थन</h1>
-                <p className="text-orange-100 text-sm md:text-lg">पंचाल समाज 14 चोखरा - जनगणना पोर्टल</p>
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">Help & Support</h1>
+        <p className="text-muted-foreground">
+          Find answers to common questions and get help with using the Panchal Samaj Census Portal
+        </p>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Quick Help Topics
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => (
+              <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <action.icon className="h-8 w-8 text-primary" />
+                    <Badge variant="secondary" className="text-xs">
+                      {action.badge}
+                    </Badge>
+                  </div>
+                  <h3 className="font-semibold mb-2">{action.title}</h3>
+                  <p className="text-sm text-muted-foreground">{action.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* FAQ Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5" />
+            Frequently Asked Questions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+
+      {/* Contact Support */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Contact Support
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Need additional help? Our support team is here to assist you.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">support@panchalsamaj.org</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">+91 98765 43210</span>
               </div>
             </div>
-            <Link href="/login">
-              <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                वापस जाएं
+            <Button className="w-full">
+              <Mail className="h-4 w-4 mr-2" />
+              Send Support Email
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5" />
+              Video Tutorials
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">Watch step-by-step video guides for common tasks.</p>
+            <div className="space-y-2">
+              <Button variant="outline" className="w-full justify-start bg-transparent">
+                <Video className="h-4 w-4 mr-2" />
+                Getting Started Guide
               </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 md:py-12">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Contact Information */}
-          <Card className="bg-gradient-to-br from-white to-orange-50 border-orange-200 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl text-orange-700 flex items-center">
-                <MessageCircle className="w-6 h-6 mr-2" />
-                संपर्क जानकारी
-              </CardTitle>
-              <CardDescription>सहायता के लिए नीचे दिए गए विवरण का उपयोग करें</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700">एडमिन नाम</p>
-                      <p className="text-lg font-semibold text-orange-700">{contactInfo.adminName}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Mail className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700">ईमेल</p>
-                      <a
-                        href={`mailto:${contactInfo.email}`}
-                        className="text-lg font-semibold text-blue-600 hover:underline"
-                      >
-                        {contactInfo.email}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700">फोन नंबर</p>
-                      <a
-                        href={`tel:${contactInfo.phone}`}
-                        className="text-lg font-semibold text-green-600 hover:underline"
-                      >
-                        {contactInfo.phone}
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mt-1">
-                      <MapPin className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700">संगठन का पता</p>
-                      <p className="text-sm text-gray-600 leading-relaxed">{contactInfo.address}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg">
-                <div className="flex items-center space-x-3 mb-2">
-                  <Clock className="w-5 h-5 text-orange-600" />
-                  <h3 className="font-semibold text-orange-700">सहायता समय</h3>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="font-medium">सोमवार - शुक्रवार</p>
-                    <p className="text-gray-600">सुबह 9:00 - शाम 6:00</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">शनिवार</p>
-                    <p className="text-gray-600">सुबह 10:00 - दोपहर 2:00</p>
-                  </div>
-                </div>
-                <Badge variant="outline" className="mt-2 border-orange-300 text-orange-700">
-                  रविवार बंद
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* FAQ Section */}
-          <Card className="bg-gradient-to-br from-white to-blue-50 border-blue-200 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl text-blue-700 flex items-center">
-                <HelpCircle className="w-6 h-6 mr-2" />
-                अक्सर पूछे जाने वाले प्रश्न
-              </CardTitle>
-              <CardDescription>सामान्य प्रश्नों के उत्तर यहां देखें</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                {faqData.map((faq, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-left hover:text-blue-600">{faq.question}</AccordionTrigger>
-                    <AccordionContent className="text-gray-600 leading-relaxed">{faq.answer}</AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-green-700 mb-2">उपयोगकर्ता गाइड</h3>
-                <p className="text-sm text-green-600 mb-4">विस्तृत उपयोग निर्देश</p>
-                <Button size="sm" className="bg-green-500 hover:bg-green-600">
-                  डाउनलोड करें
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Settings className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-purple-700 mb-2">तकनीकी सहायता</h3>
-                <p className="text-sm text-purple-600 mb-4">सिस्टम संबंधी समस्याएं</p>
-                <Button size="sm" className="bg-purple-500 hover:bg-purple-600">
-                  संपर्क करें
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-red-700 mb-2">सुरक्षा नीति</h3>
-                <p className="text-sm text-red-600 mb-4">डेटा सुरक्षा जानकारी</p>
-                <Button size="sm" className="bg-red-500 hover:bg-red-600">
-                  पढ़ें
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Back to Login */}
-          <div className="text-center">
-            <Link href="/login">
-              <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                लॉगिन पेज पर वापस जाएं
+              <Button variant="outline" className="w-full justify-start bg-transparent">
+                <Users className="h-4 w-4 mr-2" />
+                Family Management
               </Button>
-            </Link>
-          </div>
-        </div>
-      </main>
+              <Button variant="outline" className="w-full justify-start bg-transparent">
+                <Database className="h-4 w-4 mr-2" />
+                Data Export & Import
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8 mt-16">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-orange-100">© 2025 पंचाल समाज 14 चोखरा डिजिटल जनगणना। सभी अधिकार सुरक्षित।</p>
-        </div>
-      </footer>
+      {/* System Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            System Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <label className="font-medium text-muted-foreground">Version</label>
+              <p>v1.0.0</p>
+            </div>
+            <div>
+              <label className="font-medium text-muted-foreground">Last Updated</label>
+              <p>January 2024</p>
+            </div>
+            <div>
+              <label className="font-medium text-muted-foreground">Status</label>
+              <Badge variant="default">Active</Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

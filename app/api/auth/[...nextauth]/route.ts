@@ -32,15 +32,14 @@ export const authOptions: NextAuthOptions = {
 
           const data = await response.json()
 
-          if (data.success && data.data) {
+          if (data.success && data.user) {
             return {
-              id: data.data.user.id,
-              email: data.data.user.email,
-              name: data.data.user.name,
-              role: data.data.user.role,
-              token: data.data.token,
-              choklaId: data.data.user.choklaId,
-              villageId: data.data.user.villageId,
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.name,
+              role: data.user.role,
+              villageId: data.user.villageId,
+              chokhlaId: data.user.chokhlaId,
             }
           }
 
@@ -59,9 +58,8 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.token = user.token
-        token.choklaId = user.choklaId
         token.villageId = user.villageId
+        token.chokhlaId = user.chokhlaId
       }
       return token
     },
@@ -69,9 +67,8 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.sub!
         session.user.role = token.role as string
-        session.user.token = token.token as string
-        session.user.choklaId = token.choklaId as string
         session.user.villageId = token.villageId as string
+        session.user.chokhlaId = token.chokhlaId as string
       }
       return session
     },

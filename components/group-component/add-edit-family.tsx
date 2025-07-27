@@ -453,3 +453,6 @@ export default function AddEditFamily({ family, villageId, onSuccess, onCancel }
     </div>
   )
 }
+
+// Add named export
+export { AddEditFamily }
