@@ -1,11 +1,50 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { AddEditFamily } from "@/components/group-component/add-edit-family"
-import { useGetFamilyDetails } from "@/data-hooks/mutation-query/useQueryAndMutation"
+
+// Mock family data - replace with actual API call
+const mockFamilyData = {
+  id: "1",
+  familyHead: "John Panchal",
+  address: "123 Main Street, Village Center",
+  phone: "+91 98765 43210",
+  email: "john.panchal@example.com",
+  members: [
+    {
+      id: "1",
+      name: "John Panchal",
+      age: 45,
+      gender: "male",
+      relation: "head",
+      occupation: "Farmer",
+      education: "Graduate",
+      maritalStatus: "married",
+    },
+    {
+      id: "2",
+      name: "Jane Panchal",
+      age: 40,
+      gender: "female",
+      relation: "wife",
+      occupation: "Teacher",
+      education: "Post Graduate",
+      maritalStatus: "married",
+    },
+    {
+      id: "3",
+      name: "Mike Panchal",
+      age: 18,
+      gender: "male",
+      relation: "son",
+      occupation: "Student",
+      education: "Higher Secondary",
+      maritalStatus: "unmarried",
+    },
+  ],
+}
 
 export default function EditFamilyPage() {
   const params = useParams()
@@ -13,61 +52,40 @@ export default function EditFamilyPage() {
   const villageId = params.villageId as string
   const familyId = params.familyId as string
 
-  const { data: family, isLoading, error } = useGetFamilyDetails(familyId)
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    )
+  const handleBack = () => {
+    router.push(`/admin/village/${villageId}/family/${familyId}`)
   }
 
-  if (error || !family) {
-    return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-red-500">Error loading family details</p>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  const handleSave = (familyData: any) => {
+    // Handle saving the family data
+    console.log("Saving family data:", familyData)
+    // After successful save, redirect back to family detail page
+    router.push(`/admin/village/${villageId}/family/${familyId}`)
   }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
+        <Button variant="outline" size="sm" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          Back to Family
         </Button>
         <div>
           <h1 className="text-3xl font-bold">Edit Family</h1>
-          <p className="text-muted-foreground mt-1">Edit family information and members</p>
+          <p className="text-muted-foreground">Edit family information and members</p>
         </div>
       </div>
 
       {/* Edit Family Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Family Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AddEditFamily
-            villageId={villageId}
-            familyId={familyId}
-            initialData={family}
-            mode="edit"
-            onSuccess={() => router.push(`/admin/village/${villageId}/family/${familyId}`)}
-            onCancel={() => router.back()}
-          />
-        </CardContent>
-      </Card>
+      <AddEditFamily
+        mode="edit"
+        villageId={villageId}
+        familyId={familyId}
+        initialData={mockFamilyData}
+        onSave={handleSave}
+        onCancel={handleBack}
+      />
     </div>
   )
 }

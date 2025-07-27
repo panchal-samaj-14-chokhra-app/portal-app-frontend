@@ -13,6 +13,7 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
+    // Log the error to an error reporting service
     console.error("Global error:", error)
   }, [error])
 
@@ -22,23 +23,20 @@ export default function GlobalError({
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 h-12 w-12 text-red-500">
-                <AlertTriangle className="h-full w-full" />
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
-              <CardTitle className="text-xl">Something went wrong!</CardTitle>
+              <CardTitle className="text-xl font-semibold text-gray-900">Something went wrong!</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-center text-gray-600">
                 An unexpected error occurred. Please try again or contact support if the problem persists.
               </p>
-              {error.digest && <p className="text-xs text-muted-foreground text-center">Error ID: {error.digest}</p>}
-              <div className="flex gap-2">
-                <Button onClick={reset} className="flex-1">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
-                </Button>
-                <Button variant="outline" onClick={() => (window.location.href = "/")} className="flex-1">
-                  Go Home
+              {error.digest && <p className="text-center text-xs text-gray-400">Error ID: {error.digest}</p>}
+              <div className="flex justify-center">
+                <Button onClick={reset} className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Try again
                 </Button>
               </div>
             </CardContent>
