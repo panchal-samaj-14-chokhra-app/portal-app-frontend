@@ -1,20 +1,6 @@
 import NextAuth, { type NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-
-interface User {
-  id: string
-  email: string
-  name: string
-  role: string
-  token: string
-  choklaId?: string
-  villageId?: string
-}
-
-interface LoginResponse {
-  user: User
-  token: string
-}
+import type { User, LoginResponse } from "@/types"
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -101,4 +87,4 @@ const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions)
 
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST, authOptions }

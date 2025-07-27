@@ -1,848 +1,410 @@
 "use client"
 
-import { useSession } from "next-auth/react"
-import { useRouter, useParams, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
-import { useCreateFamily, useGetFamilyDetails, useUpdateFamily } from "@/data-hooks/mutation-query/useQueryAndMutation"
-import type { CreateFamilyPayload, Person } from "@/data-hooks/requests/village-family"
-import Image from "next/image"
+import { useState, useEffect } from "react"
+import { useForm, useFieldArray } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Trash2, Plus, Save, X } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import type { Family, CreateFamilyPayload, UpdateFamilyPayload } from "@/types"
 
-import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  Save,
-  User,
-  Home,
-  UserCheck,
-  AlertCircle,
-  Phone,
-  Mail,
-  FileText,
-  Calendar,
-} from "lucide-react"
-import { Button } from "@/components/ui/button/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
-import { Input } from "@/components/ui/input/input"
-import { Label } from "@/components/ui/label/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
-import { Textarea } from "@/components/ui/textarea/textarea"
-import { Checkbox } from "@/components/ui/checkbox/checkbox"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion/accordion"
-import { Alert, AlertDescription } from "@/components/ui/alert/alert"
-import { Badge } from "@/components/ui/badge/badge"
+// Validation schemas
+const personSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  age: z.number().min(0, "Age must be positive").max(150, "Age must be realistic"),
+  gender: z.enum(["male", "female", "other"], { required_error: "Gender is required" }),
+  relation: z.string().min(1, "Relation is required"),
+  education: z.string().optional(),
+  occupation: z.string().optional(),
+  maritalStatus: z.enum(["single", "married", "divorced", "widowed"]).optional(),
+  phone: z.string().optional(),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+})
 
-interface FamilyMember extends Omit<Person, "familyId"> {
-  id: string
+const familySchema = z.object({
+  headName: z.string().min(1, "Head name is required"),
+  address: z.string().min(1, "Address is required"),
+  phone: z.string().optional(),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  villageId: z.string().min(1, "Village is required"),
+  members: z.array(personSchema).min(1, "At least one member is required"),
+})
+
+type FormData = z.infer<typeof familySchema>
+
+interface AddEditFamilyProps {
+  family?: Family
+  villageId?: string
+  onSave: (data: CreateFamilyPayload | UpdateFamilyPayload) => Promise<void>
+  onCancel: () => void
+  isLoading?: boolean
 }
 
-interface FamilyData {
-  currentAddress: string
-  permanentAddress: string
-  economicStatus: string
-  status: "draft" | "submitted"
-  members: FamilyMember[]
-}
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+] as const
 
-const initialMember: Omit<FamilyMember, "id"> = {
-  fullName: "",
-  name: "",
-  aadhaarNumber: "",
-  dateOfBirth: "",
-  age: 0,
-  gender: "MALE",
-  relation: "",
-  maritalStatus: "unmarried",
-  religion: "hindu",
-  caste: "general",
-  disability: false,
-  bloodGroup: "",
-  mobileNumber: "",
-  email: "",
-  permanentAddress: "",
-  currentAddress: "",
-  isCurrentAddressInIndia: true,
-  currentCountry: "",
-  village: "",
-  pincode: "",
-  district: "",
-  state: "",
-  isStudent: false,
-  educationLevel: "",
-  classCompleted: "",
-  currentClass: "",
-  collegeCourse: "",
-  institutionName: "",
-  enrollmentStatus: "",
-  schoolName: "",
-  higherEducationType: "",
-  isEmployed: false,
-  occupation: "",
-  monthlyIncome: 0,
-  incomeSource: "",
-  isIncomeSourceInIndia: true,
-  incomeSourceCountry: "",
-  serviceType: "",
-  landOwned: 0,
-  livestock: "",
-  houseType: "kutcha",
-  houseOwnership: "owned",
-  hasElectricity: false,
-  waterSource: "tap",
-  hasToilet: false,
-  cookingFuel: "firewood",
-  hasHealthIssues: false,
-  isVaccinated: false,
-  welfareSchemes: [],
-  hasHealthInsurance: false,
-  hasSmartphone: false,
-  hasInternet: false,
-  hasBankAccount: false,
-  hasJanDhan: false,
-  isMukhiya: false,
-}
+const MARITAL_STATUS_OPTIONS = [
+  { value: "single", label: "Single" },
+  { value: "married", label: "Married" },
+  { value: "divorced", label: "Divorced" },
+  { value: "widowed", label: "Widowed" },
+] as const
 
-interface FamilyFormProps {
-  mode: "add" | "edit"
-  familyId?: string
-  onSuccess?: () => void
-}
+const RELATION_OPTIONS = [
+  "Head",
+  "Spouse",
+  "Son",
+  "Daughter",
+  "Father",
+  "Mother",
+  "Brother",
+  "Sister",
+  "Grandfather",
+  "Grandmother",
+  "Uncle",
+  "Aunt",
+  "Nephew",
+  "Niece",
+  "Cousin",
+  "Son-in-law",
+  "Daughter-in-law",
+  "Other",
+]
 
-export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const params = useParams()
-  const villageId = params.villageId as string
-  const searchParams = useSearchParams()
-  const chakolaId = searchParams.get("chakolaId")
+export function AddEditFamily({ family, villageId, onSave, onCancel, isLoading = false }: AddEditFamilyProps) {
+  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || "")
-  const { mutation: createMutation } = useCreateFamily({
-    onSuccess: () => {
-      alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
-      router.push(`/admin/village/${villageId}`)
-    },
-    onError: (error) => {
-      alert("पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।")
-      console.error(error)
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+    reset,
+  } = useForm<FormData>({
+    resolver: zodResolver(familySchema),
+    defaultValues: {
+      headName: "",
+      address: "",
+      phone: "",
+      email: "",
+      villageId: villageId || "",
+      members: [
+        {
+          name: "",
+          age: 0,
+          gender: "male",
+          relation: "Head",
+          education: "",
+          occupation: "",
+          maritalStatus: "single",
+          phone: "",
+          email: "",
+        },
+      ],
     },
   })
 
-  const { mutation: updateMutation } = useUpdateFamily({
-    onSuccess: () => {
-      alert("परिवार सफलतापूर्वक अपडेट हो गया!")
-      router.push(`/admin/village/${villageId}`)
-    },
-    onError: (error) => {
-      alert("अपडेट में त्रुटि हुई। कृपया पुनः प्रयास करें।")
-      console.error(error)
-    },
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "members",
   })
 
-  const [familyData, setFamilyData] = useState<FamilyData>(() => {
-    if (mode === "edit" && familyDetails) {
-      return {
-        currentAddress: familyDetails.currentAddress || "",
-        permanentAddress: familyDetails.permanentAddress || "",
-        economicStatus: familyDetails.economicStatus || "bpl",
-        status: (familyDetails.status as "draft" | "submitted") || "draft",
-        members: familyDetails.Person || [],
-      }
-    }
-    return {
-      currentAddress: "",
-      permanentAddress: "",
-      economicStatus: "bpl",
-      status: "draft",
-      members: [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
-    }
-  })
-
+  // Populate form when editing
   useEffect(() => {
-    if (mode === "edit" && familyDetails) {
-      setFamilyData({
-        currentAddress: familyDetails.currentAddress || "",
-        permanentAddress: familyDetails.permanentAddress || "",
-        economicStatus: familyDetails.economicStatus || "bpl",
-        status: (familyDetails.status as "draft" | "submitted") || "draft",
-        members: familyDetails.Person || [],
+    if (family) {
+      reset({
+        headName: family.headName,
+        address: family.address,
+        phone: family.phone || "",
+        email: family.email || "",
+        villageId: family.villageId,
+        members: family.members.map((member) => ({
+          name: member.name,
+          age: member.age,
+          gender: member.gender,
+          relation: member.relation,
+          education: member.education || "",
+          occupation: member.occupation || "",
+          maritalStatus: member.maritalStatus || "single",
+          phone: member.phone || "",
+          email: member.email || "",
+        })),
       })
     }
-  }, [mode, familyDetails])
+  }, [family, reset])
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [loading, setLoading] = useState(false)
-  const [savingDraft, setSavingDraft] = useState(false)
+  const onSubmit = async (data: FormData) => {
+    try {
+      setIsSubmitting(true)
 
-  useEffect(() => {
-    if (status === "loading") return
-    if (!session) router.push("/login")
-  }, [session, status, router])
+      if (family) {
+        // Update existing family
+        const updateData: UpdateFamilyPayload = {
+          id: family.id,
+          ...data,
+        }
+        await onSave(updateData)
+      } else {
+        // Create new family
+        await onSave(data as CreateFamilyPayload)
+      }
 
-  const calculateAge = (dateOfBirth: string): number => {
-    if (!dateOfBirth) return 0
-
-    const today = new Date()
-    const birthDate = new Date(dateOfBirth)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
+      toast({
+        title: "Success",
+        description: `Family ${family ? "updated" : "created"} successfully`,
+      })
+    } catch (error) {
+      console.error("Error saving family:", error)
+      toast({
+        title: "Error",
+        description: `Failed to ${family ? "update" : "create"} family`,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    return Math.max(0, age)
   }
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-orange-700 hindi-text">लोड हो रहा है...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!session) return null
 
   const addMember = () => {
-    const newMember: FamilyMember = {
-      ...initialMember,
-      id: `member-${Date.now()}`,
-      isMukhiya: false,
-    }
-    setFamilyData((prev) => ({
-      ...prev,
-      members: [...prev.members, newMember],
-    }))
+    append({
+      name: "",
+      age: 0,
+      gender: "male",
+      relation: "Other",
+      education: "",
+      occupation: "",
+      maritalStatus: "single",
+      phone: "",
+      email: "",
+    })
   }
 
-  const removeMember = (memberId: string) => {
-    if (familyData.members.length <= 1) {
-      alert("कम से कम एक सदस्य होना आवश्यक है")
-      return
-    }
-
-    const memberToRemove = familyData.members.find((m) => m.id === memberId)
-    if (memberToRemove?.isMukhiya) {
-      alert("मुखिया को हटाया नहीं जा सकता। पहले किसी और को मुखिया बनाएं।")
-      return
-    }
-
-    setFamilyData((prev) => ({
-      ...prev,
-      members: prev.members.filter((m) => m.id !== memberId),
-    }))
-  }
-
-  const updateMember = (memberId: string, field: keyof FamilyMember, value: any) => {
-    setFamilyData((prev) => ({
-      ...prev,
-      members: prev.members.map((member) => {
-        if (member.id === memberId) {
-          if (field === "isMukhiya" && value === true) {
-            const updatedMembers = prev.members.map((m) => ({ ...m, isMukhiya: false }))
-            return { ...updatedMembers.find((m) => m.id === memberId)!, [field]: value }
-          }
-
-          if (field === "dateOfBirth") {
-            if (!value) return { ...member }
-
-            const isoDate = new Date(value).toISOString()
-            const age = calculateAge(value)
-
-            return {
-              ...member,
-              [field]: isoDate,
-              age,
-            }
-          }
-
-          return { ...member, [field]: value }
-        }
-        return member
-      }),
-    }))
-  }
-
-  const validateForm = (isDraft = false): boolean => {
-    const newErrors: Record<string, string> = {}
-
-    if (!isDraft) {
-      const mukhiyaCount = familyData.members.filter((m) => m.isMukhiya).length
-      if (mukhiyaCount === 0) {
-        newErrors.mukhiya = "कम से कम एक मुखिया होना आवश्यक है"
-      } else if (mukhiyaCount > 1) {
-        newErrors.mukhiya = "केवल एक मुखिया हो सकता है"
-      }
-
-      const aadhaarNumbers = familyData.members.map((m) => m.aadhaarNumber).filter(Boolean)
-      const duplicateAadhaar = aadhaarNumbers.find((num, index) => aadhaarNumbers.indexOf(num) !== index)
-      if (duplicateAadhaar) {
-        newErrors.aadhaar = `आधार नंबर ${duplicateAadhaar} डुप्लिकेट है`
-      }
-
-      const mobileNumbers = familyData.members.map((m) => m.mobileNumber).filter(Boolean)
-      const duplicateMobile = mobileNumbers.find((num, index) => mobileNumbers.indexOf(num) !== index)
-      if (duplicateMobile) {
-        newErrors.mobile = `मोबाइल नंबर ${duplicateMobile} डुप्लिकेट है`
-      }
-
-      familyData.members.forEach((member, index) => {
-        if (!member.name.trim()) {
-          newErrors[`member-${index}-name`] = "नाम आवश्यक है"
-        }
-        if (!member.aadhaarNumber.trim()) {
-          newErrors[`member-${index}-aadhaar`] = "आधार नंबर आवश्यक है"
-        }
-        if (!member.dateOfBirth) {
-          newErrors[`member-${index}-dob`] = "जन्म तिथि आवश्यक है"
-        }
+  const removeMember = (index: number) => {
+    if (fields.length > 1) {
+      remove(index)
+    } else {
+      toast({
+        title: "Warning",
+        description: "At least one family member is required",
+        variant: "destructive",
       })
     }
-
-    familyData.members.forEach((member, index) => {
-      if (member.mobileNumber && !/^[6-9]\d{9}$/.test(member.mobileNumber)) {
-        newErrors[`member-${index}-mobile`] = "वैध मोबाइल नंबर दर्ज करें"
-      }
-      if (member.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)) {
-        newErrors[`member-${index}-email`] = "वैध ईमेल पता दर्ज करें"
-      }
-      if (member.dateOfBirth) {
-        const birthDate = new Date(member.dateOfBirth)
-        const today = new Date()
-        if (birthDate > today) {
-          newErrors[`member-${index}-dob`] = "जन्म तिथि भविष्य में नहीं हो सकती"
-        }
-      }
-    })
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
   }
-
-  const handleSaveAsDraft = async () => {
-    if (!validateForm(true)) {
-      alert("कृपया फॉर्मेट त्रुटियों को ठीक करें")
-      return
-    }
-
-    setSavingDraft(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      alert("परिवार का डेटा ड्राफ्ट के रूप में सहेजा गया!")
-      router.push(`/admin/village/${villageId}`)
-    } catch (error) {
-      alert("ड्राफ्ट सहेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।")
-    } finally {
-      setSavingDraft(false)
-    }
-  }
-
-  const handleSubmit = async () => {
-    if (!validateForm(false)) {
-      alert("कृपया सभी त्रुटियों को ठीक करें")
-      return
-    }
-
-    setLoading(true)
-    try {
-      const mukhiya = familyData.members.find((m) => m.isMukhiya)
-      const mukhiyaName = mukhiya ? mukhiya.name : ""
-
-      const payload: CreateFamilyPayload = {
-        ...familyData,
-        mukhiyaName,
-        villageId,
-        chakolaId: chakolaId || "",
-        members: familyData.members.map(({ id, ...member }) => member),
-      }
-
-      if (mode === "edit" && familyId) {
-        updateMutation.mutate({ id: familyId, payload })
-      } else {
-        createMutation.mutate(payload)
-      }
-    } catch (error) {
-      alert("पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const mukhiyaCount = familyData.members.filter((m) => m.isMukhiya).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => router.push(`/admin/village/${villageId}`)}
-                variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                <span className="hindi-text">वापस</span>
-              </Button>
-              <Image
-                src="/images/main-logo.png"
-                alt="Panchal Samaj Logo"
-                width={50}
-                height={50}
-                className="rounded-full shadow-lg"
-              />
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-white hindi-text">
-                  {mode === "edit" ? "परिवार संपादित करें" : "नया परिवार जोड़ें"}
-                </h1>
-                <p className="text-orange-100 text-sm hindi-text">परिवार पंजीकरण फॉर्म</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{family ? "Edit Family" : "Add New Family"}</h1>
+        <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          <X className="w-4 h-4 mr-2" />
+          Cancel
+        </Button>
+      </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Error Alerts */}
-        {(errors.mukhiya || errors.aadhaar || errors.mobile) && (
-          <Alert className="mb-6 border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
-              {errors.mukhiya && <div className="hindi-text">{errors.mukhiya}</div>}
-              {errors.aadhaar && <div className="hindi-text">{errors.aadhaar}</div>}
-              {errors.mobile && <div className="hindi-text">{errors.mobile}</div>}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Family Level Information */}
-        <Card className="mb-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Family Information */}
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center hindi-text">
-              <Home className="w-5 h-5 mr-2" />
-              परिवार की जानकारी
-            </CardTitle>
-            <CardDescription className="hindi-text">परिवार स्तर की बुनियादी जानकारी</CardDescription>
+            <CardTitle>Family Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="currentAddress" className="hindi-text">
-                  वर्तमान पता *
-                </Label>
-                <Textarea
-                  id="currentAddress"
-                  value={familyData.currentAddress}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, currentAddress: e.target.value }))}
-                  placeholder="वर्तमान पता दर्ज करें"
-                  className="mt-1"
-                />
+                <Label htmlFor="headName">Head of Family *</Label>
+                <Input id="headName" {...register("headName")} placeholder="Enter head of family name" />
+                {errors.headName && <p className="text-sm text-red-500 mt-1">{errors.headName.message}</p>}
               </div>
+
               <div>
-                <Label htmlFor="permanentAddress" className="hindi-text">
-                  स्थायी पता *
-                </Label>
-                <Textarea
-                  id="permanentAddress"
-                  value={familyData.permanentAddress}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, permanentAddress: e.target.value }))}
-                  placeholder="स्थायी पता दर्ज करें"
-                  className="mt-1"
-                />
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" {...register("phone")} placeholder="Enter phone number" />
+                {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>}
               </div>
             </div>
+
             <div>
-              <Label htmlFor="economicStatus" className="hindi-text">
-                आर्थिक स्थिति
-              </Label>
-              <Select
-                value={familyData.economicStatus}
-                onValueChange={(value) => setFamilyData((prev) => ({ ...prev, economicStatus: value }))}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="आर्थिक स्थिति चुनें" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bpl">गरीबी रेखा से नीचे (BPL)</SelectItem>
-                  <SelectItem value="apl">गरीबी रेखा से ऊपर (APL)</SelectItem>
-                  <SelectItem value="middle">मध्यम वर्गीय</SelectItem>
-                  <SelectItem value="upper">उच्च वर्गीय</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="address">Address *</Label>
+              <Input id="address" {...register("address")} placeholder="Enter family address" />
+              {errors.address && <p className="text-sm text-red-500 mt-1">{errors.address.message}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" {...register("email")} placeholder="Enter email address" />
+              {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
             </div>
           </CardContent>
         </Card>
 
-        {/* Members Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center hindi-text">
-                  <User className="w-5 h-5 mr-2" />
-                  परिवार के सदस्य ({familyData.members.length})
-                </CardTitle>
-                <div className="flex items-center">
-                  <CardDescription className="hindi-text">सभी परिवारिक सदस्यों की विस्तृत जानकारी</CardDescription>
-                  {mukhiyaCount === 1 && (
-                    <Badge className="ml-2 bg-green-100 text-green-700">
-                      <UserCheck className="w-3 h-3 mr-1" />
-                      <span className="hindi-text">मुखिया चुना गया</span>
-                    </Badge>
+        {/* Family Members */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Family Members</CardTitle>
+            <Button type="button" onClick={addMember} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Member
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {fields.map((field, index) => (
+              <div key={field.id} className="border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Member {index + 1}</h4>
+                  {fields.length > 1 && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => removeMember(index)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   )}
                 </div>
-              </div>
-              <Button onClick={addMember} className="bg-orange-500 hover:bg-orange-600">
-                <Plus className="w-4 h-4 mr-2" />
-                <span className="hindi-text">सदस्य जोड़ें</span>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="space-y-4">
-              {familyData.members.map((member, index) => (
-                <AccordionItem key={member.id} value={member.id} className="border rounded-lg">
-                  <AccordionTrigger className="px-4 hover:no-underline">
-                    <div className="flex items-center justify-between w-full mr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          <span className="font-medium">{member.name || `सदस्य ${index + 1}`}</span>
-                          {member.isMukhiya && (
-                            <Badge className="bg-orange-100 text-orange-700">
-                              <UserCheck className="w-3 h-3 mr-1" />
-                              <span className="hindi-text">मुखिया</span>
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {member.age > 0 && <Badge variant="outline">{member.age} वर्ष</Badge>}
-                        {member.gender && (
-                          <Badge variant="outline">
-                            {member.gender === "MALE" ? "पुरुष" : member.gender === "FEMALE" ? "महिला" : "अन्य"}
-                          </Badge>
-                        )}
-                        {familyData.members.length > 1 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              removeMember(member.id)
-                            }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-6">
-                      {/* Personal Information */}
-                      <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
-                          <User className="w-4 h-4 mr-2" />
-                          व्यक्तिगत जानकारी
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <Label className="hindi-text">पूरा नाम *</Label>
-                            <Input
-                              value={member.name}
-                              onChange={(e) => updateMember(member.id, "name", e.target.value)}
-                              placeholder="पूरा नाम दर्ज करें"
-                              className={errors[`member-${index}-name`] ? "border-red-500" : ""}
-                            />
-                            {errors[`member-${index}-name`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-name`]}</p>
-                            )}
-                          </div>
-                          <div>
-                            <Label className="hindi-text">आधार नंबर *</Label>
-                            <Input
-                              value={member.aadhaarNumber}
-                              onChange={(e) => updateMember(member.id, "aadhaarNumber", e.target.value)}
-                              placeholder="12 अंकों का आधार नंबर"
-                              maxLength={12}
-                              className={errors[`member-${index}-aadhaar`] ? "border-red-500" : ""}
-                            />
-                            {errors[`member-${index}-aadhaar`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">
-                                {errors[`member-${index}-aadhaar`]}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <Label className="hindi-text flex items-center">
-                              <Calendar className="w-4 h-4 mr-1" />
-                              जन्म तिथि *
-                            </Label>
-                            <Input
-                              type="date"
-                              value={member.dateOfBirth}
-                              onChange={(e) => updateMember(member.id, "dateOfBirth", e.target.value)}
-                              className={errors[`member-${index}-dob`] ? "border-red-500" : ""}
-                              max={new Date().toISOString().split("T")[0]}
-                            />
-                            {errors[`member-${index}-dob`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-dob`]}</p>
-                            )}
-                          </div>
-                          <div>
-                            <Label className="hindi-text">उम्र</Label>
-                            <Input
-                              type="number"
-                              value={member.age || ""}
-                              readOnly
-                              placeholder="जन्म तिथि से गणना होगी"
-                              className="bg-gray-50 cursor-not-allowed"
-                            />
-                            <p className="text-xs text-gray-500 mt-1 hindi-text">जन्म तिथि के आधार पर स्वचालित गणना</p>
-                          </div>
-                          <div>
-                            <Label className="hindi-text flex items-center">
-                              <Phone className="w-4 h-4 mr-1" />
-                              मोबाइल नंबर
-                            </Label>
-                            <Input
-                              value={member.mobileNumber}
-                              onChange={(e) => updateMember(member.id, "mobileNumber", e.target.value)}
-                              placeholder="10 अंकों का मोबाइल नंबर"
-                              maxLength={10}
-                              className={errors[`member-${index}-mobile`] ? "border-red-500" : ""}
-                            />
-                            {errors[`member-${index}-mobile`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-mobile`]}</p>
-                            )}
-                          </div>
-                          <div>
-                            <Label className="hindi-text flex items-center">
-                              <Mail className="w-4 h-4 mr-1" />
-                              ईमेल पता
-                            </Label>
-                            <Input
-                              type="email"
-                              value={member.email}
-                              onChange={(e) => updateMember(member.id, "email", e.target.value)}
-                              placeholder="example@email.com"
-                              className={errors[`member-${index}-email`] ? "border-red-500" : ""}
-                            />
-                            {errors[`member-${index}-email`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-email`]}</p>
-                            )}
-                          </div>
-                          <div>
-                            <Label className="hindi-text">लिंग</Label>
-                            <Select
-                              value={member.gender}
-                              onValueChange={(value: "MALE" | "FEMALE" | "OTHER") =>
-                                updateMember(member.id, "gender", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="MALE">पुरुष</SelectItem>
-                                <SelectItem value="FEMALE">महिला</SelectItem>
-                                <SelectItem value="OTHER">अन्य</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="hindi-text">रिश्ता</Label>
-                            <Select
-                              value={member.relation}
-                              onValueChange={(value) => updateMember(member.id, "relation", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="रिश्ता चुनें" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="self">स्वयं</SelectItem>
-                                <SelectItem value="spouse">पति/पत्नी</SelectItem>
-                                <SelectItem value="son">पुत्र</SelectItem>
-                                <SelectItem value="daughter">पुत्री</SelectItem>
-                                <SelectItem value="father">पिता</SelectItem>
-                                <SelectItem value="mother">माता</SelectItem>
-                                <SelectItem value="brother">भाई</SelectItem>
-                                <SelectItem value="sister">बहन</SelectItem>
-                                <SelectItem value="grandfather">दादा/नाना</SelectItem>
-                                <SelectItem value="grandmother">दादी/नानी</SelectItem>
-                                <SelectItem value="uncle">चाचा/मामा</SelectItem>
-                                <SelectItem value="aunt">चाची/मामी</SelectItem>
-                                <SelectItem value="nephew">भतीजा/भांजा</SelectItem>
-                                <SelectItem value="niece">भतीजी/भांजी</SelectItem>
-                                <SelectItem value="son_in_law">दामाद</SelectItem>
-                                <SelectItem value="daughter_in_law">बहू</SelectItem>
-                                <SelectItem value="other">अन्य</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="hindi-text">वैवाहिक स्थिति</Label>
-                            <Select
-                              value={member.maritalStatus}
-                              onValueChange={(value) => updateMember(member.id, "maritalStatus", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="unmarried">अविवाहित</SelectItem>
-                                <SelectItem value="married">विवाहित</SelectItem>
-                                <SelectItem value="widowed">विधवा/विधुर</SelectItem>
-                                <SelectItem value="divorced">तलाकशुदा</SelectItem>
-                                <SelectItem value="separated">अलग रह रहे</SelectItem>
-                                <SelectItem value="engaged">सगाई हो गई</SelectItem>
-                                <SelectItem value="remarried">पुनर्विवाह</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="hindi-text">धर्म</Label>
-                            <Select
-                              value={member.religion}
-                              onValueChange={(value) => updateMember(member.id, "religion", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="hindu">हिंदू</SelectItem>
-                                <SelectItem value="muslim">मुस्लिम</SelectItem>
-                                <SelectItem value="christian">ईसाई</SelectItem>
-                                <SelectItem value="sikh">सिख</SelectItem>
-                                <SelectItem value="buddhist">बौद्ध</SelectItem>
-                                <SelectItem value="jain">जैन</SelectItem>
-                                <SelectItem value="other">अन्य</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="hindi-text">जाति</Label>
-                            <Select
-                              value={member.caste}
-                              onValueChange={(value) => updateMember(member.id, "caste", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="general">सामान्य</SelectItem>
-                                <SelectItem value="sc">अनुसूचित जाति (SC)</SelectItem>
-                                <SelectItem value="st">अनुसूचित जनजाति (ST)</SelectItem>
-                                <SelectItem value="obc">अन्य पिछड़ा वर्ग (OBC)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="hindi-text">ब्लड ग्रुप</Label>
-                            <Select
-                              value={member.bloodGroup}
-                              onValueChange={(value) => updateMember(member.id, "bloodGroup", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="ब्लड ग्रुप चुनें" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="A+">A+</SelectItem>
-                                <SelectItem value="A-">A-</SelectItem>
-                                <SelectItem value="B+">B+</SelectItem>
-                                <SelectItem value="B-">B-</SelectItem>
-                                <SelectItem value="AB+">AB+</SelectItem>
-                                <SelectItem value="AB-">AB-</SelectItem>
-                                <SelectItem value="O+">O+</SelectItem>
-                                <SelectItem value="O-">O-</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <div className="mt-4 flex items-center space-x-6">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`disability-${member.id}`}
-                              checked={member.disability}
-                              onCheckedChange={(checked) => updateMember(member.id, "disability", checked)}
-                            />
-                            <Label htmlFor={`disability-${member.id}`} className="hindi-text">
-                              विकलांगता है
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`mukhiya-${member.id}`}
-                              checked={member.isMukhiya}
-                              onCheckedChange={(checked) => updateMember(member.id, "isMukhiya", checked)}
-                            />
-                            <Label htmlFor={`mukhiya-${member.id}`} className="font-medium text-orange-700 hindi-text">
-                              मुखिया है
-                            </Label>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Additional sections would continue here with proper typing... */}
-                      {/* For brevity, I'm showing the pattern for the first section */}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor={`members.${index}.name`}>Name *</Label>
+                    <Input {...register(`members.${index}.name`)} placeholder="Enter name" />
+                    {errors.members?.[index]?.name && (
+                      <p className="text-sm text-red-500 mt-1">{errors.members[index]?.name?.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.age`}>Age *</Label>
+                    <Input
+                      type="number"
+                      {...register(`members.${index}.age`, { valueAsNumber: true })}
+                      placeholder="Enter age"
+                      min="0"
+                      max="150"
+                    />
+                    {errors.members?.[index]?.age && (
+                      <p className="text-sm text-red-500 mt-1">{errors.members[index]?.age?.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.gender`}>Gender *</Label>
+                    <Select
+                      value={watch(`members.${index}.gender`)}
+                      onValueChange={(value) =>
+                        setValue(`members.${index}.gender`, value as "male" | "female" | "other")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GENDER_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.members?.[index]?.gender && (
+                      <p className="text-sm text-red-500 mt-1">{errors.members[index]?.gender?.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.relation`}>Relation *</Label>
+                    <Select
+                      value={watch(`members.${index}.relation`)}
+                      onValueChange={(value) => setValue(`members.${index}.relation`, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select relation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RELATION_OPTIONS.map((relation) => (
+                          <SelectItem key={relation} value={relation}>
+                            {relation}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.members?.[index]?.relation && (
+                      <p className="text-sm text-red-500 mt-1">{errors.members[index]?.relation?.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.education`}>Education</Label>
+                    <Input {...register(`members.${index}.education`)} placeholder="Enter education" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.occupation`}>Occupation</Label>
+                    <Input {...register(`members.${index}.occupation`)} placeholder="Enter occupation" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.maritalStatus`}>Marital Status</Label>
+                    <Select
+                      value={watch(`members.${index}.maritalStatus`)}
+                      onValueChange={(value) =>
+                        setValue(
+                          `members.${index}.maritalStatus`,
+                          value as "single" | "married" | "divorced" | "widowed",
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MARITAL_STATUS_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.phone`}>Phone</Label>
+                    <Input {...register(`members.${index}.phone`)} placeholder="Enter phone" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`members.${index}.email`}>Email</Label>
+                    <Input type="email" {...register(`members.${index}.email`)} placeholder="Enter email" />
+                    {errors.members?.[index]?.email && (
+                      <p className="text-sm text-red-500 mt-1">{errors.members[index]?.email?.message}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
-        {/* Submit Buttons */}
-        <div className="flex justify-center gap-4 flex-wrap">
-          <Button
-            onClick={() => router.push(`/admin/village/${villageId}`)}
-            variant="outline"
-            className="bg-transparent"
-          >
-            <span className="hindi-text">रद्द करें</span>
+        <Separator />
+
+        {/* Submit Button */}
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
           </Button>
-          <Button
-            onClick={handleSaveAsDraft}
-            disabled={savingDraft}
-            variant="outline"
-            className="border-orange-300 text-orange-600 hover:bg-orange-50 min-w-[180px] bg-transparent"
-          >
-            {savingDraft ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
-                <span className="hindi-text">ड्राफ्ट सहेजा जा रहा है...</span>
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                <span className="hindi-text">ड्राफ्ट के रूप में सहेजें</span>
-              </div>
-            )}
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="bg-orange-500 hover:bg-orange-600 min-w-[200px]">
-            {loading ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                <span className="hindi-text">सहेजा जा रहा है...</span>
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <Save className="w-4 h-4 mr-2" />
-                <span className="hindi-text">परिवार पंजीकृत करें</span>
-              </div>
-            )}
+          <Button type="submit" disabled={isSubmitting || isLoading}>
+            <Save className="w-4 h-4 mr-2" />
+            {isSubmitting ? "Saving..." : family ? "Update Family" : "Create Family"}
           </Button>
         </div>
-      </main>
+      </form>
     </div>
   )
 }
+
+export default AddEditFamily

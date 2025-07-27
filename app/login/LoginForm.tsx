@@ -1,175 +1,188 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button/button"
-import { Input } from "@/components/ui/input/input"
-import { Label } from "@/components/ui/label/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
-import { Alert, AlertDescription } from "@/components/ui/alert/alert"
-import { AlertCircle, Eye, EyeOff } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Eye, EyeOff, LogIn, AlertCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
-interface LoginFormData {
-  email: string
-  password: string
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
+
+interface LoginFormProps {
+  callbackUrl?: string
 }
 
-interface LoginError {
-  message: string
-  field?: keyof LoginFormData
-}
-
-export default function LoginForm() {
-  const [formData, setFormData] = useState<LoginFormData>({
-    email: "",
-    password: "",
-  })
+export function LoginForm({ callbackUrl = "/admin" }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<LoginError | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { toast } = useToast()
 
-  const handleInputChange = (field: keyof LoginFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: e.target.value,
-    }))
-    // Clear error when user starts typing
-    if (error) setError(null)
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  })
 
-  const validateForm = (): boolean => {
-    if (!formData.email) {
-      setError({ message: "ईमेल आवश्यक है", field: "email" })
-      return false
-    }
-    if (!formData.email.includes("@")) {
-      setError({ message: "वैध ईमेल पता दर्ज करें", field: "email" })
-      return false
-    }
-    if (!formData.password) {
-      setError({ message: "पासवर्ड आवश्यक है", field: "password" })
-      return false
-    }
-    if (formData.password.length < 6) {
-      setError({ message: "पासवर्ड कम से कम 6 अक्षर का होना चाहिए", field: "password" })
-      return false
-    }
-    return true
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if (!validateForm()) return
-
-    setIsLoading(true)
-    setError(null)
-
+  const onSubmit = async (data: LoginFormData) => {
     try {
+      setIsLoading(true)
+      setError(null)
+
       const result = await signIn("credentials", {
-        email: formData.email,
-        password: formData.password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       })
 
       if (result?.error) {
-        setError({ message: "गलत ईमेल या पासवर्ड" })
+        setError("Invalid email or password. Please try again.")
+        toast({
+          title: "Login Failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive",
+        })
         return
       }
 
       if (result?.ok) {
-        // Get the session to check user role
-        const session = await getSession()
+        toast({
+          title: "Login Successful",
+          description: "Welcome back! Redirecting to dashboard...",
+        })
 
-        if (session?.user?.role === "SUPER_ADMIN") {
-          router.push("/admin/superadmin")
-        } else if (session?.user?.role === "CHOKHLA_ADMIN") {
-          router.push(`/admin/chokhla/${session.user.choklaId}`)
-        } else if (session?.user?.role === "VILLAGE_ADMIN") {
-          router.push(`/admin/village/${session.user.villageId}`)
-        } else {
-          router.push("/admin")
-        }
+        // Redirect to callback URL or default admin page
+        router.push(callbackUrl)
+        router.refresh()
       }
     } catch (error) {
       console.error("Login error:", error)
-      setError({ message: "लॉगिन में त्रुटि हुई। कृपया पुनः प्रयास करें।" })
+      setError("An unexpected error occurred. Please try again.")
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
+
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">लॉगिन</CardTitle>
-        <CardDescription className="text-center">अपने खाते में प्रवेश करें</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error.message}</AlertDescription>
-            </Alert>
-          )}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+          <p className="mt-2 text-sm text-gray-600">Panchal Samaj Census Portal</p>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">ईमेल पता</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your@email.com"
-              value={formData.email}
-              onChange={handleInputChange("email")}
-              disabled={isLoading}
-              className={error?.field === "email" ? "border-red-500" : ""}
-              required
-            />
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Login</CardTitle>
+            <CardDescription>Enter your credentials to access the admin panel</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-          <div className="space-y-2">
-            <Label htmlFor="password">पासवर्ड</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="आपका पासवर्ड"
-                value={formData.password}
-                onChange={handleInputChange("password")}
-                disabled={isLoading}
-                className={error?.field === "password" ? "border-red-500" : ""}
-                required
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                लॉगिन हो रहा है...
+              <div>
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  {...register("email")}
+                  placeholder="Enter your email"
+                  className="mt-1"
+                />
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
               </div>
-            ) : (
-              "लॉगिन करें"
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    {...register("password")}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <a href="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
+                    Forgot your password?
+                  </a>
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign in
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-600">Need help? Contact your system administrator</p>
+        </div>
+      </div>
+    </div>
   )
 }
+
+export default LoginForm

@@ -1,259 +1,156 @@
-import request from "@/config/request"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useSession } from "next-auth/react"
+import { API } from "@/config/request"
+import type { CreateFamilyPayload, UpdateFamilyPayload, Person } from "@/types"
 
-// Define proper interfaces for API responses and requests
-export interface Village {
-  id: string
-  name: string
-  villageMemberName: string
-  mobileNumber: string
-  age: number
-  email: string
-  tehsil: string
-  district: string
-  state: string
-  isVillageHaveSchool: boolean
-  isVillageHavePrimaryHealthCare: boolean
-  isVillageHaveCommunityHall: boolean
-  longitude: number
-  latitude: number
-  choklaId: string
-  chakolaName?: string
-  createdDate: string
-  updatedDate: string
-  families?: Family[]
-  genderCount: {
-    MALE: number
-    FEMALE: number
-    OTHER: number
-  }
+// Custom hook to get auth token
+const useAuthToken = () => {
+  const { data: session } = useSession()
+  return session?.user?.token
 }
 
-export interface Family {
-  id: string
-  mukhiyaName: string
-  currentAddress: string
-  permanentAddress: string
-  economicStatus: string
-  status: string
-  villageId: string
-  contactNumber?: string
-  createdAt: string
-  updatedAt: string
-  createdDate: string
-  updatedDate: string
-  verificationStatus: string
-  Person: Person[]
-  genderCount: {
-    MALE: number
-    FEMALE: number
-    OTHER: number
-  }
+// Village-specific family hooks
+export const useVillageFamilies = (villageId: string, page = 1, limit = 10) => {
+  const token = useAuthToken()
+
+  return useQuery({
+    queryKey: ["village-families", villageId, page, limit],
+    queryFn: () => API.family.getAll(token!, villageId, page, limit),
+    enabled: !!token && !!villageId,
+  })
 }
 
-export interface Person {
-  id: string
-  fullName: string
-  name: string
-  aadhaarNumber: string
-  dateOfBirth: string
-  age: number
-  gender: "MALE" | "FEMALE" | "OTHER"
-  relation: string
-  maritalStatus: string
-  religion: string
-  caste: string
-  disability: boolean
-  bloodGroup: string
-  mobileNumber: string
-  email: string
-  permanentAddress: string
-  currentAddress: string
-  isCurrentAddressInIndia: boolean
-  currentCountry: string
-  village: string
-  pincode: string
-  district: string
-  state: string
-  isStudent: boolean
-  educationLevel: string
-  classCompleted: string
-  currentClass: string
-  collegeCourse: string
-  institutionName: string
-  enrollmentStatus: string
-  dropoutReason?: string
-  schoolName?: string
-  higherEducationType: string
-  isEmployed: boolean
-  occupation: string
-  monthlyIncome: number
-  incomeSource: string
-  isIncomeSourceInIndia: boolean
-  incomeSourceCountry: string
-  serviceType: string
-  landOwned: number
-  livestock: string
-  houseType: string
-  houseOwnership: string
-  hasElectricity: boolean
-  waterSource: string
-  hasToilet: boolean
-  cookingFuel: string
-  hasHealthIssues: boolean
-  chronicDisease?: string
-  isVaccinated: boolean
-  welfareSchemes: string[]
-  hasHealthInsurance: boolean
-  hasSmartphone: boolean
-  hasInternet: boolean
-  hasBankAccount: boolean
-  hasJanDhan: boolean
-  isMukhiya: boolean
-  familyId: string
+export const useVillageFamily = (villageId: string, familyId: string) => {
+  const token = useAuthToken()
+
+  return useQuery({
+    queryKey: ["village-family", villageId, familyId],
+    queryFn: () => API.family.getById(familyId, token!),
+    enabled: !!token && !!villageId && !!familyId,
+  })
 }
 
-export interface Chokhla {
-  id: string
-  name: string
-  adhyaksh: string
-  contactNumber: string
-  state: string
-  district: string
-  villageName: string
-  createdDate: string
-  updatedDate: string
-  villages?: Village[]
+export const useCreateVillageFamily = (villageId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreateFamilyPayload) => {
+      const familyData = { ...data, villageId }
+      return API.family.create(familyData, token!)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["villages", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["families"] })
+    },
+  })
 }
 
-export interface User {
-  id: string
-  email: string
-  fullName: string
-  globalRole: string
-  isActive: boolean
-  createdAt: string
-  choklaId?: string
-  villageId?: string
+export const useUpdateVillageFamily = (villageId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: UpdateFamilyPayload) => API.family.update(data.id, data, token!),
+    onSuccess: (_, data) => {
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["village-family", villageId, data.id] })
+      queryClient.invalidateQueries({ queryKey: ["villages", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["families", data.id] })
+    },
+  })
 }
 
-export interface CreateFamilyPayload {
-  currentAddress: string
-  permanentAddress: string
-  economicStatus: string
-  status: "draft" | "submitted"
-  mukhiyaName: string
-  villageId: string
-  chakolaId: string
-  members: Omit<Person, "id" | "familyId">[]
+export const useDeleteVillageFamily = (villageId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (familyId: string) => API.family.delete(familyId, token!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["villages", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["families"] })
+    },
+  })
 }
 
-export interface CreateVillagePayload {
-  name: string
-  villageMemberName: string
-  mobileNumber: string
-  age: number
-  email: string
-  tehsil: string
-  district: string
-  state: string
-  isVillageHaveSchool: boolean
-  isVillageHavePrimaryHealthCare: boolean
-  isVillageHaveCommunityHall: boolean
-  longitude: number
-  latitude: number
-  password: string
-  repeatPassword: string
-  chakola: {
-    connect: {
-      id: string
-    }
-  }
+// Family member management hooks
+export const useAddFamilyMember = (villageId: string, familyId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (memberData: Omit<Person, "id" | "familyId">) => API.family.addMember(familyId, memberData, token!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["village-family", villageId, familyId] })
+      queryClient.invalidateQueries({ queryKey: ["families", familyId] })
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+    },
+  })
 }
 
-export interface CreateChokhlaPayload {
-  name: string
-  adhyaksh: string
-  contactNumber: string
-  state: string
-  district: string
-  villageName: string
-  email: string
-  password: string
-  repeatPassword: string
+export const useUpdateFamilyMember = (villageId: string, familyId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ memberId, memberData }: { memberId: string; memberData: Partial<Person> }) =>
+      API.family.updateMember(familyId, memberId, memberData, token!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["village-family", villageId, familyId] })
+      queryClient.invalidateQueries({ queryKey: ["families", familyId] })
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+    },
+  })
 }
 
-export interface ApiResponse<T> {
-  data: T
-  message?: string
-  success?: boolean
+export const useDeleteFamilyMember = (villageId: string, familyId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (memberId: string) => API.family.deleteMember(familyId, memberId, token!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["village-family", villageId, familyId] })
+      queryClient.invalidateQueries({ queryKey: ["families", familyId] })
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+    },
+  })
 }
 
-export const getApiCall = async (): Promise<ApiResponse<any>> => {
-  const { data } = await request.get("/")
-  return { data }
+// Bulk operations
+export const useBulkUpdateFamilies = (villageId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (updates: UpdateFamilyPayload[]) => {
+      const promises = updates.map((update) => API.family.update(update.id, update, token!))
+      return Promise.all(promises)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["villages", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["families"] })
+    },
+  })
 }
 
-export const createFamily = async (payload: CreateFamilyPayload): Promise<ApiResponse<Family>> => {
-  const { data } = await request.post("/family/create", payload)
-  return { data }
-}
+export const useBulkDeleteFamilies = (villageId: string) => {
+  const token = useAuthToken()
+  const queryClient = useQueryClient()
 
-export const updateFamily = async (id: string, payload: Partial<CreateFamilyPayload>): Promise<ApiResponse<Family>> => {
-  const { data } = await request.put(`/family/${id}`, payload)
-  return { data }
-}
-
-export const getFamilyDetails = async (id: string): Promise<Family> => {
-  const { data } = await request.get(`/family/${id}`)
-  return data
-}
-
-export const deleteFamilyWithId = async (id: string): Promise<ApiResponse<void>> => {
-  const { data } = await request.delete(`/family/delete/${id}`)
-  return data
-}
-
-export const getVillageDetails = async (id: string): Promise<Village> => {
-  const { data } = await request.get(`/village/${id}`)
-  return data
-}
-
-export const getAllVillages = async (): Promise<ApiResponse<Village[]>> => {
-  const { data } = await request.get("/village")
-  return data
-}
-
-export const getAllVillagesWithChokhlaID = async (chokhlaID: string): Promise<Village[]> => {
-  const { data } = await request.get(`chokhla/getvillage/${chokhlaID}`)
-  return data
-}
-
-export const createVillage = async (payload: CreateVillagePayload): Promise<ApiResponse<Village>> => {
-  const { data } = await request.post("/village/create", payload)
-  return data
-}
-
-export const getChokhlaDetails = async (id: string): Promise<Chokhla> => {
-  const { data } = await request.get(`/chokhla/${id}`)
-  return data
-}
-
-export const updateChokhla = async (id: string, payload: Partial<Chokhla>): Promise<ApiResponse<Chokhla>> => {
-  const { data } = await request.put(`/chokhla/${id}`, payload)
-  return data
-}
-
-export const getAllChokhlas = async (): Promise<Chokhla[]> => {
-  const { data } = await request.get("/chokhla")
-  return data
-}
-
-export const createChokhla = async (payload: CreateChokhlaPayload): Promise<ApiResponse<Chokhla>> => {
-  const { data } = await request.post("/chokhla/create", payload)
-  return data
-}
-
-export const getAlluserList = async (): Promise<User[]> => {
-  const { data } = await request.get("/api/auth/users")
-  return data
+  return useMutation({
+    mutationFn: async (familyIds: string[]) => {
+      const promises = familyIds.map((id) => API.family.delete(id, token!))
+      return Promise.all(promises)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["village-families", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["villages", villageId] })
+      queryClient.invalidateQueries({ queryKey: ["families"] })
+    },
+  })
 }
