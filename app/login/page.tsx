@@ -24,7 +24,9 @@ export default function LoginPage() {
 
         {/* Login Form Section */}
         <div className="w-full max-w-md">
-          <Suspense fallback={<LoginLoading />}>{LoginForm()}</Suspense>
+          <Suspense fallback={<LoginLoading />}>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>

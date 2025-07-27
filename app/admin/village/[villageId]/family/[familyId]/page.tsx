@@ -4,53 +4,101 @@ import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { User, Phone, Mail, GraduationCap, Briefcase, Heart, ArrowLeft, Edit } from "lucide-react"
+import { ArrowLeft, Users, Phone, Mail, MapPin, Edit, UserPlus } from "lucide-react"
 import Link from "next/link"
-import { useGetFamilyDetails } from "@/data-hooks/mutation-query/useQueryAndMutation"
+
+// Mock data - replace with actual API call
+const mockFamilyData = {
+  id: "1",
+  familyHead: "John Panchal",
+  address: "123 Main Street, Village Center",
+  phone: "+91 98765 43210",
+  email: "john.panchal@example.com",
+  registrationDate: "2023-01-15",
+  status: "active",
+  members: [
+    {
+      id: "1",
+      name: "John Panchal",
+      age: 45,
+      gender: "male",
+      relation: "head",
+      occupation: "Farmer",
+      education: "Graduate",
+      maritalStatus: "married",
+    },
+    {
+      id: "2",
+      name: "Jane Panchal",
+      age: 40,
+      gender: "female",
+      relation: "wife",
+      occupation: "Teacher",
+      education: "Post Graduate",
+      maritalStatus: "married",
+    },
+    {
+      id: "3",
+      name: "Mike Panchal",
+      age: 18,
+      gender: "male",
+      relation: "son",
+      occupation: "Student",
+      education: "Higher Secondary",
+      maritalStatus: "unmarried",
+    },
+    {
+      id: "4",
+      name: "Sarah Panchal",
+      age: 16,
+      gender: "female",
+      relation: "daughter",
+      occupation: "Student",
+      education: "Secondary",
+      maritalStatus: "unmarried",
+    },
+  ],
+}
 
 export default function FamilyDetailPage() {
   const params = useParams()
-  const familyId = params.familyId as string
   const villageId = params.villageId as string
+  const familyId = params.familyId as string
 
-  const { data: familyResponse, isLoading, error } = useGetFamilyDetails(familyId)
-  const family = familyResponse?.data
+  // In a real app, you would fetch data based on familyId
+  const family = mockFamilyData
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    )
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800"
+      case "inactive":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
-  if (error || !family) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Family Not Found</h2>
-          <p className="text-gray-600 mb-6">The requested family could not be found.</p>
-          <Link href={`/admin/village/${villageId}`}>
-            <Button>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Village
-            </Button>
-          </Link>
-        </div>
-      </div>
-    )
+  const getRelationColor = (relation: string) => {
+    switch (relation) {
+      case "head":
+        return "bg-blue-100 text-blue-800"
+      case "wife":
+        return "bg-pink-100 text-pink-800"
+      case "son":
+        return "bg-green-100 text-green-800"
+      case "daughter":
+        return "bg-purple-100 text-purple-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           <Link href={`/admin/village/${villageId}`}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -58,131 +106,137 @@ export default function FamilyDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{family.headName}'s Family</h1>
-            <p className="text-gray-600">{family.address}</p>
+            <h1 className="text-3xl font-bold">{family.familyHead} Family</h1>
+            <p className="text-muted-foreground">Family ID: {family.id}</p>
           </div>
         </div>
-        <Link href={`/admin/village/${villageId}/family/${familyId}/edit`}>
+        <div className="flex gap-2">
+          <Link href={`/admin/village/${villageId}/family/${familyId}/edit`}>
+            <Button variant="outline">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Family
+            </Button>
+          </Link>
           <Button>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Family
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Member
           </Button>
-        </Link>
+        </div>
       </div>
 
-      {/* Family Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Family Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Family Head</p>
-              <p className="text-lg">{family.headName}</p>
+      {/* Family Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Family Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Head:</span>
+              <span>{family.familyHead}</span>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Total Members</p>
-              <p className="text-lg">{family.totalMembers}</p>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Address:</span>
+              <span>{family.address}</span>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Address</p>
-              <p className="text-lg">{family.address}</p>
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Phone:</span>
+              <span>{family.phone}</span>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Village</p>
-              <p className="text-lg">{family.village?.name}</p>
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Email:</span>
+              <span>{family.email}</span>
             </div>
-            {family.phone && (
-              <div>
-                <p className="text-sm font-medium text-gray-500">Phone</p>
-                <p className="text-lg flex items-center">
-                  <Phone className="h-4 w-4 mr-2" />
-                  {family.phone}
-                </p>
-              </div>
-            )}
-            {family.email && (
-              <div>
-                <p className="text-sm font-medium text-gray-500">Email</p>
-                <p className="text-lg flex items-center">
-                  <Mail className="h-4 w-4 mr-2" />
-                  {family.email}
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Status:</span>
+              <Badge className={getStatusColor(family.status)}>{family.status}</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Registration Date:</span>
+              <span>{family.registrationDate}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Family Statistics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between">
+              <span>Total Members:</span>
+              <span className="font-bold">{family.members.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Male Members:</span>
+              <span className="font-bold">{family.members.filter((m) => m.gender === "male").length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Female Members:</span>
+              <span className="font-bold">{family.members.filter((m) => m.gender === "female").length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Married Members:</span>
+              <span className="font-bold">{family.members.filter((m) => m.maritalStatus === "married").length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Working Members:</span>
+              <span className="font-bold">{family.members.filter((m) => m.occupation !== "Student").length}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Family Members */}
       <Card>
         <CardHeader>
-          <CardTitle>Family Members ({family.members.length})</CardTitle>
+          <CardTitle>Family Members</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {family.members.map((member, index) => (
-              <div key={member.id}>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                      <User className="h-5 w-5 text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {family.members.map((member) => (
+              <Card key={member.id} className="border-2">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{member.name}</CardTitle>
+                    <Badge className={getRelationColor(member.relation)}>{member.relation}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Age:</span>
+                      <span className="ml-1 font-medium">{member.age}</span>
                     </div>
-                    <div className="space-y-2">
-                      <div>
-                        <h3 className="text-lg font-semibold">{member.name}</h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>Age: {member.age}</span>
-                          <span>•</span>
-                          <span className="capitalize">{member.gender}</span>
-                          <span>•</span>
-                          <span>{member.relation}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {member.education && (
-                          <Badge variant="outline" className="flex items-center">
-                            <GraduationCap className="h-3 w-3 mr-1" />
-                            {member.education}
-                          </Badge>
-                        )}
-                        {member.occupation && (
-                          <Badge variant="outline" className="flex items-center">
-                            <Briefcase className="h-3 w-3 mr-1" />
-                            {member.occupation}
-                          </Badge>
-                        )}
-                        {member.maritalStatus && (
-                          <Badge variant="outline" className="flex items-center">
-                            <Heart className="h-3 w-3 mr-1" />
-                            {member.maritalStatus}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {(member.phone || member.email) && (
-                        <div className="flex items-center space-x-4 text-sm">
-                          {member.phone && (
-                            <span className="flex items-center text-gray-600">
-                              <Phone className="h-3 w-3 mr-1" />
-                              {member.phone}
-                            </span>
-                          )}
-                          {member.email && (
-                            <span className="flex items-center text-gray-600">
-                              <Mail className="h-3 w-3 mr-1" />
-                              {member.email}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                    <div>
+                      <span className="text-muted-foreground">Gender:</span>
+                      <span className="ml-1 font-medium capitalize">{member.gender}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Occupation:</span>
+                      <span className="ml-1 font-medium">{member.occupation}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Education:</span>
+                      <span className="ml-1 font-medium">{member.education}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Marital Status:</span>
+                      <span className="ml-1 font-medium capitalize">{member.maritalStatus}</span>
                     </div>
                   </div>
-                </div>
-                {index < family.members.length - 1 && <Separator className="mt-4" />}
-              </div>
+                  <div className="flex gap-1 pt-2">
+                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </CardContent>

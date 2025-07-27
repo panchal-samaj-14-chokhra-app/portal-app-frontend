@@ -1,94 +1,113 @@
-# Panchal Samaj 14 Chhkhra - Digital Census Portal
+# Panchal Samaj Census Portal
 
-A comprehensive digital census management system for Panchal Samaj 14 Chhkhra community.
+A comprehensive census management system for the Panchal Samaj community built with Next.js 14, TypeScript, and modern web technologies.
 
 ## Features
 
-- **Admin Dashboard**: Complete overview of census data
-- **Village Management**: Manage villages and their information
-- **Family Records**: Track family details and members
-- **User Management**: Handle different user roles and permissions
-- **Multi-language Support**: Hindi and English interface
-- **Responsive Design**: Works on all devices
+- **Admin Dashboard**: Complete administrative interface for managing census data
+- **Village Management**: Add, edit, and manage village information
+- **Family Records**: Comprehensive family and member registration system
+- **Authentication**: Secure login system with NextAuth.js
+- **Multilingual Support**: English and Hindi language support
+- **Responsive Design**: Mobile-first responsive design
+- **Real-time Updates**: Live data updates and notifications
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React, TypeScript
-- **Styling**: Tailwind CSS, shadcn/ui
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui components
 - **Authentication**: NextAuth.js
-- **State Management**: TanStack Query
+- **State Management**: React Query (TanStack Query)
+- **Forms**: React Hook Form with Zod validation
 - **Internationalization**: next-intl
 - **Testing**: Jest, React Testing Library
 
 ## Getting Started
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+### Prerequisites
 
-First, run the development server:
+- Node.js 18+ 
+- pnpm (recommended) or npm
+- Git
 
+### Installation
+
+1. Clone the repository:
 \`\`\`bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/jeki01/smj-app-14-chokhra.git
+cd smj-app-14-chokhra
 \`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+\`\`\`bash
+pnpm install
+\`\`\`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+\`\`\`bash
+cp .env.example .env.local
+\`\`\`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Configure your environment variables in `.env.local`
+
+5. Run the development server:
+\`\`\`bash
+pnpm dev
+\`\`\`
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Project Structure
+
+\`\`\`
+├── app/                    # Next.js 14 App Router
+│   ├── admin/             # Admin dashboard pages
+│   ├── api/               # API routes
+│   ├── login/             # Authentication pages
+│   └── globals.css        # Global styles
+├── components/            # Reusable components
+│   ├── ui/               # shadcn/ui components
+│   └── group-component/  # Feature-specific components
+├── lib/                  # Utility libraries
+│   ├── providers/        # Context providers
+│   └── i18n/            # Internationalization config
+├── types/                # TypeScript type definitions
+├── hooks/                # Custom React hooks
+├── data-hooks/           # Data fetching hooks
+└── messages/             # Translation files
+\`\`\`
 
 ## Environment Variables
 
 Create a `.env.local` file with the following variables:
 
-\`\`\`
-NEXTAUTH_URL=http://localhost:3000
+\`\`\`env
 NEXTAUTH_SECRET=your-secret-key
-NEXT_PUBLIC_REQUEST_URL=your-backend-api-url
+NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_REQUEST_URL=https://your-backend-api.vercel.app
 \`\`\`
 
-## Project Structure
+## Deployment
 
-\`\`\`
-├── app/                    # Next.js app directory
-├── components/            # Reusable UI components
-├── config/               # Configuration files
-├── data-hooks/           # API hooks and data fetching
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility libraries
-├── messages/             # Internationalization messages
-├── public/               # Static assets
-└── styles/               # Global styles
-\`\`\`
+The application is configured for deployment on Vercel:
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://vercel.com/docs/deployments) for more details.
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Configure environment variables in Vercel dashboard
+4. Deploy automatically on push to production branch
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, email support@panchalsamaj.org or create an issue in the GitHub repository.

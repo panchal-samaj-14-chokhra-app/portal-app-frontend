@@ -1,152 +1,188 @@
 "use client"
 
+import { useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Building, MapPin, Users, Home, Settings, HelpCircle, LogOut } from "lucide-react"
+import {
+  Users,
+  Home,
+  MapPin,
+  BarChart3,
+  Shield,
+  Database,
+  ArrowRight,
+  CheckCircle,
+  Globe,
+  Smartphone,
+  Lock,
+} from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
-import { signOut } from "next-auth/react"
 
 export default function HomePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login")
+    if (status === "authenticated") {
+      router.push("/admin/superadmin")
     }
   }, [status, router])
 
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
 
-  if (!session) {
-    return null
+  if (status === "authenticated") {
+    return null // Will redirect
   }
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: "/login" })
-  }
+  const features = [
+    {
+      icon: Users,
+      title: "Family Management",
+      description: "Comprehensive family and member registration system",
+    },
+    {
+      icon: Home,
+      title: "Village Administration",
+      description: "Organize and manage villages within chokhlas",
+    },
+    {
+      icon: Database,
+      title: "Data Security",
+      description: "Secure data storage with backup and recovery",
+    },
+    {
+      icon: BarChart3,
+      title: "Analytics & Reports",
+      description: "Generate insights and statistical reports",
+    },
+    {
+      icon: Smartphone,
+      title: "Mobile Responsive",
+      description: "Access from any device, anywhere",
+    },
+    {
+      icon: Shield,
+      title: "Role-based Access",
+      description: "Secure access control for different user roles",
+    },
+  ]
 
-  const getRoleBasedContent = () => {
-    switch (session.user.role) {
-      case "superadmin":
-        return {
-          title: "Super Admin Dashboard",
-          description: "Manage the entire system, chokhlas, villages, and users",
-          dashboardLink: "/admin/superadmin",
-          features: [
-            { icon: Building, title: "Manage Chokhlas", description: "Add, edit, and manage chokhlas" },
-            { icon: MapPin, title: "Manage Villages", description: "Oversee all villages across chokhlas" },
-            { icon: Users, title: "User Management", description: "Manage system users and permissions" },
-            { icon: Home, title: "Family Records", description: "Access all family records" },
-          ],
-        }
-      case "admin":
-        return {
-          title: "Admin Dashboard",
-          description: "Manage your assigned chokhla and villages",
-          dashboardLink: `/admin/chokhla/${session.user.chokhlaId}`,
-          features: [
-            { icon: MapPin, title: "Manage Villages", description: "Manage villages in your chokhla" },
-            { icon: Home, title: "Family Records", description: "Manage family records" },
-            { icon: Users, title: "Member Data", description: "View and update member information" },
-          ],
-        }
-      case "user":
-        return {
-          title: "User Dashboard",
-          description: "Manage families in your village",
-          dashboardLink: `/admin/village/${session.user.villageId}`,
-          features: [
-            { icon: Home, title: "Family Records", description: "Manage families in your village" },
-            { icon: Users, title: "Member Data", description: "Add and update member information" },
-          ],
-        }
-      default:
-        return {
-          title: "Dashboard",
-          description: "Welcome to the system",
-          dashboardLink: "/",
-          features: [],
-        }
-    }
-  }
-
-  const content = getRoleBasedContent()
+  const stats = [
+    { label: "Registered Families", value: "1,250+", icon: Users },
+    { label: "Community Members", value: "4,800+", icon: Users },
+    { label: "Villages Covered", value: "85+", icon: Home },
+    { label: "Chokhlas Managed", value: "14", icon: MapPin },
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">Panchal Samaj Census Portal</h1>
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10">
+              <Image src="/images/main-logo.png" alt="Panchal Samaj Logo" fill className="object-contain" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{session.user.name}</p>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={session.user.role === "superadmin" ? "default" : "secondary"}>
-                    {session.user.role}
-                  </Badge>
-                  <p className="text-xs text-gray-500">{session.user.email}</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Panchal Samaj</h1>
+              <p className="text-xs text-gray-600">Census Portal</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/help">
+              <Button variant="ghost" size="sm">
+                Help
               </Button>
-            </div>
+            </Link>
+            <Link href="/login">
+              <Button size="sm">
+                Sign In
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">{content.title}</h2>
-            <p className="text-gray-600">{content.description}</p>
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto text-center space-y-8">
+          <div className="space-y-4">
+            <Badge variant="secondary" className="mb-4">
+              <Globe className="w-3 h-3 mr-1" />
+              Digital Census Management
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
+              Panchal Samaj
+              <span className="block text-primary">Census Portal</span>
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              A comprehensive digital platform for managing community census data, family records, and member
+              information for the Panchal Samaj community.
+            </p>
           </div>
 
-          {/* Quick Actions */}
-          <div className="mb-8">
-            <div className="flex flex-wrap gap-4">
-              <Link href={content.dashboardLink}>
-                <Button size="lg">
-                  <Settings className="h-5 w-5 mr-2" />
-                  Go to Dashboard
-                </Button>
-              </Link>
-              <Link href="/help">
-                <Button variant="outline" size="lg">
-                  <HelpCircle className="h-5 w-5 mr-2" />
-                  Help & Support
-                </Button>
-              </Link>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/login">
+              <Button size="lg" className="text-lg px-8">
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/help">
+              <Button variant="outline" size="lg" className="text-lg px-8 bg-transparent">
+                Learn More
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
+                  <stat.icon className="h-6 w-6 text-primary" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
+                <div className="text-sm text-gray-600">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Powerful Features</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Everything you need to manage community census data efficiently and securely
+            </p>
           </div>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {content.features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <feature.icon className="h-5 w-5 mr-2 text-blue-600" />
-                    {feature.title}
-                  </CardTitle>
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
+                    <feature.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600">{feature.description}</p>
@@ -154,35 +190,102 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* System Info */}
-          <div className="mt-12">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="font-medium text-gray-500">Version</p>
-                    <p>1.0.0</p>
+      {/* Benefits Section */}
+      <section className="py-20 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Why Choose Our Platform?</h2>
+              <p className="text-lg text-gray-600">
+                Built specifically for the Panchal Samaj community with modern technology and user-friendly design.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  "Easy family and member registration",
+                  "Secure data management and privacy",
+                  "Real-time updates and synchronization",
+                  "Comprehensive reporting and analytics",
+                  "Mobile-friendly responsive design",
+                  "Role-based access control",
+                ].map((benefit, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <span className="text-gray-700">{benefit}</span>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-500">Last Updated</p>
-                    <p>January 2024</p>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative">
+              <Card className="p-8 shadow-2xl">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <Lock className="h-6 w-6 text-primary" />
+                    <span className="font-semibold">Secure & Reliable</span>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-500">Support</p>
-                    <Link href="/help" className="text-blue-600 hover:text-blue-800">
-                      Get Help
+                  <p className="text-gray-600">
+                    Your community data is protected with enterprise-grade security and regular backups to ensure data
+                    integrity.
+                  </p>
+                  <div className="pt-4">
+                    <Link href="/login">
+                      <Button className="w-full">
+                        Start Managing Your Community
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
                     </Link>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </Card>
+            </div>
           </div>
         </div>
-      </main>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12 px-4">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="relative w-8 h-8">
+                  <Image src="/images/main-logo.png" alt="Panchal Samaj Logo" fill className="object-contain" />
+                </div>
+                <span className="text-xl font-bold">Panchal Samaj</span>
+              </div>
+              <p className="text-gray-400">Digital census management for the Panchal Samaj community.</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Quick Links</h3>
+              <div className="space-y-2">
+                <Link href="/login" className="block text-gray-400 hover:text-white transition-colors">
+                  Sign In
+                </Link>
+                <Link href="/help" className="block text-gray-400 hover:text-white transition-colors">
+                  Help & Support
+                </Link>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Contact</h3>
+              <div className="space-y-2 text-gray-400">
+                <p>support@panchalsamaj.org</p>
+                <p>+91 98765 43210</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 Panchal Samaj Census Portal. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
