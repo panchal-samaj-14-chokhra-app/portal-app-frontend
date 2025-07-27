@@ -99,4 +99,4 @@ function ReusableTable<T extends { id: string | number }>({
   );
 }
 
-export default ReusableTable;
+export default ReusableTable; 

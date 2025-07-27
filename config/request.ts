@@ -1,18 +1,12 @@
-import axios, { type AxiosResponse } from "axios"
-import { signIn } from "next-auth/react"
-
-interface ApiError {
-  message: string
-  status?: number
-  data?: any
-}
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { getSession, signIn } from 'next-auth/react';
 
 const request = axios.create({
   baseURL: process.env.NEXT_PUBLIC_REQUEST_URL,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
-})
+});
 
 // request.interceptors.request.use(
 //   async (config: InternalAxiosRequestConfig) => {
@@ -32,58 +26,48 @@ const request = axios.create({
 
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    return response
+    return response;
   },
-  async (error: any) => {
+  async (error) => {
     if (error.response) {
       if (
-        error.request.responseType === "blob" &&
+        error.request.responseType === 'blob' &&
         error.response.data instanceof Blob &&
         error.response.data.type &&
-        error.response.data.type.toLowerCase().indexOf("json") !== -1
+        error.response.data.type.toLowerCase().indexOf('json') != -1
       ) {
-        await new Promise<void>((resolve) => {
-          const reader: FileReader = new FileReader()
+        await new Promise((resolve) => {
+          let reader: FileReader = new FileReader();
           reader.onload = () => {
-            try {
-              error.response.data = JSON.parse((reader?.result || "") as string)
-            } catch (parseError) {
-              console.error("Error parsing blob response:", parseError)
-            }
-            resolve()
-          }
+            error.response.data = JSON.parse((reader?.result || '') as string);
+            resolve('');
+          };
           reader.onerror = () => {
-            resolve()
-          }
-          reader.readAsText(error.response.data)
-        })
+            resolve('');
+          };
+          reader.readAsText(error.response.data);
+        });
       }
-
-      const { status, data }: { status: number; data: any } = error.response
-
+      const { status, data } = error.response;
       switch (status) {
         case 400:
-          console.error("Bad Request:", data)
-          break
+          console.error('Bad Request:', data);
+          break;
         case 401:
-          if (process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID) {
-            signIn(process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID)
-          }
-          console.error("Unauthorized:", data)
-          break
+          signIn(process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID);
+          console.error('Unauthorized:', data);
+          break;
         case 404:
-          console.error("Not Found:", data)
-          break
+          console.error('Not Found:', data);
+          break;
         default:
-          console.error("Error:", data)
-          break
+          console.error('Error:', data);
+          break;
       }
     } else {
-      console.error("Error:", error.message)
+      console.error('Error:', error.message);
     }
-    return Promise.reject(error)
-  },
-)
-
-export default request
-export type { ApiError }
+    return Promise.reject(error);
+  }
+);
+export default request;
