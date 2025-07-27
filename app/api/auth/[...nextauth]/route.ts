@@ -1,62 +1,92 @@
-import NextAuth from "next-auth"
+import NextAuth, { type NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import type { AuthOptions, Session, User } from "next-auth"
-import type { JWT } from "next-auth/jwt"
 
-const authOptions: AuthOptions = {
+interface User {
+  id: string
+  email: string
+  name: string
+  role: string
+  token: string
+  choklaId?: string
+  villageId?: string
+}
+
+interface LoginResponse {
+  user: User
+  token: string
+}
+
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<User | null> {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
-        const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
-          }),
-        })
-        const data = await res.json()
 
-        if (data && data.userId) {
-          return {
-            id: data.userId,
-            email: data.email,
-            role: data.role,
-            token: data.token,
-            choklaId: data.choklaId,
-            villageId: data.villageId,
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_URL}/api/auth/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          })
+
+          if (!response.ok) {
+            return null
           }
+
+          const data: LoginResponse = await response.json()
+
+          if (data.user && data.token) {
+            return {
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.name,
+              role: data.user.role,
+              token: data.token,
+              choklaId: data.user.choklaId,
+              villageId: data.user.villageId,
+            }
+          }
+
+          return null
+        } catch (error) {
+          console.error("Authentication error:", error)
+          return null
         }
-        return null
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }: { token: JWT; user?: User }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = (user as any).id
-        token.role = (user as any).role
-        token.token = (user as any).token
-        token.choklaId = (user as any).choklaId
-        token.villageId = (user as any).villageId
+        token.role = user.role
+        token.accessToken = user.token
+        token.choklaId = user.choklaId
+        token.villageId = user.villageId
       }
       return token
     },
-    async session({ session, token }: { session: Session; token: JWT }) {
-      if (session.user) {
-        ;(session.user as any).id = (token as any).id
-        ;(session.user as any).role = (token as any).role
-        ;(session.user as any).token = (token as any).token
-        ;(session.user as any).choklaId = (token as any).choklaId
-        ;(session.user as any).villageId = (token as any).villageId
+    async session({ session, token }) {
+      if (token) {
+        session.user = {
+          ...session.user,
+          id: token.sub as string,
+          role: token.role as string,
+          token: token.accessToken as string,
+          choklaId: token.choklaId as string,
+          villageId: token.villageId as string,
+        }
       }
       return session
     },
@@ -67,10 +97,8 @@ const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
 }
 
 const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }
-export { authOptions }

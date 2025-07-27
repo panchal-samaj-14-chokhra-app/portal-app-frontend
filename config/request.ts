@@ -1,6 +1,12 @@
 import axios, { type AxiosResponse } from "axios"
 import { signIn } from "next-auth/react"
 
+interface ApiError {
+  message: string
+  status?: number
+  data?: any
+}
+
 const request = axios.create({
   baseURL: process.env.NEXT_PUBLIC_REQUEST_URL,
   headers: {
@@ -28,33 +34,41 @@ request.interceptors.response.use(
   (response: AxiosResponse) => {
     return response
   },
-  async (error) => {
+  async (error: any) => {
     if (error.response) {
       if (
         error.request.responseType === "blob" &&
         error.response.data instanceof Blob &&
         error.response.data.type &&
-        error.response.data.type.toLowerCase().indexOf("json") != -1
+        error.response.data.type.toLowerCase().indexOf("json") !== -1
       ) {
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
           const reader: FileReader = new FileReader()
           reader.onload = () => {
-            error.response.data = JSON.parse((reader?.result || "") as string)
-            resolve("")
+            try {
+              error.response.data = JSON.parse((reader?.result || "") as string)
+            } catch (parseError) {
+              console.error("Error parsing blob response:", parseError)
+            }
+            resolve()
           }
           reader.onerror = () => {
-            resolve("")
+            resolve()
           }
           reader.readAsText(error.response.data)
         })
       }
-      const { status, data } = error.response
+
+      const { status, data }: { status: number; data: any } = error.response
+
       switch (status) {
         case 400:
           console.error("Bad Request:", data)
           break
         case 401:
-          signIn(process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID)
+          if (process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID) {
+            signIn(process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID)
+          }
           console.error("Unauthorized:", data)
           break
         case 404:
@@ -70,4 +84,6 @@ request.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
 export default request
+export type { ApiError }
