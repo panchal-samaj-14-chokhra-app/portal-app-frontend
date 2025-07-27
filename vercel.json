@@ -7,5 +7,10 @@
   },
   "github": {
     "autoAlias": true
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
   }
 }
