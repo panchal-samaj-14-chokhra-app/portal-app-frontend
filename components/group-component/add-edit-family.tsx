@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -453,3 +453,6 @@ export default function AddEditFamily({ family, villageId, onSuccess, onCancel }
     </div>
   )
 }
+
+// Named export for compatibility
+export { AddEditFamily }
