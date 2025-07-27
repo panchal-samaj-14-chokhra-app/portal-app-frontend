@@ -1,30 +1,65 @@
-# Panchal Samaj 14 Chhkhra
+# Panchal Samaj 14 Chhkhra - Digital Census Portal
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A comprehensive digital census management system for Panchal Samaj 14 Chhkhra community.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/jeki01s-projects/v0-panchal-samaj-14-chhkhra)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/N1AeINvdQli)
+## Features
 
-## Overview
+- **Admin Dashboard**: Complete overview of census data
+- **Village Management**: Manage villages and their information
+- **Family Records**: Track family details and members
+- **User Management**: Handle different user roles and permissions
+- **Multi-language Support**: Hindi and English interface
+- **Responsive Design**: Works on all devices
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Tech Stack
 
-## Deployment
+- **Frontend**: Next.js 14, React, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Authentication**: NextAuth.js
+- **State Management**: TanStack Query
+- **Internationalization**: next-intl
+- **Testing**: Jest, React Testing Library
 
-Your project is live at:
+## Getting Started
 
-**[https://vercel.com/jeki01s-projects/v0-panchal-samaj-14-chhkhra](https://vercel.com/jeki01s-projects/v0-panchal-samaj-14-chhkhra)**
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up environment variables (see `.env.example`)
+4. Run the development server: `npm run dev`
+5. Open [http://localhost:3000](http://localhost:3000)
 
-## Build your app
+## Environment Variables
 
-Continue building your app on:
+Create a `.env.local` file with the following variables:
 
-**[https://v0.dev/chat/projects/N1AeINvdQli](https://v0.dev/chat/projects/N1AeINvdQli)**
+\`\`\`
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key
+NEXT_PUBLIC_REQUEST_URL=your-backend-api-url
+\`\`\`
 
-## How It Works
+## Project Structure
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+\`\`\`
+├── app/                    # Next.js app directory
+├── components/            # Reusable UI components
+├── config/               # Configuration files
+├── data-hooks/           # API hooks and data fetching
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility libraries
+├── messages/             # Internationalization messages
+├── public/               # Static assets
+└── styles/               # Global styles
+\`\`\`
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

@@ -1,45 +1,47 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import { Eye, EyeOff, Mail, Lock, HelpCircle } from "lucide-react";
-import { Button } from "@/components/ui/button/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card";
-import { Input } from "@/components/ui/input/input";
-import { Label } from "@/components/ui/label/label";
-import { Alert, AlertDescription } from "@/components/ui/alert/alert";
+import type React from "react"
+
+import { useState } from "react"
+import { signIn } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
+import Link from "next/link"
+import { Eye, EyeOff, Mail, Lock, HelpCircle } from "lucide-react"
+import { Button } from "@/components/ui/button/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
+import { Input } from "@/components/ui/input/input"
+import { Label } from "@/components/ui/label/label"
+import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 
 export default function LoginForm() {
-  const [formData, setFormData] = useState({ email: "", password: "", showPassword: false });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "", showPassword: false })
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("from") || "/";
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("from") || "/"
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+    e.preventDefault()
+    setLoading(true)
+    setError("")
 
     const result = await signIn("credentials", {
       email: formData.email,
       password: formData.password,
       redirect: false,
-    });
+    })
 
     if (result?.error) {
-      setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।");
+      setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।")
     } else {
       // Let the server-side page handle the redirect on reload
-      router.refresh();
+      router.refresh()
     }
-    setLoading(false);
-  };
+    setLoading(false)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
@@ -84,7 +86,7 @@ export default function LoginForm() {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                       placeholder="अपना ईमेल पता दर्ज करें"
                       className="border-orange-200 focus:border-orange-400 pl-10"
                       required
@@ -101,7 +103,7 @@ export default function LoginForm() {
                       id="password"
                       type={formData.showPassword ? "text" : "password"}
                       value={formData.password}
-                      onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                       placeholder="पासवर्ड दर्ज करें"
                       className="border-orange-200 focus:border-orange-400 pl-10 pr-10"
                       required
@@ -111,7 +113,7 @@ export default function LoginForm() {
                       variant="ghost"
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setFormData(prev => ({ ...prev, showPassword: !prev.showPassword }))}
+                      onClick={() => setFormData((prev) => ({ ...prev, showPassword: !prev.showPassword }))}
                     >
                       {formData.showPassword ? (
                         <EyeOff className="h-4 w-4 text-gray-400" />
@@ -168,5 +170,5 @@ export default function LoginForm() {
         </div>
       </footer>
     </div>
-  );
-} 
+  )
+}

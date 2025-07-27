@@ -1,14 +1,13 @@
-import request from "@/config/request";
+import request from "@/config/request"
 
 export const getApiCall = async () => {
-  const { data } = await request.get('/')
+  const { data } = await request.get("/")
 
   return { data }
 }
 
-
 export const createFamily = async (payload: void) => {
-  const { data } = await request.post('/family/create', payload)
+  const { data } = await request.post("/family/create", payload)
 
   return { data }
 }
@@ -18,7 +17,6 @@ export const updateFamily = async (id: void, payload: undefined) => {
 
   return { data }
 }
-
 
 export const getFamilyDetails = async (id: string) => {
   const { data } = await request.get(`/family/${id}`)
@@ -30,47 +28,46 @@ export const deleteFamilyWithId = async (id: string) => {
   return data
 }
 
-
 export const getVillageDetails = async (id: string) => {
   const { data } = await request.get(`/village/${id}`)
   return data
 }
 
 export const getAllVillages = async () => {
-  const { data } = await request.get('/village');
-  return data;
+  const { data } = await request.get("/village")
+  return data
 }
 export const getAllVillagesWithChokhlaID = async (chokhlaID: string) => {
-  const { data } = await request.get(`chokhla/getvillage/${chokhlaID}`);
-  return data;
+  const { data } = await request.get(`chokhla/getvillage/${chokhlaID}`)
+  return data
 }
 
 export const createVillage = async (payload: any) => {
-  const { data } = await request.post('/village/create', payload);
-  return data;
+  const { data } = await request.post("/village/create", payload)
+  return data
 }
 
 export const getChokhlaDetails = async (id: string) => {
-  const { data } = await request.get(`/chokhla/${id}`);
-  return data;
+  const { data } = await request.get(`/chokhla/${id}`)
+  return data
 }
 
 export const updateChokhla = async (id: string, payload: any) => {
-  const { data } = await request.put(`/chokhla/${id}`, payload);
-  return data;
+  const { data } = await request.put(`/chokhla/${id}`, payload)
+  return data
 }
 
 export const getAllChokhlas = async () => {
-  const { data } = await request.get('/chokhla');
-  return data;
+  const { data } = await request.get("/chokhla")
+  return data
 }
 
 export const createChokhla = async (payload: any) => {
-  const { data } = await request.post('/chokhla/create', payload);
-  return data;
+  const { data } = await request.post("/chokhla/create", payload)
+  return data
 }
 
 export const getAlluserList = async () => {
-  const { data } = await request.get('/api/auth/users')
-  return data;
+  const { data } = await request.get("/api/auth/users")
+  return data
 }
