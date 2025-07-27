@@ -1,77 +1,176 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   createFamily,
-  addFamilyMember,
-  deleteFamily,
+  deleteFamilyWithId,
+  getFamilyDetails,
+  getVillageDetails,
   updateFamily,
-  getAllVillageDetails,
-} from '@/requests/village-family.ts'; // Adjust paths if some are from different files
-import { FETCH_VILLAGE_DETAILS } from '@/constants/queryKeys/village';
+  getAllVillages,
+  createVillage,
+  getChokhlaDetails,
+  updateChokhla,
+  getAllChokhlas,
+  createChokhla,
+  getAllVillagesWithChokhlaID,
+  getAlluserList,
+  type CreateFamilyPayload,
+  type CreateVillagePayload,
+  type CreateChokhlaPayload,
+  type Family,
+  type ApiResponse,
+} from "../requests/village-family"
 
-// 1. Create Family
-export const useCreateFamily = () => {
+interface MutationCallbacks<T = any> {
+  onSuccess?: (data: T) => void
+  onError?: (error: Error) => void
+}
+
+// Family hooks
+export const useCreateFamily = (callbacks?: MutationCallbacks<ApiResponse<Family>>) => {
+  const queryClient = useQueryClient()
+
   const mutation = useMutation({
-    mutationFn: (payload: ICreateFamilyRequest) => createFamily(payload),
-    onError: (err) => {
-      // Handle error
+    mutationFn: (payload: CreateFamilyPayload) => createFamily(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["village-details"] })
+      queryClient.invalidateQueries({ queryKey: ["family-list"] })
+      callbacks?.onSuccess?.(data)
     },
-  });
-  return { mutation };
-};
+    onError: (err: Error) => {
+      callbacks?.onError?.(err)
+      console.error("Create family error:", err)
+    },
+  })
+  return { mutation }
+}
 
-// 2. Add Family Member
-export const useAddFamilyMember = () => {
+export const useUpdateFamily = (callbacks?: MutationCallbacks<ApiResponse<Family>>) => {
+  const queryClient = useQueryClient()
+
   const mutation = useMutation({
-    mutationFn: ({
-      familyId,
-      memberData,
-    }: {
-      familyId: string;
-      memberData: IAddFamilyMemberRequest;
-    }) => addFamilyMember(familyId, memberData),
-    onError: (err) => {
-      // Handle error
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<CreateFamilyPayload> }) => updateFamily(id, payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["family-detail"] })
+      queryClient.invalidateQueries({ queryKey: ["village-details"] })
+      callbacks?.onSuccess?.(data)
     },
-  });
-  return { mutation };
-};
+    onError: (err: Error) => {
+      callbacks?.onError?.(err)
+      console.error("Update family error:", err)
+    },
+  })
 
-// 3. Delete Family
-export const useDeleteFamily = () => {
-  const mutation = useMutation({
-    mutationFn: (familyId: string) => deleteFamily(familyId),
-    onError: (err) => {
-      // Handle error
-    },
-  });
-  return { mutation };
-};
+  return { mutation }
+}
 
-// 4. Update Family
-export const useUpdateFamily = () => {
-  const mutation = useMutation({
-    mutationFn: ({
-      familyId,
-      updateData,
-    }: {
-      familyId: string;
-      updateData: IUpdateFamilyRequest;
-    }) => updateFamily(familyId, updateData),
-    onError: (err) => {
-      // Handle error
-    },
-  });
-  return { mutation };
-};
+export const useGetFamilyDetails = (familyId: string) => {
+  return useQuery({
+    queryKey: ["family-detail", familyId],
+    queryFn: () => getFamilyDetails(familyId),
+    enabled: !!familyId,
+  })
+}
 
-// 5. Get All Village Details
-export const useGetAllVillageDetails = () => {
-  const query = useQuery({
-    queryKey: [FETCH_VILLAGE_DETAILS],
-    queryFn: getAllVillageDetails,
-    onError: (err) => {
-      // Handle error
+export const useDeleteFamilyUsingID = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (familyId: string) => deleteFamilyWithId(familyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["family-list"] })
+      queryClient.invalidateQueries({ queryKey: ["village-details"] })
     },
-  });
-  return { query };
-};
+    onError: (error: Error) => {
+      console.error("Delete failed:", error)
+    },
+  })
+}
+
+// Village hooks
+export const useVillageDetails = (villageId: string) => {
+  return useQuery({
+    queryKey: ["village-details", villageId],
+    queryFn: () => getVillageDetails(villageId),
+    enabled: !!villageId,
+  })
+}
+
+export const useAllVillages = () => {
+  return useQuery({
+    queryKey: ["all-villages"],
+    queryFn: getAllVillages,
+  })
+}
+
+export const useGetAllVillageswithChokhlaID = (chokhlaID: string) => {
+  return useQuery({
+    queryKey: ["all-villages-with-chokhla-id", chokhlaID],
+    queryFn: () => getAllVillagesWithChokhlaID(chokhlaID),
+    enabled: !!chokhlaID,
+  })
+}
+
+export const useCreateVillage = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateVillagePayload) => createVillage(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-villages"] })
+      queryClient.invalidateQueries({ queryKey: ["all-villages-with-chokhla-id"] })
+    },
+    onError: (error: Error) => {
+      console.error("Create village error:", error)
+    },
+  })
+}
+
+// Chokhla hooks
+export const useChokhlaDetails = (chokhlaId: string) => {
+  return useQuery({
+    queryKey: ["chokhla-details", chokhlaId],
+    queryFn: () => getChokhlaDetails(chokhlaId),
+    enabled: !!chokhlaId,
+  })
+}
+
+export const useUpdateChokhla = (chokhlaId: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: any) => updateChokhla(chokhlaId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chokhla-details", chokhlaId] })
+      queryClient.invalidateQueries({ queryKey: ["all-chokhlas"] })
+    },
+    onError: (error: Error) => {
+      console.error("Update chokhla error:", error)
+    },
+  })
+}
+
+export const useAllChokhlas = () => {
+  return useQuery({
+    queryKey: ["all-chokhlas"],
+    queryFn: getAllChokhlas,
+  })
+}
+
+export const useCreateChokhla = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateChokhlaPayload) => createChokhla(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-chokhlas"] })
+    },
+    onError: (error: Error) => {
+      console.error("Create chokhla error:", error)
+    },
+  })
+}
+
+// User hooks
+export const useGetAllUserList = () => {
+  return useQuery({
+    queryKey: ["all-users"],
+    queryFn: getAlluserList,
+  })
+}
