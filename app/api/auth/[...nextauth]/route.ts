@@ -1,27 +1,29 @@
-import NextAuth, { type NextAuthOptions } from "next-auth"
+import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import type { NextAuthOptions } from "next-auth"
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.username || !credentials?.password) {
           return null
         }
 
         try {
+          // Make API call to your backend
           const response = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_URL}/api/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              email: credentials.email,
+              username: credentials.username,
               password: credentials.password,
             }),
           })
@@ -30,23 +32,20 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          const data = await response.json()
+          const user = await response.json()
 
-          if (data.success && data.data) {
+          if (user && user.id) {
             return {
-              id: data.data.user.id,
-              email: data.data.user.email,
-              name: data.data.user.name,
-              role: data.data.user.role,
-              token: data.data.token,
-              choklaId: data.data.user.choklaId,
-              villageId: data.data.user.villageId,
+              id: user.id,
+              name: user.name || user.username,
+              email: user.email,
+              role: user.role || "user",
             }
           }
 
           return null
         } catch (error) {
-          console.error("Auth error:", error)
+          console.error("Authentication error:", error)
           return null
         }
       },
@@ -55,29 +54,23 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.token = user.token
-        token.choklaId = user.choklaId
-        token.villageId = user.villageId
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
-        session.user.role = token.role as string
-        session.user.token = token.token as string
-        session.user.choklaId = token.choklaId as string
-        session.user.villageId = token.villageId as string
+        session.user.id = token.sub
+        session.user.role = token.role
       }
       return session
     },
-  },
-  pages: {
-    signIn: "/login",
   },
 }
 

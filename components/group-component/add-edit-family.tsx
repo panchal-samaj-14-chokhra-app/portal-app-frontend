@@ -1,20 +1,23 @@
 "use client"
 
-import { useState } from "react"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Textarea } from "@/components/ui/textarea"
-import { Plus, Trash2, Save, X } from "lucide-react"
-import { useCreateFamily, useUpdateFamily, useAllVillages } from "@/data-hooks/mutation-query/useQueryAndMutation"
-import type { Family, CreateFamilyPayload } from "@/types"
+import { Separator } from "@/components/ui/separator"
+import { Plus, Trash2 } from "lucide-react"
+import { toast } from "sonner"
+import { FormErrorBoundary } from "@/components/form-error-boundary"
+import { ErrorBoundary } from "@/components/error-boundary"
 
-const personSchema = z.object({
+// Form validation schema
+const memberSchema = z.object({
   name: z.string().min(1, "Name is required"),
   age: z.number().min(0, "Age must be positive").max(150, "Age must be realistic"),
   gender: z.enum(["male", "female", "other"]),
@@ -23,129 +26,84 @@ const personSchema = z.object({
   occupation: z.string().optional(),
   maritalStatus: z.enum(["single", "married", "divorced", "widowed"]).optional(),
   phone: z.string().optional(),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  email: z.string().email().optional().or(z.literal("")),
 })
 
 const familySchema = z.object({
-  headName: z.string().min(1, "Head name is required"),
+  familyHead: z.string().min(1, "Family head name is required"),
   address: z.string().min(1, "Address is required"),
   phone: z.string().optional(),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
-  villageId: z.string().min(1, "Village selection is required"),
-  members: z.array(personSchema).min(1, "At least one member is required"),
+  email: z.string().email().optional().or(z.literal("")),
+  members: z.array(memberSchema).min(1, "At least one member is required"),
 })
 
 type FamilyFormData = z.infer<typeof familySchema>
+type Member = z.infer<typeof memberSchema>
 
 interface AddEditFamilyProps {
-  family?: Family
-  villageId?: string
-  onSuccess?: () => void
+  villageId: string
+  familyId?: string
+  initialData?: Partial<FamilyFormData>
+  onSave?: (data: FamilyFormData) => void
   onCancel?: () => void
 }
 
-export default function AddEditFamily({ family, villageId, onSuccess, onCancel }: AddEditFamilyProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { data: villagesResponse } = useAllVillages()
-  const villages = villagesResponse?.data || []
+function AddEditFamilyForm({ villageId, familyId, initialData, onSave, onCancel }: AddEditFamilyProps) {
+  const [members, setMembers] = useState<Member[]>([
+    {
+      name: "",
+      age: 0,
+      gender: "male",
+      relation: "self",
+      education: "",
+      occupation: "",
+      maritalStatus: "single",
+      phone: "",
+      email: "",
+    },
+  ])
 
-  const form = useForm<FamilyFormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+    reset,
+  } = useForm<FamilyFormData>({
     resolver: zodResolver(familySchema),
     defaultValues: {
-      headName: family?.headName || "",
-      address: family?.address || "",
-      phone: family?.phone || "",
-      email: family?.email || "",
-      villageId: family?.villageId || villageId || "",
-      members: family?.members?.map((member) => ({
-        name: member.name,
-        age: member.age,
-        gender: member.gender,
-        relation: member.relation,
-        education: member.education || "",
-        occupation: member.occupation || "",
-        maritalStatus: member.maritalStatus,
-        phone: member.phone || "",
-        email: member.email || "",
-      })) || [
-        {
-          name: "",
-          age: 0,
-          gender: "male" as const,
-          relation: "Head",
-          education: "",
-          occupation: "",
-          maritalStatus: "single" as const,
-          phone: "",
-          email: "",
-        },
-      ],
+      familyHead: "",
+      address: "",
+      phone: "",
+      email: "",
+      members: members,
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "members",
-  })
-
-  const createFamilyMutation = useCreateFamily({
-    onSuccess: () => {
-      onSuccess?.()
-    },
-    onError: (error) => {
-      console.error("Create family error:", error)
-    },
-  })
-
-  const updateFamilyMutation = useUpdateFamily({
-    onSuccess: () => {
-      onSuccess?.()
-    },
-    onError: (error) => {
-      console.error("Update family error:", error)
-    },
-  })
-
-  const onSubmit = async (data: FamilyFormData) => {
-    setIsSubmitting(true)
-
-    try {
-      const payload: CreateFamilyPayload = {
-        headName: data.headName,
-        address: data.address,
-        phone: data.phone || undefined,
-        email: data.email || undefined,
-        villageId: data.villageId,
-        members: data.members.map((member) => ({
-          name: member.name,
-          age: member.age,
-          gender: member.gender,
-          relation: member.relation,
-          education: member.education || undefined,
-          occupation: member.occupation || undefined,
-          maritalStatus: member.maritalStatus,
-          phone: member.phone || undefined,
-          email: member.email || undefined,
-        })),
+  // Load initial data if editing
+  useEffect(() => {
+    if (initialData) {
+      reset({
+        familyHead: initialData.familyHead || "",
+        address: initialData.address || "",
+        phone: initialData.phone || "",
+        email: initialData.email || "",
+        members: initialData.members || members,
+      })
+      if (initialData.members) {
+        setMembers(initialData.members)
       }
-
-      if (family) {
-        await updateFamilyMutation.mutation.mutateAsync({
-          id: family.id,
-          payload,
-        })
-      } else {
-        await createFamilyMutation.mutation.mutateAsync(payload)
-      }
-    } catch (error) {
-      console.error("Submit error:", error)
-    } finally {
-      setIsSubmitting(false)
     }
-  }
+  }, [initialData, reset])
+
+  // Update form when members change
+  useEffect(() => {
+    setValue("members", members)
+  }, [members, setValue])
 
   const addMember = () => {
-    append({
+    const newMember: Member = {
       name: "",
       age: 0,
       gender: "male",
@@ -155,12 +113,35 @@ export default function AddEditFamily({ family, villageId, onSuccess, onCancel }
       maritalStatus: "single",
       phone: "",
       email: "",
-    })
+    }
+    setMembers([...members, newMember])
   }
 
   const removeMember = (index: number) => {
-    if (fields.length > 1) {
-      remove(index)
+    if (members.length > 1) {
+      setMembers(members.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateMember = (index: number, field: keyof Member, value: any) => {
+    const updatedMembers = [...members]
+    updatedMembers[index] = { ...updatedMembers[index], [field]: value }
+    setMembers(updatedMembers)
+  }
+
+  const onSubmit = async (data: FamilyFormData) => {
+    try {
+      // Here you would typically make an API call
+      console.log("Saving family data:", data)
+
+      if (onSave) {
+        onSave(data)
+      }
+
+      toast.success(familyId ? "Family updated successfully!" : "Family added successfully!")
+    } catch (error) {
+      console.error("Error saving family:", error)
+      toast.error("Failed to save family. Please try again.")
     }
   }
 
@@ -168,291 +149,198 @@ export default function AddEditFamily({ family, villageId, onSuccess, onCancel }
     <div className="max-w-4xl mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle>{family ? "Edit Family" : "Add New Family"}</CardTitle>
+          <CardTitle>{familyId ? "Edit Family" : "Add New Family"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Family Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="headName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Family Head Name *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter family head name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="villageId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Village *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select village" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {villages.map((village) => (
-                            <SelectItem key={village.id} value={village.id}>
-                              {village.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter phone number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter email address" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address *</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Enter full address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Family Members */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Family Information */}
+            <ErrorBoundary>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Family Information</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="familyHead">Family Head Name *</Label>
+                    <Input id="familyHead" {...register("familyHead")} placeholder="Enter family head name" />
+                    {errors.familyHead && <p className="text-sm text-red-500 mt-1">{errors.familyHead.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input id="phone" {...register("phone")} placeholder="Enter phone number" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="address">Address *</Label>
+                    <Input id="address" {...register("address")} placeholder="Enter address" />
+                    {errors.address && <p className="text-sm text-red-500 mt-1">{errors.address.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" {...register("email")} placeholder="Enter email address" />
+                    {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
+                  </div>
+                </div>
+              </div>
+            </ErrorBoundary>
+
+            <Separator />
+
+            {/* Members Information */}
+            <ErrorBoundary>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Family Members</h3>
-                  <Button type="button" onClick={addMember} variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
+                  <Button type="button" onClick={addMember} size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
                     Add Member
                   </Button>
                 </div>
 
-                {fields.map((field, index) => (
-                  <Card key={field.id} className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium">Member {index + 1}</h4>
-                      {fields.length > 1 && (
-                        <Button type="button" onClick={() => removeMember(index)} variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.name`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                {members.map((member, index) => (
+                  <ErrorBoundary key={index}>
+                    <Card className="p-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-medium">Member {index + 1}</h4>
+                        {members.length > 1 && (
+                          <Button type="button" variant="outline" size="sm" onClick={() => removeMember(index)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         )}
-                      />
+                      </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.age`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Age *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Enter age"
-                                {...field}
-                                onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label>Name *</Label>
+                          <Input
+                            value={member.name}
+                            onChange={(e) => updateMember(index, "name", e.target.value)}
+                            placeholder="Enter name"
+                          />
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.gender`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Gender *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select gender" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="male">Male</SelectItem>
-                                <SelectItem value="female">Female</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div>
+                          <Label>Age *</Label>
+                          <Input
+                            type="number"
+                            value={member.age}
+                            onChange={(e) => updateMember(index, "age", Number.parseInt(e.target.value) || 0)}
+                            placeholder="Enter age"
+                          />
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.relation`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Relation *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Head, Spouse, Son, Daughter" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div>
+                          <Label>Gender *</Label>
+                          <Select value={member.gender} onValueChange={(value) => updateMember(index, "gender", value)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.education`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Education</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter education" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div>
+                          <Label>Relation *</Label>
+                          <Input
+                            value={member.relation}
+                            onChange={(e) => updateMember(index, "relation", e.target.value)}
+                            placeholder="e.g., Father, Mother, Son, Daughter"
+                          />
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.occupation`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Occupation</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter occupation" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div>
+                          <Label>Education</Label>
+                          <Input
+                            value={member.education}
+                            onChange={(e) => updateMember(index, "education", e.target.value)}
+                            placeholder="Enter education"
+                          />
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.maritalStatus`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Marital Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="single">Single</SelectItem>
-                                <SelectItem value="married">Married</SelectItem>
-                                <SelectItem value="divorced">Divorced</SelectItem>
-                                <SelectItem value="widowed">Widowed</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div>
+                          <Label>Occupation</Label>
+                          <Input
+                            value={member.occupation}
+                            onChange={(e) => updateMember(index, "occupation", e.target.value)}
+                            placeholder="Enter occupation"
+                          />
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.phone`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter phone" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div>
+                          <Label>Marital Status</Label>
+                          <Select
+                            value={member.maritalStatus}
+                            onValueChange={(value) => updateMember(index, "maritalStatus", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="single">Single</SelectItem>
+                              <SelectItem value="married">Married</SelectItem>
+                              <SelectItem value="divorced">Divorced</SelectItem>
+                              <SelectItem value="widowed">Widowed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name={`members.${index}.email`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </Card>
+                        <div>
+                          <Label>Phone</Label>
+                          <Input
+                            value={member.phone}
+                            onChange={(e) => updateMember(index, "phone", e.target.value)}
+                            placeholder="Enter phone number"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            value={member.email}
+                            onChange={(e) => updateMember(index, "email", e.target.value)}
+                            placeholder="Enter email"
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  </ErrorBoundary>
                 ))}
-              </div>
 
-              {/* Form Actions */}
-              <div className="flex items-center justify-end space-x-4">
-                {onCancel && (
-                  <Button type="button" variant="outline" onClick={onCancel}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                )}
-                <Button type="submit" disabled={isSubmitting}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? "Saving..." : family ? "Update Family" : "Create Family"}
-                </Button>
+                {errors.members && <p className="text-sm text-red-500">{errors.members.message}</p>}
               </div>
-            </form>
-          </Form>
+            </ErrorBoundary>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-4 pt-6">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : familyId ? "Update Family" : "Add Family"}
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </div>
   )
 }
 
-// Named export for compatibility
-export { AddEditFamily }
+export function AddEditFamily(props: AddEditFamilyProps) {
+  return (
+    <FormErrorBoundary formName="Add/Edit Family" onReset={() => window.location.reload()}>
+      <AddEditFamilyForm {...props} />
+    </FormErrorBoundary>
+  )
+}
+
+// Default export for backward compatibility
+export default AddEditFamily

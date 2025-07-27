@@ -1,328 +1,366 @@
 "use client"
-import React, { useState, } from 'react';
-import ReusableTable from '@/components/ui/ReusableTable';
-import { Button } from '@/components/ui/button';
-import { useAllVillages, useAllChokhlas, useCreateChokhla, useGetAllUserList } from '@/data-hooks/mutation-query/useQueryAndMutation';
-import { useRouter } from 'next/navigation';
-import { Switch } from '@/components/ui/switch';
-import { useSession, signOut } from "next-auth/react";
-import Image from "next/image";
-import { LogOut, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const TABS = [
-  { key: 'village', label: 'गांव प्रबंधन' },
-  { key: 'chokhla', label: 'चौकला प्रबंधन' },
-  { key: 'statics', label: 'आँकड़े' },
-  { key: 'user', label: 'यूज़र प्रबंधन' },
-  { key: 'profile', label: 'सुपर एडमिन प्रोफ़ाइल' },
-];
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Users, MapPin, Building, TrendingUp, Plus, Search, Eye, Edit, Trash2 } from "lucide-react"
+import Link from "next/link"
 
-function SuperAdmin() {
-  const [activeTab, setActiveTab] = useState('village');
-  const [openChokhlaModal, setOpenChokhlaModal] = useState(false);
-  const [chokhlaForm, setChokhlaForm] = useState({
-    name: '',
-    adhyaksh: '',
-    contactNumber: '',
-    state: '',
-    district: '',
-    villageName: '',
-    email: '',
-    password: '',
-    repeatPassword: '',
-  });
-  const [formErrors, setFormErrors] = useState({ email: '', password: '', repeatPassword: '' });
-  const { data: villages, isLoading: isVillagesLoading } = useAllVillages();
-  const { data: chokhlas, isLoading: isChokhlasLoading } = useAllChokhlas();
-  const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList();
-  const { mutate: createChokhla } = useCreateChokhla();
-  const router = useRouter();
-  const { data: userData } = useSession()
-
-  const handleChokhlaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setChokhlaForm({ ...chokhlaForm, [e.target.name]: e.target.value });
-    setFormErrors({ ...formErrors, [e.target.name]: '' });
-  };
-  const validateChokhlaForm = () => {
-    let valid = true;
-    const errors: any = { email: '', password: '', repeatPassword: '' };
-    // Email validation
-    if (!chokhlaForm.email) {
-      errors.email = 'ईमेल आवश्यक है';
-      valid = false;
-    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(chokhlaForm.email)) {
-      errors.email = 'मान्य ईमेल दर्ज करें';
-      valid = false;
-    }
-    // Password validation
-    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-    if (!chokhlaForm.password) {
-      errors.password = 'पासवर्ड आवश्यक है';
-      valid = false;
-    } else if (!strongPassword.test(chokhlaForm.password)) {
-      errors.password = 'पासवर्ड मजबूत होना चाहिए (कम से कम 8 अक्षर, एक बड़ा, एक छोटा, एक संख्या, एक विशेष चिन्ह)';
-      valid = false;
-    }
-    // Repeat password validation
-    if (!chokhlaForm.repeatPassword) {
-      errors.repeatPassword = 'पासवर्ड दोबारा लिखें आवश्यक है';
-      valid = false;
-    } else if (chokhlaForm.password !== chokhlaForm.repeatPassword) {
-      errors.repeatPassword = 'पासवर्ड मेल नहीं खाते';
-      valid = false;
-    }
-    setFormErrors(errors);
-    return valid;
-  };
-  const handleChokhlaSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateChokhlaForm()) return;
-    createChokhla(chokhlaForm, {
-      onSuccess: () => {
-        setOpenChokhlaModal(false);
-        setChokhlaForm({ name: '', adhyaksh: '', contactNumber: '', state: '', district: '', villageName: '', email: '', password: '', repeatPassword: '' });
-      },
-    });
-  };
-
-  const handleToggleActive = (userId: string, current: boolean) => {
-    console.log("clicked on the toggle")
-  };
-
-  const handleBack = () => router.push("/");
-  const handleLogout = () => signOut({ callbackUrl: `${process.env.NEXTAUTH_URL}/logout` });
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Image
-              src="/images/main-logo.png"
-              alt="Panchal Samaj Logo"
-              width={44}
-              height={44}
-              className="rounded-full shadow-lg"
-            />
-            <span className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleBack}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              होम
-            </Button>
-            <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              लॉगआउट
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
-        <aside className="w-full md:w-64 mb-6 md:mb-0">
-          <nav className="bg-white rounded-lg shadow border border-orange-200 p-4 flex md:flex-col gap-2">
-            {TABS.map(tab => (
-              <Button
-                key={tab.key}
-                variant={activeTab === tab.key ? 'default' : 'ghost'}
-                onClick={() => setActiveTab(tab.key)}
-                className={`w-full justify-start text-base font-semibold ${activeTab === tab.key ? 'bg-orange-500 text-white' : 'text-orange-700'}`}
-              >
-                {tab.label}
-              </Button>
-            ))}
-          </nav>
-        </aside>
-        <section className="flex-1 min-w-0">
-          {activeTab === 'village' && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>गांव सूची</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ReusableTable
-                  columns={[
-                    { label: 'नाम', accessor: 'name' },
-                    { label: 'सदस्य', accessor: 'villageMemberName' },
-                    { label: 'जिला', accessor: 'district' },
-                    { label: 'राज्य', accessor: 'state' },
-                  ]}
-                  data={villages?.data || []}
-                  loading={isVillagesLoading}
-                  actions={row => (
-                    <Button variant="outline" onClick={() => router.push(`/admin/village/${row.id}`)}>
-                      देखें
-                    </Button>
-                  )}
-                  caption="सभी गांवों की सूची"
-                />
-              </CardContent>
-            </Card>
-          )}
-          {activeTab === 'chokhla' && (
-            <Card className="mb-8">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>चौकला सूची</CardTitle>
-                <Button variant="default" onClick={() => setOpenChokhlaModal(true)}>
-                  चौकला जोड़ें
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <ReusableTable
-                  columns={[
-                    { label: 'नाम', accessor: 'name' },
-                    { label: 'अध्यक्ष', accessor: 'adhyaksh' },
-                    { label: 'संपर्क नंबर', accessor: 'contactNumber' },
-                    { label: 'राज्य', accessor: 'state' },
-                    { label: 'जिला', accessor: 'district' },
-                    { label: 'गांव', accessor: 'villageName' },
-                  ]}
-                  data={chokhlas || []}
-                  loading={isChokhlasLoading}
-                  actions={row => (
-                    <Button variant="outline" onClick={() => router.push(`/admin/chokhla/${row.id}`)}>
-                      देखें
-                    </Button>
-                  )}
-                  caption="सभी चौकला की सूची"
-                />
-              </CardContent>
-              {/* Modal remains unchanged */}
-              {openChokhlaModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                  <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-sm max-h-[90vh] overflow-y-auto">
-                    <h3 className="text-xl font-bold mb-4 text-orange-700">नया चौकला जोड़ें</h3>
-                    <form onSubmit={handleChokhlaSubmit} className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम</label>
-                        <input type="text" name="name" value={chokhlaForm.name} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">अध्यक्ष</label>
-                        <input type="text" name="adhyaksh" value={chokhlaForm.adhyaksh} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">संपर्क नंबर</label>
-                        <input type="text" name="contactNumber" value={chokhlaForm.contactNumber} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">राज्य</label>
-                        <input type="text" name="state" value={chokhlaForm.state} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">जिला</label>
-                        <input type="text" name="district" value={chokhlaForm.district} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">गांव</label>
-                        <input type="text" name="villageName" value={chokhlaForm.villageName} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">ईमेल</label>
-                        <input type="email" name="email" value={chokhlaForm.email} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                        {formErrors.email && <div className="text-red-600 text-xs mt-1">{formErrors.email}</div>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड</label>
-                        <input type="password" name="password" value={chokhlaForm.password} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                        {formErrors.password && <div className="text-red-600 text-xs mt-1">{formErrors.password}</div>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड दोबारा लिखें</label>
-                        <input type="password" name="repeatPassword" value={chokhlaForm.repeatPassword} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                        {formErrors.repeatPassword && <div className="text-red-600 text-xs mt-1">{formErrors.repeatPassword}</div>}
-                      </div>
-                      <div className="flex justify-end gap-2 mt-4">
-                        <Button type="button" variant="ghost" onClick={() => setOpenChokhlaModal(false)}>
-                          रद्द करें
-                        </Button>
-                        <Button type="submit" variant="default">
-                          सहेजें
-                        </Button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-            </Card>
-          )}
-          {activeTab === 'statics' && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>आँकड़े</CardTitle>
-              </CardHeader>
-              <CardContent>
-              </CardContent>
-            </Card>
-          )}
-          {activeTab === 'user' && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>यूज़र प्रबंधन</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {usersLoading ? (
-                  <div className="text-orange-600">लोड हो रहा है...</div>
-                ) : usersError ? (
-                  <div className="text-red-600">{usersError}</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px] bg-white border border-orange-200 rounded-lg shadow">
-                      <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">ID</th>
-                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">ईमेल</th>
-                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">नाम</th>
-                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">भूमिका</th>
-                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">सक्रिय</th>
-                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">निर्माण तिथि</th>
-                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">कार्रवाई</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users?.map((user: { id: boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<React.AwaitedReactNode> | React.Key | null | undefined; email: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; fullName: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; globalRole: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; isActive: boolean | undefined; createdAt: string | number | Date; }) => (
-                          <tr key={user.id} className="border-b border-orange-100 hover:bg-orange-50">
-                            <td className="px-4 py-2 text-orange-900 text-xs break-all">{user.id}</td>
-                            <td className="px-4 py-2 text-orange-800">{user.email}</td>
-                            <td className="px-4 py-2 text-orange-800">{user.fullName}</td>
-                            <td className="px-4 py-2 text-orange-800">{user.globalRole}</td>
-                            <td className="px-4 py-2">
-                              <Switch checked={user.isActive} onCheckedChange={() => handleToggleActive(user.id, user.isActive)} />
-                            </td>
-                            <td className="px-4 py-2 text-orange-700 text-xs">{user.createdAt ? new Date(user.createdAt).toLocaleDateString('hi-IN') : '-'}</td>
-                            <td className="px-4 py-2">
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-          {activeTab === 'profile' && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>सुपर एडमिन प्रोफ़ाइल</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div><strong>ID:</strong> {userData?.user?.id}</div>
-                <div><strong>Email:</strong> {userData?.user?.email}</div>
-                <div><strong>Role:</strong> {userData?.user?.role}</div>
-                <div><strong>Chokla ID:</strong> {userData?.user?.choklaId}</div>
-                <div><strong>Village ID:</strong> {userData?.user?.villageId ?? 'N/A'}</div>
-                <div><strong>Token Expires:</strong> {new Date(userData?.expires).toLocaleString()}</div>
-              </CardContent>
-            </Card>
-
-          )}
-        </section>
-      </main>
-    </div>
-  );
+// Mock data - replace with actual API calls
+const mockStats = {
+  totalChokhlas: 8,
+  totalVillages: 156,
+  totalFamilies: 3420,
+  totalMembers: 14680,
 }
 
-export default SuperAdmin;
+const mockChokhlas = [
+  { id: "1", name: "Chokhla Central", villages: 12, families: 450, members: 1850, status: "active" },
+  { id: "2", name: "Chokhla North", villages: 18, families: 520, members: 2100, status: "active" },
+  { id: "3", name: "Chokhla South", villages: 22, families: 680, members: 2750, status: "active" },
+  { id: "4", name: "Chokhla East", villages: 15, families: 380, members: 1520, status: "active" },
+  { id: "5", name: "Chokhla West", villages: 20, families: 590, members: 2380, status: "active" },
+]
+
+const mockVillages = [
+  { id: "1", name: "Village Alpha", chokhla: "Chokhla Central", families: 45, members: 180, status: "active" },
+  { id: "2", name: "Village Beta", chokhla: "Chokhla North", families: 38, members: 152, status: "active" },
+  { id: "3", name: "Village Gamma", chokhla: "Chokhla South", families: 52, members: 208, status: "active" },
+  { id: "4", name: "Village Delta", chokhla: "Chokhla East", families: 41, members: 164, status: "active" },
+  { id: "5", name: "Village Epsilon", chokhla: "Chokhla West", families: 35, members: 140, status: "active" },
+]
+
+const mockRequests = [
+  { id: "1", type: "Family Registration", village: "Village Alpha", status: "pending", date: "2024-01-15" },
+  { id: "2", type: "Member Addition", village: "Village Beta", status: "approved", date: "2024-01-14" },
+  { id: "3", type: "Data Correction", village: "Village Gamma", status: "pending", date: "2024-01-13" },
+  { id: "4", type: "Family Transfer", village: "Village Delta", status: "rejected", date: "2024-01-12" },
+]
+
+export default function SuperAdminDashboard() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isAddChokhlaOpen, setIsAddChokhlaOpen] = useState(false)
+  const [isAddVillageOpen, setIsAddVillageOpen] = useState(false)
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      case "approved":
+        return "bg-green-100 text-green-800"
+      case "rejected":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
+        <p className="text-muted-foreground">Manage all Chokhlas, villages, and census data across the organization</p>
+      </div>
+
+      {/* Overview Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Chokhlas</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.totalChokhlas}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 mr-1" />
+              +2 from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Villages</CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.totalVillages}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 mr-1" />
+              +12 from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Families</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.totalFamilies}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 mr-1" />
+              +45 from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.totalMembers}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 mr-1" />
+              +180 from last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="chokhlas" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="chokhlas">Chokhlas</TabsTrigger>
+          <TabsTrigger value="villages">Villages</TabsTrigger>
+          <TabsTrigger value="families">Families</TabsTrigger>
+          <TabsTrigger value="requests">Requests</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
+
+        {/* Chokhlas Tab */}
+        <TabsContent value="chokhlas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Chokhla Management</CardTitle>
+                <Dialog open={isAddChokhlaOpen} onOpenChange={setIsAddChokhlaOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Chokhla
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Chokhla</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="chokhla-name">Chokhla Name</Label>
+                        <Input id="chokhla-name" placeholder="Enter chokhla name" />
+                      </div>
+                      <div>
+                        <Label htmlFor="chokhla-description">Description</Label>
+                        <Textarea id="chokhla-description" placeholder="Enter description" />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsAddChokhlaOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => setIsAddChokhlaOpen(false)}>Add Chokhla</Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search chokhlas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  {mockChokhlas.map((chokhla) => (
+                    <div key={chokhla.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <h3 className="font-medium">{chokhla.name}</h3>
+                        <div className="flex gap-4 text-sm text-muted-foreground">
+                          <span>Villages: {chokhla.villages}</span>
+                          <span>Families: {chokhla.families}</span>
+                          <span>Members: {chokhla.members}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor(chokhla.status)}>{chokhla.status}</Badge>
+                        <Link href={`/admin/chokhla/${chokhla.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                        </Link>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Villages Tab */}
+        <TabsContent value="villages" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Village Management</CardTitle>
+                <Dialog open={isAddVillageOpen} onOpenChange={setIsAddVillageOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Village
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Village</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="village-name">Village Name</Label>
+                        <Input id="village-name" placeholder="Enter village name" />
+                      </div>
+                      <div>
+                        <Label htmlFor="village-chokhla">Chokhla</Label>
+                        <Input id="village-chokhla" placeholder="Select chokhla" />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsAddVillageOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => setIsAddVillageOpen(false)}>Add Village</Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search villages..." className="max-w-sm" />
+                </div>
+                <div className="space-y-2">
+                  {mockVillages.map((village) => (
+                    <div key={village.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <h3 className="font-medium">{village.name}</h3>
+                        <div className="flex gap-4 text-sm text-muted-foreground">
+                          <span>Chokhla: {village.chokhla}</span>
+                          <span>Families: {village.families}</span>
+                          <span>Members: {village.members}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor(village.status)}>{village.status}</Badge>
+                        <Link href={`/admin/village/${village.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                        </Link>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Families Tab */}
+        <TabsContent value="families" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Family Records</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Family management interface coming soon...</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Requests Tab */}
+        <TabsContent value="requests" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {mockRequests.map((request) => (
+                  <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="space-y-1">
+                      <h3 className="font-medium">{request.type}</h3>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>Village: {request.village}</span>
+                        <span>Date: {request.date}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
+                      <Button variant="outline" size="sm">
+                        Review
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Reports & Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Reports and analytics interface coming soon...</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
