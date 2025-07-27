@@ -1,9 +1,11 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useCreateFamily, useGetFamilyDetails, useUpdateFamily } from '@/data-hooks/mutation-query/useQueryAndMutation';
 import Image from "next/image"
+
 import {
   ArrowLeft,
   Plus,
@@ -35,13 +37,15 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 import { Badge } from "@/components/ui/badge/badge"
 
+
+
 interface FamilyMember {
   id: string
   name: string
   aadhaarNumber: string
   dateOfBirth: string
   age: number
-  gender: "male" | "female" | "other"
+  gender: "MALE" | "FEMALE" | "other"
   relation: string
   maritalStatus: string
   religion: string
@@ -87,6 +91,7 @@ interface FamilyMember {
   chronicDisease?: string
   isVaccinated: boolean
   welfareSchemes: string[]
+
   hasHealthInsurance: boolean
   hasSmartphone: boolean
   hasInternet: boolean
@@ -108,7 +113,7 @@ const initialMember: Omit<FamilyMember, "id"> = {
   aadhaarNumber: "",
   dateOfBirth: "",
   age: 0,
-  gender: "male",
+  gender: "MALE",
   relation: "",
   maritalStatus: "unmarried",
   religion: "hindu",
@@ -160,19 +165,56 @@ const initialMember: Omit<FamilyMember, "id"> = {
   isMukhiya: false,
 }
 
-export default function AddFamilyPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const params = useParams()
-  const villageId = params.villageId as string
+interface FamilyFormProps {
+  mode: 'add' | 'edit';
+  familyId?: string;
+  onSuccess?: () => void;
+}
 
-  const [familyData, setFamilyData] = useState<FamilyData>({
-    currentAddress: "",
-    permanentAddress: "",
-    economicStatus: "bpl",
-    status: "draft",
-    members: [{ ...initialMember, id: "member-1", isMukhiya: true }],
-  })
+export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const params = useParams();
+  const villageId = params.villageId as string;
+  const searchParams = useSearchParams();
+  const chakolaId = searchParams.get('chakolaId');
+  console.log(chakolaId)
+  const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || '');
+
+  const { mutation } = useCreateFamily();
+  const { mutation: updateMutation } = useUpdateFamily();
+
+  // If edit mode and data is loaded, use it as initial state
+  const [familyData, setFamilyData] = useState<FamilyData>(() => {
+    if (mode === 'edit' && familyDetails) {
+      return {
+        currentAddress: familyDetails.currentAddress || '',
+        permanentAddress: familyDetails.permanentAddress || '',
+        economicStatus: familyDetails.economicStatus || 'bpl',
+        status: familyDetails.status || 'draft',
+        members: familyDetails.Person || [],
+      };
+    }
+    return {
+      currentAddress: '',
+      permanentAddress: '',
+      economicStatus: 'bpl',
+      status: 'draft',
+      members: [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
+    };
+  });
+
+  useEffect(() => {
+    if (mode === 'edit' && familyDetails) {
+      setFamilyData({
+        currentAddress: familyDetails.currentAddress || '',
+        permanentAddress: familyDetails.permanentAddress || '',
+        economicStatus: familyDetails.economicStatus || 'bpl',
+        status: familyDetails.status || 'draft',
+        members: familyDetails.Person || [],
+      });
+    }
+  }, [mode, familyDetails]);
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -255,8 +297,16 @@ export default function AddFamilyPage() {
 
           // If updating date of birth, also update age
           if (field === "dateOfBirth") {
-            const age = calculateAge(value)
-            return { ...member, [field]: value, age }
+            if (!value) return { ...member }; // skip if empty or undefined
+
+            const isoDate = new Date(value).toISOString();
+            const age = calculateAge(value); // make sure calculateAge can handle raw date string or Date
+
+            return {
+              ...member,
+              [field]: isoDate,
+              age
+            };
           }
 
           return { ...member, [field]: value }
@@ -356,11 +406,16 @@ export default function AddFamilyPage() {
 
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Simulate API
+      //  call
+      const mukhiya = familyData.members.find((m) => m.isMukhiya);
+      const mukhiyaName = mukhiya ? mukhiya.name : "";
+      if (mode === 'edit') updateMutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId });
+      else mutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId });
+      // await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
-      router.push(`/village/${villageId}`)
+      // alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
+      // router.push(`/village/${villageId}`)a
     } catch (error) {
       alert("पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।")
     } finally {
@@ -482,15 +537,17 @@ export default function AddFamilyPage() {
                   <User className="w-5 h-5 mr-2" />
                   परिवार के सदस्य ({familyData.members.length})
                 </CardTitle>
-                <CardDescription className="hindi-text">
-                  सभी परिवारिक सदस्यों की विस्तृत जानकारी
+                <div className="flex items-center">
+                  <CardDescription className="hindi-text">
+                    सभी परिवारिक सदस्यों की विस्तृत जानकारी
+                  </CardDescription>
                   {mukhiyaCount === 1 && (
                     <Badge className="ml-2 bg-green-100 text-green-700">
                       <UserCheck className="w-3 h-3 mr-1" />
                       <span className="hindi-text">मुखिया चुना गया</span>
                     </Badge>
                   )}
-                </CardDescription>
+                </div>
               </div>
               <Button onClick={addMember} className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
@@ -520,7 +577,7 @@ export default function AddFamilyPage() {
                         {member.age > 0 && <Badge variant="outline">{member.age} वर्ष</Badge>}
                         {member.gender && (
                           <Badge variant="outline">
-                            {member.gender === "male" ? "पुरुष" : member.gender === "female" ? "महिला" : "अन्य"}
+                            {member.gender === "MALE" ? "पुरुष" : member.gender === "FEMALE" ? "महिला" : "अन्य"}
                           </Badge>
                         )}
                         {familyData.members.length > 1 && (
@@ -644,8 +701,8 @@ export default function AddFamilyPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="male">पुरुष</SelectItem>
-                                <SelectItem value="female">महिला</SelectItem>
+                                <SelectItem value="MALE">पुरुष</SelectItem>
+                                <SelectItem value="FEMALE">महिला</SelectItem>
                                 <SelectItem value="other">अन्य</SelectItem>
                               </SelectContent>
                             </Select>
@@ -1531,3 +1588,6 @@ export default function AddFamilyPage() {
     </div>
   )
 }
+
+
+

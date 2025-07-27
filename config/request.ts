@@ -8,21 +8,21 @@ const request = axios.create({
   },
 });
 
-request.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
-    if (config.headers.Authorization) {
-      return config;
-    } else {
-      await getSession().then((res) => {
-        return res?.user ? (config.headers.Authorization = `Bearer ${res?.user.token}`) : delete config.headers.Authorization;
-      });
-      return config;
-    }
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// request.interceptors.request.use(
+//   async (config: InternalAxiosRequestConfig) => {
+//     if (config.headers.Authorization) {
+//       return config;
+//     } else {
+//       await getSession().then((res) => {
+//         return res?.user ? (config.headers.Authorization = `Bearer ${res?.user.token}`) : delete config.headers.Authorization;
+//       });
+//       return config;
+//     }
+//   },
+//   (error) => {
+//     return Promise.reject(error);
+//   }
+// );
 
 request.interceptors.response.use(
   (response: AxiosResponse) => {

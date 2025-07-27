@@ -1,77 +1,127 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  createFamily,
-  addFamilyMember,
-  deleteFamily,
-  updateFamily,
-  getAllVillageDetails,
-} from '@/requests/village-family.ts'; // Adjust paths if some are from different files
-import { FETCH_VILLAGE_DETAILS } from '@/constants/queryKeys/village';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList } from '../requests/village-family';
 
-// 1. Create Family
-export const useCreateFamily = () => {
+export const useCreateFamily = (onSuccess: any, onError: { (): void; (arg0: Error): void; }) => {
   const mutation = useMutation({
-    mutationFn: (payload: ICreateFamilyRequest) => createFamily(payload),
+    mutationFn: (payload) => createFamily(payload),
+    onSuccess,
     onError: (err) => {
-      // Handle error
+      if (onError) onError(err);
+      else console.log(err);
     },
   });
   return { mutation };
 };
 
-// 2. Add Family Member
-export const useAddFamilyMember = () => {
+export const useUpdateFamily = (onSuccess: any, onError: (arg0: Error) => void) => {
   const mutation = useMutation({
-    mutationFn: ({
-      familyId,
-      memberData,
-    }: {
-      familyId: string;
-      memberData: IAddFamilyMemberRequest;
-    }) => addFamilyMember(familyId, memberData),
+    mutationFn: (id: void, payload: undefined) => updateFamily(id, payload),
+    onSuccess,
     onError: (err) => {
-      // Handle error
+      if (onError) onError(err);
+      else console.log(err);
     },
   });
+
   return { mutation };
 };
 
-// 3. Delete Family
-export const useDeleteFamily = () => {
-  const mutation = useMutation({
-    mutationFn: (familyId: string) => deleteFamily(familyId),
-    onError: (err) => {
-      // Handle error
-    },
+
+export const useGetFamilyDetails = (familyId: string) => {
+  return useQuery({
+    queryKey: ["family-detail", familyId],
+    queryFn: () => getFamilyDetails(familyId),
   });
-  return { mutation };
 };
 
-// 4. Update Family
-export const useUpdateFamily = () => {
-  const mutation = useMutation({
-    mutationFn: ({
-      familyId,
-      updateData,
-    }: {
-      familyId: string;
-      updateData: IUpdateFamilyRequest;
-    }) => updateFamily(familyId, updateData),
-    onError: (err) => {
-      // Handle error
+
+
+export const useDeleteFamilyUsingID = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (familyId: string) => deleteFamilyWithId(familyId),
+    onSuccess: () => {
+      // Optional: Refetch or clean up any queries
+      queryClient.invalidateQueries({ queryKey: ["family-list"] });
+    },
+    onError: (error) => {
+      console.error("Delete failed:", error);
     },
   });
-  return { mutation };
 };
 
-// 5. Get All Village Details
-export const useGetAllVillageDetails = () => {
-  const query = useQuery({
-    queryKey: [FETCH_VILLAGE_DETAILS],
-    queryFn: getAllVillageDetails,
-    onError: (err) => {
-      // Handle error
+
+export const useVillageDetails = (villageId: string) => {
+  return useQuery({
+    queryKey: ['village-details', villageId],
+    queryFn: () => getVillageDetails(villageId),
+  })
+}
+
+export const useAllVillages = () => {
+  return useQuery({
+    queryKey: ['all-villages'],
+    queryFn: getAllVillages,
+  });
+}
+
+export const useGetAllVillageswithChokhlaID = (chokhlaID: string) => {
+  return useQuery({
+    queryKey: ['all-villages-with-chokhla-id'],
+    queryFn: async () => await getAllVillagesWithChokhlaID(chokhlaID),
+  });
+}
+
+export const useCreateVillage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => createVillage(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-villages', 'all-villages-with-chokhla-id'] });
     },
   });
-  return { query };
+}
+
+export const useChokhlaDetails = (chokhlaId: string) => {
+  return useQuery({
+    queryKey: ['chokhla-details', chokhlaId],
+    queryFn: () => getChokhlaDetails(chokhlaId),
+    enabled: !!chokhlaId,
+  });
+}
+
+export const useUpdateChokhla = (chokhlaId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => updateChokhla(chokhlaId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chokhla-details', chokhlaId] });
+    },
+  });
+}
+
+export const useAllChokhlas = () => {
+  return useQuery({
+    queryKey: ['all-chokhlas'],
+    queryFn: getAllChokhlas,
+  });
+}
+
+export const useCreateChokhla = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => createChokhla(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-chokhlas'] });
+    },
+  });
+}
+
+
+export const useGetAllUserList = () => {
+  return useQuery({
+    queryKey: ['all-users'],
+    queryFn: getAlluserList
+  });
 };

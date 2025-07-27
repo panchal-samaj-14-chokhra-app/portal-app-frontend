@@ -1,40 +1,76 @@
-export const createFamily = async (familyData: ICreateFamilyRequest) => {
-  const { data, status, statusText } = await request.post<ICreateFamilyResponse>(
-    'family/create',
-    familyData
-  );
-  return { data, status, statusText };
-};
+import request from "@/config/request";
 
-export const addFamilyMember = async (familyId: string, memberData: IAddFamilyMemberRequest) => {
-  const { data, status, statusText } = await request.post<IAddFamilyMemberResponse>(
-    `family/${familyId}/member/add`,
-    memberData
-  );
-  return { data, status, statusText };
-};
+export const getApiCall = async () => {
+  const { data } = await request.get('/')
+
+  return { data }
+}
 
 
-export const deleteFamily = async (familyId: string) => {
-  const { data, status, statusText } = await request.delete<IDeleteFamilyResponse>(
-    `family/${familyId}/delete`
-  );
-  return { data, status, statusText };
-};
+export const createFamily = async (payload: void) => {
+  const { data } = await request.post('/family/create', payload)
+
+  return { data }
+}
+
+export const updateFamily = async (id: void, payload: undefined) => {
+  const { data } = await request.put(`/family/${id}`, payload)
+
+  return { data }
+}
 
 
-export const updateFamily = async (familyId: string, updateData: IUpdateFamilyRequest) => {
-  const { data, status, statusText } = await request.put<IUpdateFamilyResponse>(
-    `family/${familyId}/update`,
-    updateData
-  );
-  return { data, status, statusText };
-};
+export const getFamilyDetails = async (id: string) => {
+  const { data } = await request.get(`/family/${id}`)
+  return data
+}
+
+export const deleteFamilyWithId = async (id: string) => {
+  const { data } = await request.delete(`/family/delete/${id}`)
+  return data
+}
 
 
-export const getAllVillageDetails = async () => {
-  const { data, status, statusText } = await request.get<IVillageDetailsResponse>(
-    'village/all'
-  );
-  return { data, status, statusText };
-};
+export const getVillageDetails = async (id: string) => {
+  const { data } = await request.get(`/village/${id}`)
+  return data
+}
+
+export const getAllVillages = async () => {
+  const { data } = await request.get('/village');
+  return data;
+}
+export const getAllVillagesWithChokhlaID = async (chokhlaID: string) => {
+  const { data } = await request.get(`chokhla/getvillage/${chokhlaID}`);
+  return data;
+}
+
+export const createVillage = async (payload: any) => {
+  const { data } = await request.post('/village/create', payload);
+  return data;
+}
+
+export const getChokhlaDetails = async (id: string) => {
+  const { data } = await request.get(`/chokhla/${id}`);
+  return data;
+}
+
+export const updateChokhla = async (id: string, payload: any) => {
+  const { data } = await request.put(`/chokhla/${id}`, payload);
+  return data;
+}
+
+export const getAllChokhlas = async () => {
+  const { data } = await request.get('/chokhla');
+  return data;
+}
+
+export const createChokhla = async (payload: any) => {
+  const { data } = await request.post('/chokhla/create', payload);
+  return data;
+}
+
+export const getAlluserList = async () => {
+  const { data } = await request.get('/api/auth/users')
+  return data;
+}
