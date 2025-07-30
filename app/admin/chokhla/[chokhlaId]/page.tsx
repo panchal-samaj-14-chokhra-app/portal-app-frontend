@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { useParams, useRouter } from 'next/navigation';
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
-import { LogOut, ArrowLeft } from "lucide-react";
+import { LogOut, ArrowLeft, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const TABS = [
@@ -33,6 +33,11 @@ function Chokhla() {
     const { mutate: updateChokhla, isLoading: isUpdatingChokhla } = useUpdateChokhla(ChokhlaID);
     const [editProfile, setEditProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<any>(null);
+    const [successData, setSuccessData] = useState<null | any>(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+
     React.useEffect(() => {
         if (chokhla && !editProfile) {
             setProfileForm({
@@ -45,6 +50,14 @@ function Chokhla() {
             });
         }
     }, [chokhla, editProfile]);
+
+    useEffect(() => {
+        if (showSuccessModal) {
+            const timer = setTimeout(() => setShowSuccessModal(false), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [showSuccessModal]);
+
     const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
     };
@@ -57,8 +70,8 @@ function Chokhla() {
     const userType = useMemo(() => session?.user?.role, [session?.user?.role])
 
 
-    const handleBack = () => router.push("/");
-    const handleLogout = () => signOut({ callbackUrl: `${process.env.NEXTAUTH_URL}/logout` });
+    const handleBack = () => router.back();
+    const handleLogout = () => signOut({ callbackUrl: "/login" });
 
     const form = useForm({
         mode: "onChange",
@@ -81,23 +94,35 @@ function Chokhla() {
             repeatPassword: '',
         },
     });
-    const { mutate: createVillage, isLoading: isCreating } = useCreateVillage();
 
-    // Form submit handler (replace with actual API call)
+    const { mutate: createVillage, isLoading: isCreating } = useCreateVillage();
     const onSubmit = (data: any) => {
-        createVillage({
-            ...data,
-            mobileNumber: data.mobileNumber,
-            age: data.age ? Number(data.age) : null,
-            longitude: data.longitude ? Number(data.longitude) : null,
-            latitude: data.latitude ? Number(data.latitude) : null,
-            chakola: { connect: { id: ChokhlaID } }
-        }, {
-            onSuccess: () => {
-                setOpen(false);
-                form.reset();
+        const plainPassword = data.password; // Store before hash
+        createVillage(
+            {
+                ...data,
+                age: data.age ? Number(data.age) : null,
+                longitude: data.longitude ? Number(data.longitude) : null,
+                latitude: data.latitude ? Number(data.latitude) : null,
+                chakola: { connect: { id: ChokhlaID } },
             },
-        });
+            {
+
+                onSuccess: (res) => {
+                    setSuccessData({ ...res, password: plainPassword });
+                    setShowSuccessModal(true);
+                    setOpen(false);
+                    form.reset();
+                },
+                onError: (error: any) => {
+                    const message =
+                        error?.response?.data?.message || error?.message || "कुछ गलत हो गया। कृपया पुनः प्रयास करें।";
+                    setErrorMessage(message);
+                    setShowErrorModal(true);
+                },
+
+            }
+        );
     };
 
     return (
@@ -116,17 +141,17 @@ function Chokhla() {
                         <span className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleBack}>
+                        {userType === 'SUPER_ADMIN' && (< Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleBack}>
                             <ArrowLeft className="w-4 h-4 mr-2" />
-                            होम
-                        </Button>
+                            वापस
+                        </Button>)}
                         <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleLogout}>
                             <LogOut className="w-4 h-4 mr-2" />
                             लॉगआउट
                         </Button>
                     </div>
                 </div>
-            </header>
+            </header >
             <main className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
                 {/* Sidebar */}
                 <aside className="w-full md:w-64 mb-6 md:mb-0">
@@ -151,7 +176,9 @@ function Chokhla() {
                                 <CardTitle>गांव सूची</CardTitle>
                                 <Dialog open={open} onOpenChange={setOpen}>
                                     <DialogTrigger asChild>
-                                        {userType === 'CHOKHLA_MEMBER' && (<Button variant="default">गांव जोड़ें</Button>)}
+                                        {userType === 'CHOKHLA_MEMBER' && (<Button variant="outline">
+                                            <Plus className="w-5 h-5 mr-2" />
+                                            गांव जोड़ें</Button>)}
 
                                     </DialogTrigger>
                                     <DialogContent className="max-w-full sm:max-w-lg p-2 sm:p-6">
@@ -319,7 +346,7 @@ function Chokhla() {
                                                         />
                                                     </div>
                                                     <div className="flex justify-end mt-4">
-                                                        <Button type="submit" disabled={isCreating}>
+                                                        <Button className='border' type="submit" disabled={isCreating}>
                                                             {isCreating ? 'सहेजा जा रहा है...' : 'सहेजें'}
                                                         </Button>
                                                     </div>
@@ -328,6 +355,42 @@ function Chokhla() {
                                         </div>
                                     </DialogContent>
                                 </Dialog>
+                                <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+                                    <DialogContent className="sm:max-w-lg">
+                                        <DialogHeader>
+                                            <DialogTitle>गांव और यूज़र सफलतापूर्वक जोड़ा गया</DialogTitle>
+                                        </DialogHeader>
+                                        {successData && (
+                                            <div className="space-y-3 text-sm">
+                                                <p><strong>यूज़र का नाम:</strong> {successData.user.fullName}</p>
+                                                <p><strong>ईमेल:</strong> {successData.user.email}</p>
+                                                <p><strong>पासवर्ड:</strong> {successData.password}</p>
+                                                <p><strong>गांव सदस्य का नाम:</strong> {successData.village.villageMemberName}</p>
+                                                <p><strong>गांव ID:</strong> {successData.village.id}</p>
+                                                <p><strong>यूज़र ID:</strong> {successData.user.id}</p>
+                                                <p><strong>भूमिका:</strong> {successData.user.globalRole}</p>
+                                                <div className="flex justify-end pt-2">
+                                                    <Button onClick={() => setShowSuccessModal(false)}>बंद करें</Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </DialogContent>
+                                </Dialog>
+                                <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-red-600">त्रुटि</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="text-sm text-red-700">
+                                            {errorMessage}
+                                        </div>
+                                        <div className="flex justify-end pt-4">
+                                            <Button variant="outline" onClick={() => setShowErrorModal(false)}>बंद करें</Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+
+
                             </CardHeader>
                             <CardContent>
                                 <div className="overflow-x-auto">
@@ -508,7 +571,7 @@ function Chokhla() {
                     )}
                 </section>
             </main>
-        </div>
+        </div >
     );
 }
 

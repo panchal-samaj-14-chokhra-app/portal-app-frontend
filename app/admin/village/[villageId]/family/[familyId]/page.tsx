@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { ArrowLeft, Edit, Download, MapPin, Calendar, User, FileText, Users, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
@@ -72,6 +72,7 @@ export default function FamilyDetailPage() {
     if (!session) router.push("/login")
   }, [session, status, router])
 
+  const userType = useMemo(() => session?.user?.role, [session?.user?.role])
   if (isLoading) {
 
     return (
@@ -162,16 +163,22 @@ export default function FamilyDetailPage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {userType === 'VILLAGE_MEMBER' &&
+                (< Button
+                  onClick={() =>
+                    router.push(
+                      `/admin/village/${villageId}/family/${familyId}/edit?choklaId=${session.user?.choklaId}`
+                    )
+                  }
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  <span className="hindi-text">संपादित करें</span>
+                </Button>)
+              }
               <Button
-                onClick={() => router.push(`/village/${villageId}/family/${familyId}/edit`)}
-                variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                <span className="hindi-text">संपादित करें</span>
-              </Button>
-              <Button
-                onClick={() => router.push(`/village/${villageId}`)}
+                onClick={() => router.back()}
                 variant="outline"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
@@ -181,10 +188,10 @@ export default function FamilyDetailPage() {
             </div>
           </div>
         </div>
-      </header>
+      </header >
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      < main className="container mx-auto px-4 py-8" >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Family Overview */}
           <div className="lg:col-span-1">
@@ -387,8 +394,8 @@ export default function FamilyDetailPage() {
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   )
 }
 

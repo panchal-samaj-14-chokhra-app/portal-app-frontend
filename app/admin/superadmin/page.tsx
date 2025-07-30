@@ -37,6 +37,9 @@ function SuperAdmin() {
   const { data: chokhlas, isLoading: isChokhlasLoading } = useAllChokhlas();
   const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList();
   const { mutate: createChokhla } = useCreateChokhla();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdData, setCreatedData] = useState<{ chokhlaId: string, userId: string, email: string, fullName: string, role: string, password: string } | null>(null);
+
   const router = useRouter();
   const { data: userData } = useSession()
 
@@ -79,10 +82,21 @@ function SuperAdmin() {
     e.preventDefault();
     if (!validateChokhlaForm()) return;
     createChokhla(chokhlaForm, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        const { chokhla, user } = data;
+        setCreatedData({
+          chokhlaId: chokhla.id,
+          userId: user.id,
+          password: user.passwordHash,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.globalRole,
+        });
         setOpenChokhlaModal(false);
         setChokhlaForm({ name: '', adhyaksh: '', contactNumber: '', state: '', district: '', villageName: '', email: '', password: '', repeatPassword: '' });
-      },
+        setShowSuccessModal(true);
+      }
+
     });
   };
 
@@ -91,7 +105,7 @@ function SuperAdmin() {
   };
 
   const handleBack = () => router.push("/");
-  const handleLogout = () => signOut({ callbackUrl: `${process.env.NEXTAUTH_URL}/logout` });
+  const handleLogout = () => signOut({ callbackUrl: "/login" });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
@@ -108,10 +122,7 @@ function SuperAdmin() {
             <span className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleBack}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              होम
-            </Button>
+
             <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               लॉगआउट
@@ -192,60 +203,106 @@ function SuperAdmin() {
                   caption="सभी चौकला की सूची"
                 />
               </CardContent>
-              {/* Modal remains unchanged */}
+
               {openChokhlaModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                  <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-sm max-h-[90vh] overflow-y-auto">
-                    <h3 className="text-xl font-bold mb-4 text-orange-700">नया चौकला जोड़ें</h3>
-                    <form onSubmit={handleChokhlaSubmit} className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम</label>
-                        <input type="text" name="name" value={chokhlaForm.name} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">अध्यक्ष</label>
-                        <input type="text" name="adhyaksh" value={chokhlaForm.adhyaksh} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">संपर्क नंबर</label>
-                        <input type="text" name="contactNumber" value={chokhlaForm.contactNumber} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">राज्य</label>
-                        <input type="text" name="state" value={chokhlaForm.state} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">जिला</label>
-                        <input type="text" name="district" value={chokhlaForm.district} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">गांव</label>
-                        <input type="text" name="villageName" value={chokhlaForm.villageName} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">ईमेल</label>
-                        <input type="email" name="email" value={chokhlaForm.email} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                        {formErrors.email && <div className="text-red-600 text-xs mt-1">{formErrors.email}</div>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड</label>
-                        <input type="password" name="password" value={chokhlaForm.password} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                        {formErrors.password && <div className="text-red-600 text-xs mt-1">{formErrors.password}</div>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड दोबारा लिखें</label>
-                        <input type="password" name="repeatPassword" value={chokhlaForm.repeatPassword} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                        {formErrors.repeatPassword && <div className="text-red-600 text-xs mt-1">{formErrors.repeatPassword}</div>}
-                      </div>
-                      <div className="flex justify-end gap-2 mt-4">
-                        <Button type="button" variant="ghost" onClick={() => setOpenChokhlaModal(false)}>
-                          रद्द करें
-                        </Button>
-                        <Button type="submit" variant="default">
-                          सहेजें
-                        </Button>
-                      </div>
-                    </form>
+                  <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] flex flex-col p-6">
+
+                    {/* Title with Outline */}
+                    <h3 className="text-2xl font-bold mb-4 text-orange-700 border border-orange-700 rounded px-3 py-2 text-center">
+                      नया चौकला जोड़ें
+                    </h3>
+
+                    {/* Scrollable Form Container */}
+                    <div className="overflow-y-auto flex-1">
+                      <form onSubmit={handleChokhlaSubmit} className="space-y-4">
+                        {/* All form fields here */}
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम</label>
+                          <input type="text" name="name" value={chokhlaForm.name} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">अध्यक्ष</label>
+                          <input type="text" name="adhyaksh" value={chokhlaForm.adhyaksh} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">संपर्क नंबर</label>
+                          <input type="text" name="contactNumber" value={chokhlaForm.contactNumber} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">राज्य</label>
+                          <input type="text" name="state" value={chokhlaForm.state} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">जिला</label>
+                          <input type="text" name="district" value={chokhlaForm.district} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">गांव</label>
+                          <input type="text" name="villageName" value={chokhlaForm.villageName} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">ईमेल</label>
+                          <input type="email" name="email" value={chokhlaForm.email} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.email && <div className="text-red-600 text-xs mt-1">{formErrors.email}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड</label>
+                          <input type="password" name="password" value={chokhlaForm.password} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.password && <div className="text-red-600 text-xs mt-1">{formErrors.password}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड दोबारा लिखें</label>
+                          <input type="password" name="repeatPassword" value={chokhlaForm.repeatPassword} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.repeatPassword && <div className="text-red-600 text-xs mt-1">{formErrors.repeatPassword}</div>}
+                        </div>
+
+
+
+                      </form>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setOpenChokhlaModal(false)}
+                        className="border border-orange-600 text-orange-700 px-4 py-2 rounded hover:bg-orange-50"
+                      >
+                        रद्द करें
+                      </button>
+                      <button
+                        onClick={handleChokhlaSubmit}
+                        type="submit"
+                        className="border border-orange-600 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+                      >
+                        सहेजें
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {showSuccessModal && createdData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 ">
+                  <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                    <h2 className="text-xl font-semibold text-green-700 text-center mb-4">चौकला सफलतापूर्वक जोड़ा गया!</h2>
+                    <div className="space-y-2 text-sm text-gray-700">
+                      <p><strong>चौकला ID:</strong> {createdData.chokhlaId}</p>
+                      <p><strong>यूज़र ID:</strong> {createdData.userId}</p>
+                      <p><strong>ईमेल:</strong> {createdData.email}</p>
+                      <p><strong>पूरा नाम:</strong> {createdData.fullName}</p>
+                      <p><strong>भूमिका:</strong> {createdData.role}</p>
+                      <p className='text-sm'><strong>password:</strong> {createdData.password}</p>
+
+                    </div>
+                    <div className="flex justify-end mt-6">
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        onClick={() => setShowSuccessModal(false)}
+                      >
+                        ठीक है
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -269,7 +326,7 @@ function SuperAdmin() {
                 {usersLoading ? (
                   <div className="text-orange-600">लोड हो रहा है...</div>
                 ) : usersError ? (
-                  <div className="text-red-600">{usersError}</div>
+                  <div className="text-red-600">{"usersError"}</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[700px] bg-white border border-orange-200 rounded-lg shadow">

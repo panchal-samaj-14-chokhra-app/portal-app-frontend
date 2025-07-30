@@ -311,7 +311,7 @@ export default function VillageDetailPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => router.push(`/village/${villageId}/family/${family.id}?choklaId=${villageData.choklaId}`)}
+                            onClick={() => router.push(`/admin/village/${villageId}/family/${family.id}?choklaId=${villageData.choklaId}`)}
                             className="bg-transparent"
                           >
                             <Eye className="w-4 h-4" />
@@ -340,26 +340,30 @@ export default function VillageDetailPage() {
               </Table>
             </div>
 
-            {filteredFamilies?.length === 0 && (
-              <div className="text-center py-8">
-                <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई परिवार नहीं मिला</h3>
-                <p className="text-gray-600 mb-4">खोज मापदंड के अनुसार कोई परिवार नहीं मिला</p>
-                <Button
-                  onClick={handleAddFamily}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  पहला परिवार जोड़ें
-                </Button>
-              </div>
-            )}
+            {
+              userType === 'VILLAGE_MEMBER' ?
+                filteredFamilies?.length === 0 && (
+                  <div className="text-center py-8">
+                    <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई परिवार नहीं मिला</h3>
+                    <p className="text-gray-600 mb-4">खोज मापदंड के अनुसार कोई परिवार नहीं मिला</p>
+                    <Button
+                      onClick={handleAddFamily}
+                      className="bg-orange-500 hover:bg-orange-600"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      पहला परिवार जोड़ें
+                    </Button>
+                  </div>
+                ) : (
+                  <div>No member</div>
+                )}
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {userType !== "VILLAGE_MEMBER" && (<Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          {userType === "VILLAGE_MEMBER" && (<Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center text-orange-700">
                 <Plus className="w-5 h-5 mr-2" />

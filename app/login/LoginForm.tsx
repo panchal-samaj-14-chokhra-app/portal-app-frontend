@@ -16,11 +16,7 @@ export default function LoginForm() {
   const [formData, setFormData] = useState({ email: "", password: "", showPassword: false });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("from") || "/";
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

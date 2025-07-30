@@ -414,8 +414,8 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       else mutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId });
       // await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
-      // router.push(`/village/${villageId}`)a
+      alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
+      router.back()
     } catch (error) {
       alert("पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।")
     } finally {
@@ -433,7 +433,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
-                onClick={() => router.push(`/village/${villageId}`)}
+                onClick={() => router.back()}
                 variant="outline"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
@@ -1549,7 +1549,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
         {/* Submit Buttons */}
         <div className="flex justify-center gap-4 flex-wrap">
-          <Button onClick={() => router.push(`/village/${villageId}`)} variant="outline" className="bg-transparent">
+          <Button onClick={() => router.back()} variant="outline" className="bg-transparent">
             <span className="hindi-text">रद्द करें</span>
           </Button>
           <Button
