@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useCreateVillage, useChokhlaDetails, useUpdateChokhla, useGetAllVillageswithChokhlaID } from '@/data-hooks/mutation-query/useQueryAndMutation';
 import { useForm } from 'react-hook-form';
 import { useParams, useRouter } from 'next/navigation';
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { LogOut, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +22,8 @@ const TABS = [
 ];
 
 function Chokhla() {
+    const { data: session, status } = useSession()
+
     const [activeTab, setActiveTab] = useState('village');
     const [open, setOpen] = useState(false);
 
@@ -52,6 +54,8 @@ function Chokhla() {
         });
     };
     const router = useRouter();
+    const userType = useMemo(() => session?.user?.role, [session?.user?.role])
+
 
     const handleBack = () => router.push("/");
     const handleLogout = () => signOut({ callbackUrl: `${process.env.NEXTAUTH_URL}/logout` });
@@ -63,7 +67,7 @@ function Chokhla() {
             name: '',
             villageMemberName: '',
             mobileNumber: '',
-            age: '', // use string
+            age: '',
             email: '',
             tehsil: '',
             district: '',
@@ -71,8 +75,8 @@ function Chokhla() {
             isVillageHaveSchool: false,
             isVillageHavePrimaryHealthCare: false,
             isVillageHaveCommunityHall: false,
-            longitude: '', // use string
-            latitude: '', // use string
+            longitude: '',
+            latitude: '',
             password: '',
             repeatPassword: '',
         },
@@ -147,7 +151,8 @@ function Chokhla() {
                                 <CardTitle>गांव सूची</CardTitle>
                                 <Dialog open={open} onOpenChange={setOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="default">गांव जोड़ें</Button>
+                                        {userType === 'CHOKHLA_MEMBER' && (<Button variant="default">गांव जोड़ें</Button>)}
+
                                     </DialogTrigger>
                                     <DialogContent className="max-w-full sm:max-w-lg p-2 sm:p-6">
                                         <DialogHeader>

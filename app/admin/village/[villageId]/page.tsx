@@ -4,7 +4,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
-import { Users, Home, Plus, Search, LogOut, Eye, Edit, Trash2, UserCheck, MapPin } from "lucide-react"
+import { Users, Home, Plus, Search, LogOut, Eye, Edit, Trash2, UserCheck, MapPin, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
 import { Badge } from "@/components/ui/badge/badge"
@@ -29,6 +29,8 @@ export default function VillageDetailPage() {
   const chokhlaID = useMemo(() => {
     return villageData?.choklaId
   }, [villageData])
+  const userType = useMemo(() => session?.user?.role, [session?.user?.role])
+
 
   useEffect(() => {
     if (status === "loading") return
@@ -53,6 +55,10 @@ export default function VillageDetailPage() {
   }
 
   const handleAddFamily = () => {
+    if (userType !== "VILLAGE_MEMBER") {
+      router.back();
+      return;
+    }
     router.push(`/admin/village/${villageId}/add-family?chakolaId=${chokhlaID}`)
   }
 
@@ -100,13 +106,24 @@ export default function VillageDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button
-                onClick={handleAddFamily}
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                नया परिवार
-              </Button>
+              {userType !== "VILLAGE_MEMBER" ? (
+                <Button
+                  onClick={handleAddFamily}
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  वापस जॉए
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleAddFamily}
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  नया परिवार
+                </Button>
+              )}
+
               <Button
                 onClick={handleSignOut}
                 variant="outline"
@@ -342,7 +359,7 @@ export default function VillageDetailPage() {
 
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          {userType !== "VILLAGE_MEMBER" && (<Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center text-orange-700">
                 <Plus className="w-5 h-5 mr-2" />
@@ -358,7 +375,7 @@ export default function VillageDetailPage() {
                 परिवार पंजीकरण शुरू करें
               </Button>
             </CardContent>
-          </Card>
+          </Card>)}
 
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>

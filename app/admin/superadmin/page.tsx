@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
 import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
-import { LogOut, ArrowLeft } from "lucide-react";
+import { LogOut, ArrowLeft, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const TABS = [
@@ -166,7 +166,10 @@ function SuperAdmin() {
             <Card className="mb-8">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>चौकला सूची</CardTitle>
-                <Button variant="default" onClick={() => setOpenChokhlaModal(true)}>
+                <Button
+
+                  variant="outline" onClick={() => setOpenChokhlaModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
                   चौकला जोड़ें
                 </Button>
               </CardHeader>
