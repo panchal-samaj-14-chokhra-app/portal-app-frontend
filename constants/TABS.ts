@@ -1,24 +1,24 @@
-export const SUPERADMIN_TABS = [
+export const ADMIN_TABS = [
   {
     id: "chokhlas",
     label: "चौकला प्रबंधन",
     value: "chokhlas",
   },
   {
-    id: "users",
-    label: "उपयोगकर्ता प्रबंधन",
-    value: "users",
+    id: "villages",
+    label: "गांव प्रबंधन",
+    value: "villages",
+  },
+  {
+    id: "families",
+    label: "परिवार प्रबंधन",
+    value: "families",
   },
   {
     id: "reports",
     label: "रिपोर्ट्स",
     value: "reports",
   },
-  {
-    id: "settings",
-    label: "सेटिंग्स",
-    value: "settings",
-  },
 ] as const
 
-export type SuperAdminTab = (typeof SUPERADMIN_TABS)[number]["value"]
+export type AdminTabValue = (typeof ADMIN_TABS)[number]["value"]
