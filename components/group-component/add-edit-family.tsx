@@ -43,66 +43,114 @@ interface FamilyMember {
   aadhaarNumber: string
   dateOfBirth: string
   age: number
-  gender: "MALE" | "FEMALE" | "other"
+  gender: "MALE" | "FEMALE" | "OTHER"
   relation: string
   maritalStatus: string
-  religion: string
-  caste: string
+  gotra: string
   disability: boolean
   bloodGroup: string
   mobileNumber: string
   email: string
+
+  // Address details
   permanentAddress: string
   currentAddress: string
+  state: string
+  district: string
+  pincode: string
+  village: string
   isCurrentAddressInIndia: boolean
   currentCountry: string
-  village: string
-  pincode: string
-  district: string
-  state: string
+
+  // Educational Details
   isStudent: boolean
   educationLevel: string
   classCompleted: string
-  currentClass: string
+  currentClass?: string
   collegeCourse: string
   institutionName: string
-  enrollmentStatus: string
-  dropoutReason?: string
+  enrollmentStatus?: string
   schoolName?: string
-  higherEducationType: string
+  higherEducationType?: string
+  currentEducationCity?: string
+  currentEducationCountry?: string
+  isHelpRequiredFromSamaj: boolean
+  isCurrentlyEnrolled?: boolean
+  dropoutReason?: string
+  educationMode?: string
+  isStudyingAbroad?: boolean
+  scholarshipReceived?: boolean
+  scholarshipDetails?: string
+  boardOrUniversity?: string
+  yearOfPassing?: number
+  fieldOfStudy?: string
+
+  // Employment details
   isEmployed: boolean
-  occupation: string
-  monthlyIncome: number
-  incomeSource: string
-  isIncomeSourceInIndia: boolean
-  incomeSourceCountry: string
-  serviceType: string
-  landOwned: number
+  occupationType?: string
+  employmentStatus?: string
+  monthlyIncome?: number
+  incomeSourceCountry: boolean
+  countryName?: string
+  jobCategory?: string
+  employerOrganizationName?: string
+  isGovernmentJob?: boolean
+  jobPosition?: string
+  jobType?: string
+  workExperienceYears?: number
+  isSelfEmployed?: boolean
+  selfEmployedJobType?: string
+  nameOfBusiness?: string
+  businessCategory?: string
+  sizeOfBusiness?: string
+  businessRegistration?: boolean
+  willingToHirePeople?: boolean
+  occupationState?: string
+  occupationCity?: string
+  preferredJobLocation?: string
+  isOpenToRelocate?: boolean
+  workingHoursPerWeek?: number
+  hasAdditionalSkills?: boolean
+
+  // Living status
   livestock: string
+  landOwned: number
   houseType: string
   houseOwnership: string
   hasElectricity: boolean
   waterSource: string
   hasToilet: boolean
   cookingFuel: string
-  hasHealthIssues: boolean
-  chronicDisease?: string
-  isVaccinated: boolean
-  welfareSchemes: string[]
 
+  // Health issues
+  hasHealthIssues: boolean
+  chronicDisease: string
+  isVaccinated: boolean
   hasHealthInsurance: boolean
+  isInterestedInFutureHealthPolicy: boolean
+
+  // Welfare schemes and survey
   hasSmartphone: boolean
   hasInternet: boolean
   hasBankAccount: boolean
   hasJanDhan: boolean
   isMukhiya: boolean
+  welfareSchemes: string[]
+  isInterestedInFutureSamuhikVivah: boolean
+  vehicleType: "NONE" | "BICYCLE" | "MOTORCYCLE" | "CAR" | "TRUCK" | "OTHER"
 }
 
 interface FamilyData {
+  mukhiyaName: string
   currentAddress: string
-  permanentAddress: string
+  status: string
   economicStatus: string
-  status: "draft" | "submitted"
+  longitude?: number
+  latitude?: number
+  anyComment: string
+  familyDistrict: string
+  familyState: string
+  familyPincode: string
   members: FamilyMember[]
 }
 
@@ -114,20 +162,19 @@ const initialMember: Omit<FamilyMember, "id"> = {
   gender: "MALE",
   relation: "",
   maritalStatus: "unmarried",
-  religion: "hindu",
-  caste: "general",
+  gotra: "",
   disability: false,
   bloodGroup: "",
   mobileNumber: "",
   email: "",
   permanentAddress: "",
   currentAddress: "",
-  isCurrentAddressInIndia: true,
-  currentCountry: "",
-  village: "",
-  pincode: "",
-  district: "",
   state: "",
+  district: "",
+  pincode: "",
+  village: "",
+  isCurrentAddressInIndia: true,
+  currentCountry: "India",
   isStudent: false,
   educationLevel: "",
   classCompleted: "",
@@ -137,15 +184,45 @@ const initialMember: Omit<FamilyMember, "id"> = {
   enrollmentStatus: "",
   schoolName: "",
   higherEducationType: "",
+  currentEducationCity: "",
+  currentEducationCountry: "",
+  isHelpRequiredFromSamaj: false,
+  isCurrentlyEnrolled: false,
+  dropoutReason: "",
+  educationMode: "",
+  isStudyingAbroad: false,
+  scholarshipReceived: false,
+  scholarshipDetails: "",
+  boardOrUniversity: "",
+  yearOfPassing: undefined,
+  fieldOfStudy: "",
   isEmployed: false,
-  occupation: "",
+  occupationType: "",
+  employmentStatus: "",
   monthlyIncome: 0,
-  incomeSource: "",
-  isIncomeSourceInIndia: true,
-  incomeSourceCountry: "",
-  serviceType: "",
-  landOwned: 0,
+  incomeSourceCountry: false,
+  countryName: "",
+  jobCategory: "",
+  employerOrganizationName: "",
+  isGovernmentJob: false,
+  jobPosition: "",
+  jobType: "",
+  workExperienceYears: 0,
+  isSelfEmployed: false,
+  selfEmployedJobType: "",
+  nameOfBusiness: "",
+  businessCategory: "",
+  sizeOfBusiness: "",
+  businessRegistration: false,
+  willingToHirePeople: false,
+  occupationState: "",
+  occupationCity: "",
+  preferredJobLocation: "",
+  isOpenToRelocate: false,
+  workingHoursPerWeek: 0,
+  hasAdditionalSkills: false,
   livestock: "",
+  landOwned: 0,
   houseType: "kutcha",
   houseOwnership: "owned",
   hasElectricity: false,
@@ -153,14 +230,18 @@ const initialMember: Omit<FamilyMember, "id"> = {
   hasToilet: false,
   cookingFuel: "firewood",
   hasHealthIssues: false,
+  chronicDisease: "",
   isVaccinated: false,
-  welfareSchemes: [],
   hasHealthInsurance: false,
+  isInterestedInFutureHealthPolicy: false,
   hasSmartphone: false,
   hasInternet: false,
   hasBankAccount: false,
   hasJanDhan: false,
   isMukhiya: false,
+  welfareSchemes: [],
+  isInterestedInFutureSamuhikVivah: false,
+  vehicleType: "NONE",
 }
 
 interface FamilyFormProps {
@@ -176,9 +257,8 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const villageId = params.villageId as string
   const searchParams = useSearchParams()
   const chakolaId = searchParams.get("chakolaId")
-  console.log(chakolaId)
-  const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || "")
 
+  const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || "")
   const { mutation } = useCreateFamily()
   const { mutation: updateMutation } = useUpdateFamily()
 
@@ -186,18 +266,30 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const [familyData, setFamilyData] = useState<FamilyData>(() => {
     if (mode === "edit" && familyDetails) {
       return {
+        mukhiyaName: familyDetails.mukhiyaName || "",
         currentAddress: familyDetails.currentAddress || "",
-        permanentAddress: familyDetails.permanentAddress || "",
-        economicStatus: familyDetails.economicStatus || "bpl",
         status: familyDetails.status || "draft",
+        economicStatus: familyDetails.economicStatus || "bpl",
+        longitude: familyDetails.longitude,
+        latitude: familyDetails.latitude,
+        anyComment: familyDetails.anyComment || "",
+        familyDistrict: familyDetails.familyDistrict || "",
+        familyState: familyDetails.familyState || "",
+        familyPincode: familyDetails.familyPincode || "",
         members: familyDetails.Person || [],
       }
     }
     return {
+      mukhiyaName: "",
       currentAddress: "",
-      permanentAddress: "",
-      economicStatus: "bpl",
       status: "draft",
+      economicStatus: "bpl",
+      longitude: undefined,
+      latitude: undefined,
+      anyComment: "",
+      familyDistrict: "",
+      familyState: "",
+      familyPincode: "",
       members: [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
     }
   })
@@ -205,10 +297,16 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   useEffect(() => {
     if (mode === "edit" && familyDetails) {
       setFamilyData({
+        mukhiyaName: familyDetails.mukhiyaName || "",
         currentAddress: familyDetails.currentAddress || "",
-        permanentAddress: familyDetails.permanentAddress || "",
-        economicStatus: familyDetails.economicStatus || "bpl",
         status: familyDetails.status || "draft",
+        economicStatus: familyDetails.economicStatus || "bpl",
+        longitude: familyDetails.longitude,
+        latitude: familyDetails.latitude,
+        anyComment: familyDetails.anyComment || "",
+        familyDistrict: familyDetails.familyDistrict || "",
+        familyState: familyDetails.familyState || "",
+        familyPincode: familyDetails.familyPincode || "",
         members: familyDetails.Person || [],
       })
     }
@@ -290,15 +388,21 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           // If setting someone as Mukhiya, remove Mukhiya status from others
           if (field === "isMukhiya" && value === true) {
             const updatedMembers = prev.members.map((m) => ({ ...m, isMukhiya: false }))
-            return { ...updatedMembers.find((m) => m.id === memberId)!, [field]: value }
+            const updatedMember = { ...updatedMembers.find((m) => m.id === memberId)!, [field]: value }
+            // Update family mukhiya name
+            setFamilyData((prevFamily) => ({
+              ...prevFamily,
+              mukhiyaName: updatedMember.name,
+            }))
+            return updatedMember
           }
 
           // If updating date of birth, also update age
           if (field === "dateOfBirth") {
-            if (!value) return { ...member } // skip if empty or undefined
+            if (!value) return { ...member }
 
             const isoDate = new Date(value).toISOString()
-            const age = calculateAge(value) // make sure calculateAge can handle raw date string or Date
+            const age = calculateAge(value)
 
             return {
               ...member,
@@ -384,11 +488,9 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
     setSavingDraft(true)
     try {
-      // Simulate API call to save as draft
       await new Promise((resolve) => setTimeout(resolve, 1500))
-
       alert("परिवार का डेटा ड्राफ्ट के रूप में सहेजा गया!")
-      router.push(`/village/${villageId}`)
+      router.push(`/admin/village/${villageId}`)
     } catch (error) {
       alert("ड्राफ्ट सहेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।")
     } finally {
@@ -404,13 +506,21 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
     setLoading(true)
     try {
-      // Simulate API
-      //  call
       const mukhiya = familyData.members.find((m) => m.isMukhiya)
       const mukhiyaName = mukhiya ? mukhiya.name : ""
-      if (mode === "edit") updateMutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId })
-      else mutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId })
-      // await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      const submitData = {
+        ...familyData,
+        mukhiyaName,
+        villageId,
+        chakolaId,
+      }
+
+      if (mode === "edit") {
+        updateMutation.mutate(submitData)
+      } else {
+        mutation.mutate(submitData)
+      }
 
       alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
       router.back()
@@ -496,37 +606,116 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="permanentAddress" className="hindi-text text-sm font-medium">
-                  स्थायी पता *
+                <Label htmlFor="anyComment" className="hindi-text text-sm font-medium">
+                  कोई टिप्पणी
                 </Label>
                 <Textarea
-                  id="permanentAddress"
-                  value={familyData.permanentAddress}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, permanentAddress: e.target.value }))}
-                  placeholder="स्थायी पता दर्ज करें"
+                  id="anyComment"
+                  value={familyData.anyComment}
+                  onChange={(e) => setFamilyData((prev) => ({ ...prev, anyComment: e.target.value }))}
+                  placeholder="कोई अतिरिक्त जानकारी या टिप्पणी"
                   className="mt-1 min-h-[80px] text-sm"
                   rows={3}
                 />
               </div>
             </div>
-            <div className="max-w-md">
-              <Label htmlFor="economicStatus" className="hindi-text text-sm font-medium">
-                आर्थिक स्थिति
-              </Label>
-              <Select
-                value={familyData.economicStatus}
-                onValueChange={(value) => setFamilyData((prev) => ({ ...prev, economicStatus: value }))}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="आर्थिक स्थिति चुनें" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bpl">गरीबी रेखा से नीचे (BPL)</SelectItem>
-                  <SelectItem value="apl">गरीबी रेखा से ऊपर (APL)</SelectItem>
-                  <SelectItem value="middle">मध्यम वर्गीय</SelectItem>
-                  <SelectItem value="upper">उच्च वर्गीय</SelectItem>
-                </SelectContent>
-              </Select>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="economicStatus" className="hindi-text text-sm font-medium">
+                  आर्थिक स्थिति
+                </Label>
+                <Select
+                  value={familyData.economicStatus}
+                  onValueChange={(value) => setFamilyData((prev) => ({ ...prev, economicStatus: value }))}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="आर्थिक स्थिति चुनें" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bpl">गरीबी रेखा से नीचे (BPL)</SelectItem>
+                    <SelectItem value="apl">गरीबी रेखा से ऊपर (APL)</SelectItem>
+                    <SelectItem value="middle">मध्यम वर्गीय</SelectItem>
+                    <SelectItem value="upper">उच्च वर्गीय</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="familyState" className="hindi-text text-sm font-medium">
+                  राज्य
+                </Label>
+                <Input
+                  id="familyState"
+                  value={familyData.familyState}
+                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyState: e.target.value }))}
+                  placeholder="राज्य का नाम"
+                  className="mt-1 text-sm"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="familyDistrict" className="hindi-text text-sm font-medium">
+                  जिला
+                </Label>
+                <Input
+                  id="familyDistrict"
+                  value={familyData.familyDistrict}
+                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyDistrict: e.target.value }))}
+                  placeholder="जिला का नाम"
+                  className="mt-1 text-sm"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="familyPincode" className="hindi-text text-sm font-medium">
+                  पिनकोड
+                </Label>
+                <Input
+                  id="familyPincode"
+                  value={familyData.familyPincode}
+                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyPincode: e.target.value }))}
+                  placeholder="पिनकोड"
+                  maxLength={6}
+                  className="mt-1 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="longitude" className="hindi-text text-sm font-medium">
+                  देशांतर (Longitude)
+                </Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  value={familyData.longitude || ""}
+                  onChange={(e) =>
+                    setFamilyData((prev) => ({ ...prev, longitude: Number.parseFloat(e.target.value) || undefined }))
+                  }
+                  placeholder="देशांतर निर्देशांक"
+                  className="mt-1 text-sm"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="latitude" className="hindi-text text-sm font-medium">
+                  अक्षांश (Latitude)
+                </Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  value={familyData.latitude || ""}
+                  onChange={(e) =>
+                    setFamilyData((prev) => ({ ...prev, latitude: Number.parseFloat(e.target.value) || undefined }))
+                  }
+                  placeholder="अक्षांश निर्देशांक"
+                  className="mt-1 text-sm"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -718,7 +907,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               <SelectContent>
                                 <SelectItem value="MALE">पुरुष</SelectItem>
                                 <SelectItem value="FEMALE">महिला</SelectItem>
-                                <SelectItem value="other">अन्य</SelectItem>
+                                <SelectItem value="OTHER">अन्य</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -773,41 +962,13 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                           <div>
-                            <Label className="hindi-text text-sm">धर्म</Label>
-                            <Select
-                              value={member.religion}
-                              onValueChange={(value) => updateMember(member.id, "religion", value)}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="hindu">हिंदू</SelectItem>
-                                <SelectItem value="muslim">मुस्लिम</SelectItem>
-                                <SelectItem value="christian">ईसाई</SelectItem>
-                                <SelectItem value="sikh">सिख</SelectItem>
-                                <SelectItem value="buddhist">बौद्ध</SelectItem>
-                                <SelectItem value="jain">जैन</SelectItem>
-                                <SelectItem value="other">अन्य</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="hindi-text text-sm">जाति</Label>
-                            <Select
-                              value={member.caste}
-                              onValueChange={(value) => updateMember(member.id, "caste", value)}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="general">सामान्य</SelectItem>
-                                <SelectItem value="sc">अनुसूचित जाति (SC)</SelectItem>
-                                <SelectItem value="st">अनुसूचित जनजाति (ST)</SelectItem>
-                                <SelectItem value="obc">अन्य पिछड़ा वर्ग (OBC)</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Label className="hindi-text text-sm">गोत्र</Label>
+                            <Input
+                              value={member.gotra}
+                              onChange={(e) => updateMember(member.id, "gotra", e.target.value)}
+                              placeholder="गोत्र का नाम"
+                              className="mt-1 text-sm"
+                            />
                           </div>
                           <div>
                             <Label className="hindi-text text-sm">ब्लड ग्रुप</Label>
@@ -853,6 +1014,18 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               className="font-medium text-orange-700 hindi-text text-sm"
                             >
                               मुखिया है
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`samuhikVivah-${member.id}`}
+                              checked={member.isInterestedInFutureSamuhikVivah}
+                              onCheckedChange={(checked) =>
+                                updateMember(member.id, "isInterestedInFutureSamuhikVivah", checked)
+                              }
+                            />
+                            <Label htmlFor={`samuhikVivah-${member.id}`} className="hindi-text text-sm">
+                              सामूहिक विवाह में रुचि
                             </Label>
                           </div>
                         </div>
@@ -916,6 +1089,24 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                           <div className="mobile-form-grid">
                             <div>
+                              <Label className="hindi-text text-sm">राज्य</Label>
+                              <Input
+                                value={member.state}
+                                onChange={(e) => updateMember(member.id, "state", e.target.value)}
+                                placeholder="राज्य"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="hindi-text text-sm">जिला</Label>
+                              <Input
+                                value={member.district}
+                                onChange={(e) => updateMember(member.id, "district", e.target.value)}
+                                placeholder="जिला"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+                            <div>
                               <Label className="hindi-text text-sm">गांव का नाम</Label>
                               <Input
                                 value={member.village}
@@ -934,24 +1125,6 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 className="mt-1 text-sm"
                               />
                             </div>
-                            <div>
-                              <Label className="hindi-text text-sm">जिला</Label>
-                              <Input
-                                value={member.district}
-                                onChange={(e) => updateMember(member.id, "district", e.target.value)}
-                                placeholder="जिला"
-                                className="mt-1 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="hindi-text text-sm">राज्य</Label>
-                              <Input
-                                value={member.state}
-                                onChange={(e) => updateMember(member.id, "state", e.target.value)}
-                                placeholder="राज्य"
-                                className="mt-1 text-sm"
-                              />
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -963,15 +1136,59 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                           शिक्षा की जानकारी
                         </h4>
                         <div className="space-y-4">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`student-${member.id}`}
-                              checked={member.isStudent}
-                              onCheckedChange={(checked) => updateMember(member.id, "isStudent", checked)}
-                            />
-                            <Label htmlFor={`student-${member.id}`} className="hindi-text text-sm">
-                              वर्तमान में छात्र/छात्रा है
-                            </Label>
+                          <div className="flex flex-wrap gap-4">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`student-${member.id}`}
+                                checked={member.isStudent}
+                                onCheckedChange={(checked) => updateMember(member.id, "isStudent", checked)}
+                              />
+                              <Label htmlFor={`student-${member.id}`} className="hindi-text text-sm">
+                                वर्तमान में छात्र/छात्रा है
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`currentlyEnrolled-${member.id}`}
+                                checked={member.isCurrentlyEnrolled}
+                                onCheckedChange={(checked) => updateMember(member.id, "isCurrentlyEnrolled", checked)}
+                              />
+                              <Label htmlFor={`currentlyEnrolled-${member.id}`} className="hindi-text text-sm">
+                                वर्तमान में नामांकित है
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`studyingAbroad-${member.id}`}
+                                checked={member.isStudyingAbroad}
+                                onCheckedChange={(checked) => updateMember(member.id, "isStudyingAbroad", checked)}
+                              />
+                              <Label htmlFor={`studyingAbroad-${member.id}`} className="hindi-text text-sm">
+                                विदेश में पढ़ाई कर रहे हैं
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`helpFromSamaj-${member.id}`}
+                                checked={member.isHelpRequiredFromSamaj}
+                                onCheckedChange={(checked) =>
+                                  updateMember(member.id, "isHelpRequiredFromSamaj", checked)
+                                }
+                              />
+                              <Label htmlFor={`helpFromSamaj-${member.id}`} className="hindi-text text-sm">
+                                समाज से सहायता चाहिए
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`scholarship-${member.id}`}
+                                checked={member.scholarshipReceived}
+                                onCheckedChange={(checked) => updateMember(member.id, "scholarshipReceived", checked)}
+                              />
+                              <Label htmlFor={`scholarship-${member.id}`} className="hindi-text text-sm">
+                                छात्रवृत्ति प्राप्त है
+                              </Label>
+                            </div>
                           </div>
 
                           <div className="mobile-form-grid">
@@ -1030,7 +1247,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               <div>
                                 <Label className="hindi-text text-sm">वर्तमान कक्षा</Label>
                                 <Select
-                                  value={member.currentClass}
+                                  value={member.currentClass || ""}
                                   onValueChange={(value) => updateMember(member.id, "currentClass", value)}
                                 >
                                   <SelectTrigger className="mt-1">
@@ -1055,135 +1272,13 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             )}
 
                             <div>
-                              <Label className="hindi-text text-sm">कॉलेज कोर्स (यदि कोई हो)</Label>
-                              <Select
+                              <Label className="hindi-text text-sm">कॉलेज कोर्स</Label>
+                              <Input
                                 value={member.collegeCourse}
-                                onValueChange={(value) => updateMember(member.id, "collegeCourse", value)}
-                              >
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="कॉलेज कोर्स चुनें" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">कोई नहीं</SelectItem>
-
-                                  {/* Engineering Courses */}
-                                  <SelectItem value="btech_computer">B.Tech Computer Science</SelectItem>
-                                  <SelectItem value="btech_mechanical">B.Tech Mechanical</SelectItem>
-                                  <SelectItem value="btech_electrical">B.Tech Electrical</SelectItem>
-                                  <SelectItem value="btech_civil">B.Tech Civil</SelectItem>
-                                  <SelectItem value="btech_electronics">B.Tech Electronics</SelectItem>
-                                  <SelectItem value="be_computer">BE Computer Science</SelectItem>
-                                  <SelectItem value="be_mechanical">BE Mechanical</SelectItem>
-                                  <SelectItem value="be_electrical">BE Electrical</SelectItem>
-                                  <SelectItem value="be_civil">BE Civil</SelectItem>
-
-                                  {/* Medical Courses */}
-                                  <SelectItem value="mbbs">MBBS</SelectItem>
-                                  <SelectItem value="bds">BDS (Dental)</SelectItem>
-                                  <SelectItem value="bams">BAMS (Ayurveda)</SelectItem>
-                                  <SelectItem value="bhms">BHMS (Homeopathy)</SelectItem>
-                                  <SelectItem value="bums">BUMS (Unani)</SelectItem>
-                                  <SelectItem value="bpt">BPT (Physiotherapy)</SelectItem>
-                                  <SelectItem value="nursing_bsc">B.Sc Nursing</SelectItem>
-                                  <SelectItem value="nursing_gnm">GNM Nursing</SelectItem>
-                                  <SelectItem value="nursing_anm">ANM Nursing</SelectItem>
-                                  <SelectItem value="pharmacy">B.Pharmacy</SelectItem>
-                                  <SelectItem value="md">MD (Doctor of Medicine)</SelectItem>
-                                  <SelectItem value="ms">MS (Master of Surgery)</SelectItem>
-
-                                  {/* Arts & Humanities */}
-                                  <SelectItem value="ba">BA (Bachelor of Arts)</SelectItem>
-                                  <SelectItem value="ma">MA (Master of Arts)</SelectItem>
-                                  <SelectItem value="ba_english">BA English</SelectItem>
-                                  <SelectItem value="ba_hindi">BA Hindi</SelectItem>
-                                  <SelectItem value="ba_history">BA History</SelectItem>
-                                  <SelectItem value="ba_political_science">BA Political Science</SelectItem>
-                                  <SelectItem value="ba_sociology">BA Sociology</SelectItem>
-                                  <SelectItem value="ba_psychology">BA Psychology</SelectItem>
-
-                                  {/* Commerce */}
-                                  <SelectItem value="bcom">B.Com</SelectItem>
-                                  <SelectItem value="mcom">M.Com</SelectItem>
-                                  <SelectItem value="bba">BBA</SelectItem>
-                                  <SelectItem value="mba">MBA</SelectItem>
-                                  <SelectItem value="ca">CA (Chartered Accountant)</SelectItem>
-                                  <SelectItem value="cs">CS (Company Secretary)</SelectItem>
-                                  <SelectItem value="cma">CMA (Cost Management Accountant)</SelectItem>
-
-                                  {/* Science */}
-                                  <SelectItem value="bsc">B.Sc</SelectItem>
-                                  <SelectItem value="msc">M.Sc</SelectItem>
-                                  <SelectItem value="bsc_physics">B.Sc Physics</SelectItem>
-                                  <SelectItem value="bsc_chemistry">B.Sc Chemistry</SelectItem>
-                                  <SelectItem value="bsc_mathematics">B.Sc Mathematics</SelectItem>
-                                  <SelectItem value="bsc_biology">B.Sc Biology</SelectItem>
-                                  <SelectItem value="bsc_it">B.Sc IT</SelectItem>
-                                  <SelectItem value="bca">BCA (Computer Applications)</SelectItem>
-                                  <SelectItem value="mca">MCA (Computer Applications)</SelectItem>
-
-                                  {/* Law */}
-                                  <SelectItem value="llb">LLB</SelectItem>
-                                  <SelectItem value="llm">LLM</SelectItem>
-                                  <SelectItem value="ba_llb">BA LLB</SelectItem>
-                                  <SelectItem value="bcom_llb">B.Com LLB</SelectItem>
-
-                                  {/* Education */}
-                                  <SelectItem value="bed">B.Ed</SelectItem>
-                                  <SelectItem value="med">M.Ed</SelectItem>
-                                  <SelectItem value="deled">D.El.Ed</SelectItem>
-                                  <SelectItem value="btc">BTC</SelectItem>
-
-                                  {/* Diploma Courses */}
-                                  <SelectItem value="diploma_mechanical">Diploma Mechanical</SelectItem>
-                                  <SelectItem value="diploma_electrical">Diploma Electrical</SelectItem>
-                                  <SelectItem value="diploma_civil">Diploma Civil</SelectItem>
-                                  <SelectItem value="diploma_computer">Diploma Computer</SelectItem>
-                                  <SelectItem value="diploma_electronics">Diploma Electronics</SelectItem>
-
-                                  {/* Vocational Courses */}
-                                  <SelectItem value="iti_fitter">ITI Fitter</SelectItem>
-                                  <SelectItem value="iti_electrician">ITI Electrician</SelectItem>
-                                  <SelectItem value="iti_welder">ITI Welder</SelectItem>
-                                  <SelectItem value="iti_mechanic">ITI Mechanic</SelectItem>
-                                  <SelectItem value="iti_computer">ITI Computer</SelectItem>
-
-                                  {/* Agriculture */}
-                                  <SelectItem value="bsc_agriculture">B.Sc Agriculture</SelectItem>
-                                  <SelectItem value="msc_agriculture">M.Sc Agriculture</SelectItem>
-                                  <SelectItem value="diploma_agriculture">Diploma Agriculture</SelectItem>
-
-                                  {/* Other Professional Courses */}
-                                  <SelectItem value="hotel_management">Hotel Management</SelectItem>
-                                  <SelectItem value="fashion_design">Fashion Design</SelectItem>
-                                  <SelectItem value="interior_design">Interior Design</SelectItem>
-                                  <SelectItem value="journalism">Journalism</SelectItem>
-                                  <SelectItem value="mass_communication">Mass Communication</SelectItem>
-                                  <SelectItem value="social_work">Social Work</SelectItem>
-                                  <SelectItem value="library_science">Library Science</SelectItem>
-                                  <SelectItem value="other">अन्य</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div>
-                              <Label className="hindi-text text-sm">नामांकन स्थिति</Label>
-                              <Select
-                                value={member.enrollmentStatus}
-                                onValueChange={(value) => updateMember(member.id, "enrollmentStatus", value)}
-                              >
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="नामांकन स्थिति चुनें" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="enrolled">नामांकित</SelectItem>
-                                  <SelectItem value="dropped">छोड़ दिया</SelectItem>
-                                  <SelectItem value="completed">पूर्ण</SelectItem>
-                                  <SelectItem value="never_enrolled">कभी नामांकित नहीं</SelectItem>
-                                  <SelectItem value="pursuing">अध्ययनरत</SelectItem>
-                                  <SelectItem value="passed">उत्तीर्ण</SelectItem>
-                                  <SelectItem value="failed">अनुत्तीर्ण</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                onChange={(e) => updateMember(member.id, "collegeCourse", e.target.value)}
+                                placeholder="कॉलेज कोर्स का नाम"
+                                className="mt-1 text-sm"
+                              />
                             </div>
 
                             <div>
@@ -1196,18 +1291,115 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               />
                             </div>
 
-                            {member.enrollmentStatus === "dropped" && (
-                              <div>
-                                <Label className="hindi-text text-sm">छोड़ने का कारण</Label>
-                                <Input
-                                  value={member.dropoutReason || ""}
-                                  onChange={(e) => updateMember(member.id, "dropoutReason", e.target.value)}
-                                  placeholder="छोड़ने का कारण बताएं"
-                                  className="mt-1 text-sm"
-                                />
-                              </div>
-                            )}
+                            <div>
+                              <Label className="hindi-text text-sm">स्कूल का नाम</Label>
+                              <Input
+                                value={member.schoolName || ""}
+                                onChange={(e) => updateMember(member.id, "schoolName", e.target.value)}
+                                placeholder="स्कूल का नाम"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">शिक्षा का तरीका</Label>
+                              <Select
+                                value={member.educationMode || ""}
+                                onValueChange={(value) => updateMember(member.id, "educationMode", value)}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="शिक्षा का तरीका चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="regular">नियमित</SelectItem>
+                                  <SelectItem value="distance">दूरस्थ शिक्षा</SelectItem>
+                                  <SelectItem value="online">ऑनलाइन</SelectItem>
+                                  <SelectItem value="correspondence">पत्राचार</SelectItem>
+                                  <SelectItem value="part_time">अंशकालिक</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">वर्तमान शिक्षा शहर</Label>
+                              <Input
+                                value={member.currentEducationCity || ""}
+                                onChange={(e) => updateMember(member.id, "currentEducationCity", e.target.value)}
+                                placeholder="शिक्षा प्राप्त कर रहे शहर का नाम"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">वर्तमान शिक्षा देश</Label>
+                              <Input
+                                value={member.currentEducationCountry || ""}
+                                onChange={(e) => updateMember(member.id, "currentEducationCountry", e.target.value)}
+                                placeholder="शिक्षा प्राप्त कर रहे देश का नाम"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">बोर्ड/विश्वविद्यालय</Label>
+                              <Input
+                                value={member.boardOrUniversity || ""}
+                                onChange={(e) => updateMember(member.id, "boardOrUniversity", e.target.value)}
+                                placeholder="बोर्ड या विश्वविद्यालय का नाम"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">अध्ययन क्षेत्र</Label>
+                              <Input
+                                value={member.fieldOfStudy || ""}
+                                onChange={(e) => updateMember(member.id, "fieldOfStudy", e.target.value)}
+                                placeholder="अध्ययन का विषय/क्षेत्र"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">उत्तीर्ण वर्ष</Label>
+                              <Input
+                                type="number"
+                                value={member.yearOfPassing || ""}
+                                onChange={(e) =>
+                                  updateMember(member.id, "yearOfPassing", Number.parseInt(e.target.value) || undefined)
+                                }
+                                placeholder="उत्तीर्ण होने का वर्ष"
+                                min="1950"
+                                max={new Date().getFullYear() + 10}
+                                className="mt-1 text-sm"
+                              />
+                            </div>
                           </div>
+
+                          {member.scholarshipReceived && (
+                            <div>
+                              <Label className="hindi-text text-sm">छात्रवृत्ति विवरण</Label>
+                              <Textarea
+                                value={member.scholarshipDetails || ""}
+                                onChange={(e) => updateMember(member.id, "scholarshipDetails", e.target.value)}
+                                placeholder="छात्रवृत्ति का विवरण"
+                                className="mt-1 text-sm"
+                                rows={2}
+                              />
+                            </div>
+                          )}
+
+                          {member.enrollmentStatus === "dropped" && (
+                            <div>
+                              <Label className="hindi-text text-sm">छोड़ने का कारण</Label>
+                              <Input
+                                value={member.dropoutReason || ""}
+                                onChange={(e) => updateMember(member.id, "dropoutReason", e.target.value)}
+                                placeholder="छोड़ने का कारण बताएं"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1218,22 +1410,95 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                           रोजगार की जानकारी
                         </h4>
                         <div className="space-y-4">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`employed-${member.id}`}
-                              checked={member.isEmployed}
-                              onCheckedChange={(checked) => updateMember(member.id, "isEmployed", checked)}
-                            />
-                            <Label htmlFor={`employed-${member.id}`} className="hindi-text text-sm">
-                              रोजगार में है
-                            </Label>
+                          <div className="flex flex-wrap gap-4">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`employed-${member.id}`}
+                                checked={member.isEmployed}
+                                onCheckedChange={(checked) => updateMember(member.id, "isEmployed", checked)}
+                              />
+                              <Label htmlFor={`employed-${member.id}`} className="hindi-text text-sm">
+                                रोजगार में है
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`selfEmployed-${member.id}`}
+                                checked={member.isSelfEmployed}
+                                onCheckedChange={(checked) => updateMember(member.id, "isSelfEmployed", checked)}
+                              />
+                              <Label htmlFor={`selfEmployed-${member.id}`} className="hindi-text text-sm">
+                                स्व-रोजगार में है
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`governmentJob-${member.id}`}
+                                checked={member.isGovernmentJob}
+                                onCheckedChange={(checked) => updateMember(member.id, "isGovernmentJob", checked)}
+                              />
+                              <Label htmlFor={`governmentJob-${member.id}`} className="hindi-text text-sm">
+                                सरकारी नौकरी है
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`businessRegistration-${member.id}`}
+                                checked={member.businessRegistration}
+                                onCheckedChange={(checked) => updateMember(member.id, "businessRegistration", checked)}
+                              />
+                              <Label htmlFor={`businessRegistration-${member.id}`} className="hindi-text text-sm">
+                                व्यापार पंजीकृत है
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`willingToHire-${member.id}`}
+                                checked={member.willingToHirePeople}
+                                onCheckedChange={(checked) => updateMember(member.id, "willingToHirePeople", checked)}
+                              />
+                              <Label htmlFor={`willingToHire-${member.id}`} className="hindi-text text-sm">
+                                लोगों को काम देने को तैयार
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`openToRelocate-${member.id}`}
+                                checked={member.isOpenToRelocate}
+                                onCheckedChange={(checked) => updateMember(member.id, "isOpenToRelocate", checked)}
+                              />
+                              <Label htmlFor={`openToRelocate-${member.id}`} className="hindi-text text-sm">
+                                स्थानांतरण के लिए तैयार
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`additionalSkills-${member.id}`}
+                                checked={member.hasAdditionalSkills}
+                                onCheckedChange={(checked) => updateMember(member.id, "hasAdditionalSkills", checked)}
+                              />
+                              <Label htmlFor={`additionalSkills-${member.id}`} className="hindi-text text-sm">
+                                अतिरिक्त कौशल है
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`incomeSourceCountry-${member.id}`}
+                                checked={member.incomeSourceCountry}
+                                onCheckedChange={(checked) => updateMember(member.id, "incomeSourceCountry", checked)}
+                              />
+                              <Label htmlFor={`incomeSourceCountry-${member.id}`} className="hindi-text text-sm">
+                                आय का स्रोत विदेश में है
+                              </Label>
+                            </div>
                           </div>
+
                           <div className="mobile-form-grid">
                             <div>
                               <Label className="hindi-text text-sm">व्यवसाय का प्रकार</Label>
                               <Select
-                                value={member.occupation}
-                                onValueChange={(value) => updateMember(member.id, "occupation", value)}
+                                value={member.occupationType || ""}
+                                onValueChange={(value) => updateMember(member.id, "occupationType", value)}
                               >
                                 <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="व्यवसाय चुनें" />
@@ -1249,34 +1514,96 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   <SelectItem value="student">छात्र</SelectItem>
                                   <SelectItem value="housewife">गृहिणी</SelectItem>
                                   <SelectItem value="retired">सेवानिवृत्त</SelectItem>
+                                  <SelectItem value="professional">पेशेवर</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
 
                             <div>
-                              <Label className="hindi-text text-sm">सेवा का प्रकार</Label>
+                              <Label className="hindi-text text-sm">रोजगार की स्थिति</Label>
                               <Select
-                                value={member.serviceType}
-                                onValueChange={(value) => updateMember(member.id, "serviceType", value)}
+                                value={member.employmentStatus || ""}
+                                onValueChange={(value) => updateMember(member.id, "employmentStatus", value)}
                               >
                                 <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="सेवा का प्रकार चुनें" />
+                                  <SelectValue placeholder="रोजगार की स्थिति चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="none">कोई नहीं</SelectItem>
+                                  <SelectItem value="employed">कार्यरत</SelectItem>
+                                  <SelectItem value="unemployed">बेरोजगार</SelectItem>
+                                  <SelectItem value="self_employed">स्व-रोजगार</SelectItem>
+                                  <SelectItem value="retired">सेवानिवृत्त</SelectItem>
+                                  <SelectItem value="student">छात्र</SelectItem>
+                                  <SelectItem value="homemaker">गृहिणी</SelectItem>
+                                  <SelectItem value="looking_for_job">नौकरी की तलाश में</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">नौकरी की श्रेणी</Label>
+                              <Select
+                                value={member.jobCategory || ""}
+                                onValueChange={(value) => updateMember(member.id, "jobCategory", value)}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="नौकरी की श्रेणी चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="agriculture">कृषि</SelectItem>
                                   <SelectItem value="healthcare">स्वास्थ्य सेवा</SelectItem>
                                   <SelectItem value="education">शिक्षा</SelectItem>
-                                  <SelectItem value="transport">परिवहन</SelectItem>
+                                  <SelectItem value="technology">प्रौद्योगिकी</SelectItem>
+                                  <SelectItem value="finance">वित्त</SelectItem>
+                                  <SelectItem value="manufacturing">विनिर्माण</SelectItem>
                                   <SelectItem value="construction">निर्माण</SelectItem>
+                                  <SelectItem value="transport">परिवहन</SelectItem>
                                   <SelectItem value="retail">खुदरा व्यापार</SelectItem>
                                   <SelectItem value="hospitality">आतिथ्य</SelectItem>
-                                  <SelectItem value="finance">वित्त</SelectItem>
-                                  <SelectItem value="technology">प्रौद्योगिकी</SelectItem>
-                                  <SelectItem value="manufacturing">विनिर्माण</SelectItem>
-                                  <SelectItem value="agriculture">कृषि</SelectItem>
+                                  <SelectItem value="government">सरकारी सेवा</SelectItem>
                                   <SelectItem value="other">अन्य</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">नौकरी का प्रकार</Label>
+                              <Select
+                                value={member.jobType || ""}
+                                onValueChange={(value) => updateMember(member.id, "jobType", value)}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="नौकरी का प्रकार चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="full_time">पूर्णकालिक</SelectItem>
+                                  <SelectItem value="part_time">अंशकालिक</SelectItem>
+                                  <SelectItem value="contract">अनुबंध आधारित</SelectItem>
+                                  <SelectItem value="freelance">फ्रीलांस</SelectItem>
+                                  <SelectItem value="temporary">अस्थायी</SelectItem>
+                                  <SelectItem value="permanent">स्थायी</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">पद/पदनाम</Label>
+                              <Input
+                                value={member.jobPosition || ""}
+                                onChange={(e) => updateMember(member.id, "jobPosition", e.target.value)}
+                                placeholder="पद का नाम"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">नियोक्ता/संगठन का नाम</Label>
+                              <Input
+                                value={member.employerOrganizationName || ""}
+                                onChange={(e) => updateMember(member.id, "employerOrganizationName", e.target.value)}
+                                placeholder="कंपनी/संगठन का नाम"
+                                className="mt-1 text-sm"
+                              />
                             </div>
 
                             <div>
@@ -1285,7 +1612,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 type="number"
                                 value={member.monthlyIncome || ""}
                                 onChange={(e) =>
-                                  updateMember(member.id, "monthlyIncome", Number.parseInt(e.target.value) || 0)
+                                  updateMember(
+                                    member.id,
+                                    "monthlyIncome",
+                                    Number.parseFloat(e.target.value) || undefined,
+                                  )
                                 }
                                 placeholder="मासिक आय"
                                 min="0"
@@ -1294,88 +1625,162 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </div>
 
                             <div>
-                              <Label className="hindi-text text-sm">आय का मुख्य स्रोत</Label>
-                              <Select
-                                value={member.incomeSource}
-                                onValueChange={(value) => updateMember(member.id, "incomeSource", value)}
-                              >
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="आय का स्रोत चुनें" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="farming">खेती</SelectItem>
-                                  <SelectItem value="business">व्यापार</SelectItem>
-                                  <SelectItem value="wage_labor">मजदूरी</SelectItem>
-                                  <SelectItem value="salary">वेतन</SelectItem>
-                                  <SelectItem value="pension">पेंशन</SelectItem>
-                                  <SelectItem value="remittance">प्रेषण</SelectItem>
-                                  <SelectItem value="other">अन्य</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <Label className="hindi-text text-sm">कार्य अनुभव (वर्ष)</Label>
+                              <Input
+                                type="number"
+                                value={member.workExperienceYears || ""}
+                                onChange={(e) =>
+                                  updateMember(
+                                    member.id,
+                                    "workExperienceYears",
+                                    Number.parseInt(e.target.value) || undefined,
+                                  )
+                                }
+                                placeholder="कुल कार्य अनुभव"
+                                min="0"
+                                className="mt-1 text-sm"
+                              />
                             </div>
 
-                            <div className="col-span-full">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`incomeSourceIndia-${member.id}`}
-                                  checked={member.isIncomeSourceInIndia}
-                                  onCheckedChange={(checked) =>
-                                    updateMember(member.id, "isIncomeSourceInIndia", checked)
-                                  }
-                                />
-                                <Label htmlFor={`incomeSourceIndia-${member.id}`} className="hindi-text text-sm">
-                                  आय का स्रोत भारत में है
-                                </Label>
-                              </div>
+                            <div>
+                              <Label className="hindi-text text-sm">साप्ताहिक कार्य घंटे</Label>
+                              <Input
+                                type="number"
+                                value={member.workingHoursPerWeek || ""}
+                                onChange={(e) =>
+                                  updateMember(
+                                    member.id,
+                                    "workingHoursPerWeek",
+                                    Number.parseInt(e.target.value) || undefined,
+                                  )
+                                }
+                                placeholder="प्रति सप्ताह कार्य घंटे"
+                                min="0"
+                                max="168"
+                                className="mt-1 text-sm"
+                              />
                             </div>
 
-                            {!member.isIncomeSourceInIndia && (
+                            <div>
+                              <Label className="hindi-text text-sm">कार्य स्थान राज्य</Label>
+                              <Input
+                                value={member.occupationState || ""}
+                                onChange={(e) => updateMember(member.id, "occupationState", e.target.value)}
+                                placeholder="कार्य स्थान का राज्य"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">कार्य स्थान शहर</Label>
+                              <Input
+                                value={member.occupationCity || ""}
+                                onChange={(e) => updateMember(member.id, "occupationCity", e.target.value)}
+                                placeholder="कार्य स्थान का शहर"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="hindi-text text-sm">पसंदीदा कार्य स्थान</Label>
+                              <Input
+                                value={member.preferredJobLocation || ""}
+                                onChange={(e) => updateMember(member.id, "preferredJobLocation", e.target.value)}
+                                placeholder="पसंदीदा कार्य स्थान"
+                                className="mt-1 text-sm"
+                              />
+                            </div>
+
+                            {member.incomeSourceCountry && (
                               <div>
-                                <Label className="hindi-text flex items-center text-sm">
-                                  <Globe className="w-4 h-4 mr-1" />
-                                  आय स्रोत देश का नाम
-                                </Label>
+                                <Label className="hindi-text text-sm">आय स्रोत देश का नाम</Label>
                                 <Input
-                                  value={member.incomeSourceCountry}
-                                  onChange={(e) => updateMember(member.id, "incomeSourceCountry", e.target.value)}
-                                  placeholder="देश का नाम दर्ज करें"
+                                  value={member.countryName || ""}
+                                  onChange={(e) => updateMember(member.id, "countryName", e.target.value)}
+                                  placeholder="देश का नाम"
                                   className="mt-1 text-sm"
                                 />
                               </div>
                             )}
-
-                            <div>
-                              <Label className="hindi-text text-sm">भूमि स्वामित्व (एकड़)</Label>
-                              <Input
-                                type="number"
-                                value={member.landOwned || ""}
-                                onChange={(e) =>
-                                  updateMember(member.id, "landOwned", Number.parseFloat(e.target.value) || 0)
-                                }
-                                placeholder="भूमि का क्षेत्रफल"
-                                min="0"
-                                step="0.1"
-                                className="mt-1 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="hindi-text text-sm">पशुधन</Label>
-                              <Input
-                                value={member.livestock}
-                                onChange={(e) => updateMember(member.id, "livestock", e.target.value)}
-                                placeholder="गाय, भैंस, बकरी आदि"
-                                className="mt-1 text-sm"
-                              />
-                            </div>
                           </div>
+
+                          {/* Self Employment Details */}
+                          {member.isSelfEmployed && (
+                            <div className="border-t pt-4">
+                              <h5 className="font-medium text-gray-700 mb-3 hindi-text">स्व-रोजगार विवरण</h5>
+                              <div className="mobile-form-grid">
+                                <div>
+                                  <Label className="hindi-text text-sm">स्व-रोजगार का प्रकार</Label>
+                                  <Input
+                                    value={member.selfEmployedJobType || ""}
+                                    onChange={(e) => updateMember(member.id, "selfEmployedJobType", e.target.value)}
+                                    placeholder="स्व-रोजगार का प्रकार"
+                                    className="mt-1 text-sm"
+                                  />
+                                </div>
+
+                                <div>
+                                  <Label className="hindi-text text-sm">व्यापार का नाम</Label>
+                                  <Input
+                                    value={member.nameOfBusiness || ""}
+                                    onChange={(e) => updateMember(member.id, "nameOfBusiness", e.target.value)}
+                                    placeholder="व्यापार/व्यवसाय का नाम"
+                                    className="mt-1 text-sm"
+                                  />
+                                </div>
+
+                                <div>
+                                  <Label className="hindi-text text-sm">व्यापार की श्रेणी</Label>
+                                  <Select
+                                    value={member.businessCategory || ""}
+                                    onValueChange={(value) => updateMember(member.id, "businessCategory", value)}
+                                  >
+                                    <SelectTrigger className="mt-1">
+                                      <SelectValue placeholder="व्यापार की श्रेणी चुनें" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="retail">खुदरा व्यापार</SelectItem>
+                                      <SelectItem value="wholesale">थोक व्यापार</SelectItem>
+                                      <SelectItem value="manufacturing">विनिर्माण</SelectItem>
+                                      <SelectItem value="services">सेवा</SelectItem>
+                                      <SelectItem value="agriculture">कृषि</SelectItem>
+                                      <SelectItem value="construction">निर्माण</SelectItem>
+                                      <SelectItem value="transport">परिवहन</SelectItem>
+                                      <SelectItem value="food">खाद्य व्यवसाय</SelectItem>
+                                      <SelectItem value="technology">प्रौद्योगिकी</SelectItem>
+                                      <SelectItem value="other">अन्य</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div>
+                                  <Label className="hindi-text text-sm">व्यापार का आकार</Label>
+                                  <Select
+                                    value={member.sizeOfBusiness || ""}
+                                    onValueChange={(value) => updateMember(member.id, "sizeOfBusiness", value)}
+                                  >
+                                    <SelectTrigger className="mt-1">
+                                      <SelectValue placeholder="व्यापार का आकार चुनें" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="micro">सूक्ष्म (1-10 कर्मचारी)</SelectItem>
+                                      <SelectItem value="small">लघु (11-50 कर्मचारी)</SelectItem>
+                                      <SelectItem value="medium">मध्यम (51-250 कर्मचारी)</SelectItem>
+                                      <SelectItem value="large">बड़ा (250+ कर्मचारी)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Housing Information */}
+                      {/* Living Status */}
                       <div>
                         <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <Home className="w-4 h-4 mr-2" />
-                          आवास की जानकारी
+                          आवास और संपत्ति की जानकारी
                         </h4>
                         <div className="mobile-form-grid">
                           <div>
@@ -1432,6 +1837,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               </SelectContent>
                             </Select>
                           </div>
+
                           <div>
                             <Label className="hindi-text text-sm">खाना पकाने का ईंधन</Label>
                             <Select
@@ -1450,7 +1856,53 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               </SelectContent>
                             </Select>
                           </div>
+
+                          <div>
+                            <Label className="hindi-text text-sm">भूमि स्वामित्व (एकड़)</Label>
+                            <Input
+                              type="number"
+                              value={member.landOwned || ""}
+                              onChange={(e) =>
+                                updateMember(member.id, "landOwned", Number.parseFloat(e.target.value) || 0)
+                              }
+                              placeholder="भूमि का क्षेत्रफल"
+                              min="0"
+                              step="0.1"
+                              className="mt-1 text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <Label className="hindi-text text-sm">पशुधन</Label>
+                            <Input
+                              value={member.livestock}
+                              onChange={(e) => updateMember(member.id, "livestock", e.target.value)}
+                              placeholder="गाय, भैंस, बकरी आदि"
+                              className="mt-1 text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <Label className="hindi-text text-sm">वाहन का प्रकार</Label>
+                            <Select
+                              value={member.vehicleType}
+                              onValueChange={(value) => updateMember(member.id, "vehicleType", value)}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="NONE">कोई वाहन नहीं</SelectItem>
+                                <SelectItem value="BICYCLE">साइकिल</SelectItem>
+                                <SelectItem value="MOTORCYCLE">मोटरसाइकिल</SelectItem>
+                                <SelectItem value="CAR">कार</SelectItem>
+                                <SelectItem value="TRUCK">ट्रक</SelectItem>
+                                <SelectItem value="OTHER">अन्य</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
+
                         <div className="mt-4 flex flex-col sm:flex-row gap-4 sm:gap-6">
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -1513,12 +1965,24 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 स्वास्थ्य बीमा है
                               </Label>
                             </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`futureHealthPolicy-${member.id}`}
+                                checked={member.isInterestedInFutureHealthPolicy}
+                                onCheckedChange={(checked) =>
+                                  updateMember(member.id, "isInterestedInFutureHealthPolicy", checked)
+                                }
+                              />
+                              <Label htmlFor={`futureHealthPolicy-${member.id}`} className="hindi-text text-sm">
+                                भविष्य में स्वास्थ्य बीमा में रुचि
+                              </Label>
+                            </div>
                           </div>
                           {member.hasHealthIssues && (
                             <div className="max-w-md">
                               <Label className="hindi-text text-sm">पुरानी बीमारी (यदि कोई हो)</Label>
                               <Input
-                                value={member.chronicDisease || ""}
+                                value={member.chronicDisease}
                                 onChange={(e) => updateMember(member.id, "chronicDisease", e.target.value)}
                                 placeholder="बीमारी का नाम"
                                 className="mt-1 text-sm"
@@ -1528,7 +1992,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                         </div>
                       </div>
 
-                      {/* Digital Access */}
+                      {/* Digital Access and Banking */}
                       <div>
                         <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <Smartphone className="w-4 h-4 mr-2" />
