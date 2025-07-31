@@ -1,11 +1,9 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from "axios"
-import { getSession } from "next-auth/react"
-
-const baseURL = process.env.NEXT_PUBLIC_REQUEST_URL || "http://localhost:3001"
+import { getSession, signIn } from "next-auth/react"
 
 const request = axios.create({
-  baseURL,
-  timeout: 30000,
+  baseURL: process.env.NEXT_PUBLIC_REQUEST_URL || "http://localhost:3001",
+  timeout: 30000, // 30 seconds timeout
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -31,13 +29,6 @@ request.interceptors.request.use(
       }
     }
 
-    // Add auth token if available
-    const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-
-    // Log request in development
     if (process.env.NODE_ENV === "development") {
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
         headers: config.headers,
@@ -107,9 +98,8 @@ request.interceptors.response.use(
           break
         case 401:
           console.error("Unauthorized:", data)
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("authToken")
-            window.location.href = "/login"
+          if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+            signIn(process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID)
           }
           break
         case 403:

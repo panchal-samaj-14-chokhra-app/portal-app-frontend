@@ -1,136 +1,121 @@
-"use client"
+import { checkBackendHealth, checkApiCompatibility } from "@/config/request"
 
-import { useEffect } from "react"
-
-import { useState } from "react"
-
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getApiHealth, getApiVersion, syncWithBackend } from "@/data-hooks/requests/village-family"
-
-export interface BackendStatus {
-  isOnline: boolean
-  version: string
-  lastChecked: Date
-  latency: number
-  error?: string
+export interface SyncStatus {
+  isHealthy: boolean
+  isCompatible: boolean
+  lastSync?: Date
+  backendVersion?: string
+  frontendVersion: string
+  errors: string[]
 }
 
-export const useBackendSync = () => {
-  const queryClient = useQueryClient()
+export class BackendSyncManager {
+  private static instance: BackendSyncManager
+  private syncStatus: SyncStatus = {
+    isHealthy: false,
+    isCompatible: false,
+    frontendVersion: process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0",
+    errors: [],
+  }
 
-  // Health check query
-  const {
-    data: healthData,
-    isLoading: healthLoading,
-    error: healthError,
-    refetch: checkHealth,
-  } = useQuery({
-    queryKey: ["backend-health"],
-    queryFn: async () => {
-      const start = Date.now()
-      const health = await getApiHealth()
-      const latency = Date.now() - start
-      return { ...health, latency }
-    },
-    refetchInterval: 30000, // Check every 30 seconds
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  })
+  private constructor() {}
 
-  // Version check query
-  const { data: versionData } = useQuery({
-    queryKey: ["backend-version"],
-    queryFn: getApiVersion,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-
-  // Sync mutation
-  const syncMutation = useMutation({
-    mutationFn: syncWithBackend,
-    onSuccess: () => {
-      queryClient.invalidateQueries()
-    },
-  })
-
-  const getStatus = (): BackendStatus => {
-    return {
-      isOnline: !healthError && !!healthData,
-      version: versionData?.version || "unknown",
-      lastChecked: new Date(),
-      latency: healthData?.latency || 0,
-      error: healthError?.message,
+  static getInstance(): BackendSyncManager {
+    if (!BackendSyncManager.instance) {
+      BackendSyncManager.instance = new BackendSyncManager()
     }
+    return BackendSyncManager.instance
   }
 
-  const checkStatus = async () => {
+  async checkBackendStatus(): Promise<SyncStatus> {
+    const errors: string[] = []
+
     try {
-      await checkHealth()
-    } catch (error) {
-      console.error("Health check failed:", error)
-    }
-  }
+      // Check backend health
+      const isHealthy = await checkBackendHealth()
+      this.syncStatus.isHealthy = isHealthy
 
-  const performSync = () => {
-    syncMutation.mutate()
-  }
-
-  return {
-    status: getStatus(),
-    isLoading: healthLoading,
-    checkStatus,
-    performSync,
-    isSyncing: syncMutation.isPending,
-    syncError: syncMutation.error,
-  }
-}
-
-// Hook for monitoring connection status
-export const useConnectionStatus = () => {
-  const { status, isLoading } = useBackendSync()
-
-  return {
-    isOnline: status.isOnline,
-    isLoading,
-    latency: status.latency,
-    version: status.version,
-    lastChecked: status.lastChecked,
-    error: status.error,
-  }
-}
-
-// Auto-retry hook for failed requests
-export const useAutoRetry = (maxRetries = 3, retryDelay = 1000) => {
-  const retryRequest = async (requestFn: () => Promise<any>, retries = 0): Promise<any> => {
-    try {
-      return await requestFn()
-    } catch (error) {
-      if (retries < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, retryDelay * Math.pow(2, retries)))
-        return retryRequest(requestFn, retries + 1)
+      if (!isHealthy) {
+        errors.push("Backend service is not responding")
       }
-      throw error
+
+      // Check API compatibility
+      const compatibilityResult = await checkApiCompatibility()
+      this.syncStatus.isCompatible = compatibilityResult.compatible
+      this.syncStatus.backendVersion = compatibilityResult.backendVersion
+
+      if (!compatibilityResult.compatible) {
+        errors.push(
+          `API version mismatch: Frontend v${this.syncStatus.frontendVersion}, Backend v${compatibilityResult.backendVersion}`,
+        )
+      }
+
+      this.syncStatus.lastSync = new Date()
+      this.syncStatus.errors = errors
+
+      return this.syncStatus
+    } catch (error) {
+      errors.push(`Sync check failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+      this.syncStatus.errors = errors
+      return this.syncStatus
     }
   }
 
-  return { retryRequest }
+  getSyncStatus(): SyncStatus {
+    return { ...this.syncStatus }
+  }
+
+  async waitForBackend(maxRetries = 10, retryInterval = 2000): Promise<boolean> {
+    for (let i = 0; i < maxRetries; i++) {
+      const status = await this.checkBackendStatus()
+      if (status.isHealthy) {
+        return true
+      }
+
+      console.log(`Backend not ready, retrying in ${retryInterval}ms... (${i + 1}/${maxRetries})`)
+      await new Promise((resolve) => setTimeout(resolve, retryInterval))
+    }
+
+    return false
+  }
+
+  // Method to sync specific data types
+  async syncData(dataType: "families" | "villages" | "chokhlas" | "users" | "all"): Promise<boolean> {
+    try {
+      const status = await this.checkBackendStatus()
+      if (!status.isHealthy) {
+        throw new Error("Backend is not healthy")
+      }
+
+      // Implementation would depend on your specific sync requirements
+      console.log(`Syncing ${dataType} data...`)
+
+      // This is where you'd implement the actual sync logic
+      // For example, comparing local cache with backend data
+
+      return true
+    } catch (error) {
+      console.error(`Failed to sync ${dataType}:`, error)
+      return false
+    }
+  }
 }
 
-// Network status detection
-export const useNetworkStatus = () => {
-  const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true)
+// Export singleton instance
+export const backendSync = BackendSyncManager.getInstance()
 
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
+// Utility functions for components
+export const useBackendSync = () => {
+  const checkStatus = () => backendSync.checkBackendStatus()
+  const getStatus = () => backendSync.getSyncStatus()
+  const waitForBackend = (maxRetries?: number, retryInterval?: number) =>
+    backendSync.waitForBackend(maxRetries, retryInterval)
+  const syncData = (dataType: Parameters<typeof backendSync.syncData>[0]) => backendSync.syncData(dataType)
 
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-
-    return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
-    }
-  }, [])
-
-  return isOnline
+  return {
+    checkStatus,
+    getStatus,
+    waitForBackend,
+    syncData,
+  }
 }

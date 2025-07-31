@@ -1,158 +1,114 @@
 "use client"
+import React, { useState, } from 'react';
+import ReusableTable from '@/components/ui/ReusableTable';
+import { Button } from '@/components/ui/button';
+import { useAllVillages, useAllChokhlas, useCreateChokhla, useGetAllUserList } from '@/data-hooks/mutation-query/useQueryAndMutation';
+import { useRouter } from 'next/navigation';
+import { Switch } from '@/components/ui/switch';
+import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
+import { LogOut, ArrowLeft, Plus } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { useState } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
-import { LogOut, Plus, Building2, Users, MapPin, AlertCircle, Loader2, RefreshCw } from "lucide-react"
-import { AddChokhlaForm } from "@/components/forms/add-chokhla-form"
-import { ChokhlaSuccessModal } from "@/components/modals/chokhla-success-modal"
-import { useCreateChokhla, useGetAllChokhlas } from "@/data-hooks/mutation-query/useQueryAndMutation"
+const TABS = [
+  { key: 'village', label: 'गांव प्रबंधन' },
+  { key: 'chokhla', label: 'चौकला प्रबंधन' },
+  { key: 'statics', label: 'आँकड़े' },
+  { key: 'user', label: 'यूज़र प्रबंधन' },
+  { key: 'profile', label: 'सुपर एडमिन प्रोफ़ाइल' },
+];
 
-// Loading skeleton component
-function SuperAdminSkeleton() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Header Skeleton */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Skeleton className="w-11 h-11 rounded-full" />
-            <Skeleton className="h-6 w-64" />
-          </div>
-          <Skeleton className="h-10 w-24" />
-        </div>
-      </header>
+function SuperAdmin() {
+  const [activeTab, setActiveTab] = useState('village');
+  const [openChokhlaModal, setOpenChokhlaModal] = useState(false);
+  const [chokhlaForm, setChokhlaForm] = useState({
+    name: '',
+    adhyaksh: '',
+    contactNumber: '',
+    state: '',
+    district: '',
+    villageName: '',
+    email: '',
+    password: '',
+    repeatPassword: '',
+  });
+  const [formErrors, setFormErrors] = useState({ email: '', password: '', repeatPassword: '' });
+  const { data: villages, isLoading: isVillagesLoading } = useAllVillages();
+  const { data: chokhlas, isLoading: isChokhlasLoading } = useAllChokhlas();
+  const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList();
+  const { mutate: createChokhla } = useCreateChokhla();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdData, setCreatedData] = useState<{ chokhlaId: string, userId: string, email: string, fullName: string, role: string, password: string } | null>(null);
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-20" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+  const router = useRouter();
+  const { data: userData } = useSession()
 
-        {/* Table Skeleton */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-10 w-32" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-12 rounded" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                  <Skeleton className="h-8 w-20" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
-  )
-}
+  const handleChokhlaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setChokhlaForm({ ...chokhlaForm, [e.target.name]: e.target.value });
+    setFormErrors({ ...formErrors, [e.target.name]: '' });
+  };
+  const validateChokhlaForm = () => {
+    let valid = true;
+    const errors: any = { email: '', password: '', repeatPassword: '' };
+    // Email validation
+    if (!chokhlaForm.email) {
+      errors.email = 'ईमेल आवश्यक है';
+      valid = false;
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(chokhlaForm.email)) {
+      errors.email = 'मान्य ईमेल दर्ज करें';
+      valid = false;
+    }
+    // Password validation
+    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!chokhlaForm.password) {
+      errors.password = 'पासवर्ड आवश्यक है';
+      valid = false;
+    } else if (!strongPassword.test(chokhlaForm.password)) {
+      errors.password = 'पासवर्ड मजबूत होना चाहिए (कम से कम 8 अक्षर, एक बड़ा, एक छोटा, एक संख्या, एक विशेष चिन्ह)';
+      valid = false;
+    }
+    // Repeat password validation
+    if (!chokhlaForm.repeatPassword) {
+      errors.repeatPassword = 'पासवर्ड दोबारा लिखें आवश्यक है';
+      valid = false;
+    } else if (chokhlaForm.password !== chokhlaForm.repeatPassword) {
+      errors.repeatPassword = 'पासवर्ड मेल नहीं खाते';
+      valid = false;
+    }
+    setFormErrors(errors);
+    return valid;
+  };
+  const handleChokhlaSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateChokhlaForm()) return;
+    createChokhla(chokhlaForm, {
+      onSuccess: (data) => {
+        const { chokhla, user } = data;
+        setCreatedData({
+          chokhlaId: chokhla.id,
+          userId: user.id,
+          password: user.passwordHash,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.globalRole,
+        });
+        setOpenChokhlaModal(false);
+        setChokhlaForm({ name: '', adhyaksh: '', contactNumber: '', state: '', district: '', villageName: '', email: '', password: '', repeatPassword: '' });
+        setShowSuccessModal(true);
+      }
 
-export default function SuperAdminPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const { toast } = useToast()
+    });
+  };
 
-  const [isAddChokhlaOpen, setIsAddChokhlaOpen] = useState(false)
-  const [successData, setSuccessData] = useState<any>(null)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const handleToggleActive = (userId: string, current: boolean) => {
+    console.log("clicked on the toggle")
+  };
 
-  // Data fetching
-  const {
-    data: chokhlas,
-    isLoading: chokhlaLoading,
-    error: chokhlaError,
-    refetch: refetchChokhlas,
-    isFetching: chokhlasRefetching,
-  } = useGetAllChokhlas()
-
-  // Create chokhla mutation
-  const { mutate: createChokhla, isPending: isCreatingChokhla } = useCreateChokhla(
-    // Success callback
-    (response) => {
-      console.log("Chokhla created successfully:", response)
-
-      toast({
-        title: "सफलता!",
-        description: "चौकला सफलतापूर्वक बनाया गया है।",
-        variant: "default",
-      })
-
-      setSuccessData(response)
-      setShowSuccessModal(true)
-      setIsAddChokhlaOpen(false)
-
-      // Refetch chokhlas to show updated list
-      refetchChokhlas()
-    },
-    // Error callback
-    (error: any) => {
-      console.error("Create chokhla error:", error)
-
-      const message = error?.response?.data?.message || error?.message || "चौकला बनाने में त्रुटि हुई है।"
-
-      toast({
-        title: "त्रुटि!",
-        description: message,
-        variant: "destructive",
-      })
-    },
-  )
-
-  const handleLogout = () => {
-    signOut({ callbackUrl: "/login" })
-  }
-
-  const handleRefresh = () => {
-    refetchChokhlas()
-    toast({
-      title: "डेटा रिफ्रेश किया गया",
-      description: "चौकलों की जानकारी अपडेट की गई है।",
-    })
-  }
-
-  const handleAddChokhla = (formData: any) => {
-    createChokhla(formData)
-  }
-
-  // Show loading skeleton while session is loading
-  if (status === "loading" || chokhlaLoading) {
-    return <SuperAdminSkeleton />
-  }
-
-  // Redirect if not authenticated or not super admin
-  if (status === "unauthenticated" || session?.user?.role !== "SUPER_ADMIN") {
-    router.push("/login")
-    return null
-  }
+  const handleBack = () => router.push("/");
+  const handleLogout = () => signOut({ callbackUrl: "/login" });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Header */}
       <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -163,230 +119,270 @@ export default function SuperAdminPage() {
               height={44}
               className="rounded-full shadow-lg"
             />
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</h1>
-              <p className="text-orange-100 text-sm">सुपर एडमिन पैनल</p>
-            </div>
+            <span className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</span>
           </div>
-          <Button
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-            onClick={handleLogout}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            लॉगआउट
-          </Button>
+          <div className="flex items-center gap-2">
+
+            <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              लॉगआउट
+            </Button>
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-orange-200 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700">कुल चौकले</CardTitle>
-              <Building2 className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-900">{chokhlas?.length || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700">कुल गांव</CardTitle>
-              <MapPin className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-900">
-                {chokhlas?.reduce((total: number, chokhla: any) => total + (chokhla.villages?.length || 0), 0) || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700">कुल परिवार</CardTitle>
-              <Users className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-900">0</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700">कुल सदस्य</CardTitle>
-              <Users className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-900">0</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Chokhlas List */}
-        <Card className="border-orange-200 shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-4">
-              <CardTitle className="text-orange-800">चौकलों की सूची</CardTitle>
-              {chokhlasRefetching && <Loader2 className="w-4 h-4 animate-spin text-orange-500" />}
-            </div>
-            <div className="flex items-center gap-2">
+      <main className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
+        <aside className="w-full md:w-64 mb-6 md:mb-0">
+          <nav className="bg-white rounded-lg shadow border border-orange-200 p-4 flex md:flex-col gap-2">
+            {TABS.map(tab => (
               <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={chokhlasRefetching}
-                className="text-orange-600 border-orange-300 hover:bg-orange-50 bg-transparent"
+                key={tab.key}
+                variant={activeTab === tab.key ? 'default' : 'ghost'}
+                onClick={() => setActiveTab(tab.key)}
+                className={`w-full justify-start text-base font-semibold ${activeTab === tab.key ? 'bg-orange-500 text-white' : 'text-orange-700'}`}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${chokhlasRefetching ? "animate-spin" : ""}`} />
-                रिफ्रेश
+                {tab.label}
               </Button>
+            ))}
+          </nav>
+        </aside>
+        <section className="flex-1 min-w-0">
+          {activeTab === 'village' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>गांव सूची</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ReusableTable
+                  columns={[
+                    { label: 'नाम', accessor: 'name' },
+                    { label: 'सदस्य', accessor: 'villageMemberName' },
+                    { label: 'जिला', accessor: 'district' },
+                    { label: 'राज्य', accessor: 'state' },
+                  ]}
+                  data={villages?.data || []}
+                  loading={isVillagesLoading}
+                  actions={row => (
+                    <Button variant="outline" onClick={() => router.push(`/admin/village/${row.id}`)}>
+                      देखें
+                    </Button>
+                  )}
+                  caption="सभी गांवों की सूची"
+                />
+              </CardContent>
+            </Card>
+          )}
+          {activeTab === 'chokhla' && (
+            <Card className="mb-8">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>चौकला सूची</CardTitle>
+                <Button
 
-              <Dialog open={isAddChokhlaOpen} onOpenChange={setIsAddChokhlaOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
-                    <Plus className="w-4 h-4 mr-2" />
-                    नया चौकला जोड़ें
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-orange-700 flex items-center gap-2">
-                      <Building2 className="w-5 h-5" />
+                  variant="outline" onClick={() => setOpenChokhlaModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  चौकला जोड़ें
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <ReusableTable
+                  columns={[
+                    { label: 'नाम', accessor: 'name' },
+                    { label: 'अध्यक्ष', accessor: 'adhyaksh' },
+                    { label: 'संपर्क नंबर', accessor: 'contactNumber' },
+                    { label: 'राज्य', accessor: 'state' },
+                    { label: 'जिला', accessor: 'district' },
+                    { label: 'गांव', accessor: 'villageName' },
+                  ]}
+                  data={chokhlas || []}
+                  loading={isChokhlasLoading}
+                  actions={row => (
+                    <Button variant="outline" onClick={() => router.push(`/admin/chokhla/${row.id}`)}>
+                      देखें
+                    </Button>
+                  )}
+                  caption="सभी चौकला की सूची"
+                />
+              </CardContent>
+
+              {openChokhlaModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                  <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] flex flex-col p-6">
+
+                    {/* Title with Outline */}
+                    <h3 className="text-2xl font-bold mb-4 text-orange-700 border border-orange-700 rounded px-3 py-2 text-center">
                       नया चौकला जोड़ें
-                    </DialogTitle>
-                  </DialogHeader>
-                  <AddChokhlaForm onSubmit={handleAddChokhla} isLoading={isCreatingChokhla} />
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
+                    </h3>
 
-          <CardContent>
-            {/* Error State */}
-            {chokhlaError && (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-red-700 mb-2">डेटा लोड करने में त्रुटि</h3>
-                  <p className="text-red-600 mb-4">{chokhlaError?.message || "चौकलों की जानकारी लोड नहीं हो सकी"}</p>
-                  <Button
-                    onClick={handleRefresh}
-                    variant="outline"
-                    className="text-red-600 border-red-300 hover:bg-red-50 bg-transparent"
-                    disabled={chokhlasRefetching}
-                  >
-                    {chokhlasRefetching ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        लोड हो रहा है...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        पुनः प्रयास करें
-                      </>
-                    )}
-                  </Button>
+                    {/* Scrollable Form Container */}
+                    <div className="overflow-y-auto flex-1">
+                      <form onSubmit={handleChokhlaSubmit} className="space-y-4">
+                        {/* All form fields here */}
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम</label>
+                          <input type="text" name="name" value={chokhlaForm.name} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">अध्यक्ष</label>
+                          <input type="text" name="adhyaksh" value={chokhlaForm.adhyaksh} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">संपर्क नंबर</label>
+                          <input type="text" name="contactNumber" value={chokhlaForm.contactNumber} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">राज्य</label>
+                          <input type="text" name="state" value={chokhlaForm.state} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">जिला</label>
+                          <input type="text" name="district" value={chokhlaForm.district} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">गांव</label>
+                          <input type="text" name="villageName" value={chokhlaForm.villageName} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">ईमेल</label>
+                          <input type="email" name="email" value={chokhlaForm.email} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.email && <div className="text-red-600 text-xs mt-1">{formErrors.email}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड</label>
+                          <input type="password" name="password" value={chokhlaForm.password} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.password && <div className="text-red-600 text-xs mt-1">{formErrors.password}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड दोबारा लिखें</label>
+                          <input type="password" name="repeatPassword" value={chokhlaForm.repeatPassword} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.repeatPassword && <div className="text-red-600 text-xs mt-1">{formErrors.repeatPassword}</div>}
+                        </div>
+
+
+
+                      </form>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setOpenChokhlaModal(false)}
+                        className="border border-orange-600 text-orange-700 px-4 py-2 rounded hover:bg-orange-50"
+                      >
+                        रद्द करें
+                      </button>
+                      <button
+                        onClick={handleChokhlaSubmit}
+                        type="submit"
+                        className="border border-orange-600 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+                      >
+                        सहेजें
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Chokhlas Table */}
-            {!chokhlaError && (
-              <div className="overflow-x-auto">
-                <div className="rounded-lg shadow overflow-hidden border border-orange-200 bg-white">
-                  <table className="w-full min-w-[800px] divide-y divide-orange-200">
-                    <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          चौकला का नाम
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          अध्यक्ष
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          संपर्क नंबर
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          राज्य
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          जिला
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          गांव
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          निर्माण तिथि
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                          कार्रवाई
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-orange-100">
-                      {chokhlas && chokhlas.length > 0 ? (
-                        chokhlas.map((chokhla: any, idx: number) => (
-                          <tr
-                            key={chokhla.id}
-                            className={
-                              idx % 2 === 0
-                                ? "bg-orange-50 hover:bg-orange-100 transition-colors"
-                                : "bg-white hover:bg-orange-50 transition-colors"
-                            }
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap font-medium text-orange-900">{chokhla.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-orange-800">{chokhla.adhyaksh}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-orange-800">{chokhla.contactNumber}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-orange-800">{chokhla.state}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-orange-800">{chokhla.district}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-orange-800">{chokhla.villageName}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-orange-800">
-                              {chokhla.createdDate ? new Date(chokhla.createdDate).toLocaleDateString("hi-IN") : "-"}
+              {showSuccessModal && createdData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 ">
+                  <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                    <h2 className="text-xl font-semibold text-green-700 text-center mb-4">चौकला सफलतापूर्वक जोड़ा गया!</h2>
+                    <div className="space-y-2 text-sm text-gray-700">
+                      <p><strong>चौकला ID:</strong> {createdData.chokhlaId}</p>
+                      <p><strong>यूज़र ID:</strong> {createdData.userId}</p>
+                      <p><strong>ईमेल:</strong> {createdData.email}</p>
+                      <p><strong>पूरा नाम:</strong> {createdData.fullName}</p>
+                      <p><strong>भूमिका:</strong> {createdData.role}</p>
+                      <p className='text-sm'><strong>password:</strong> {createdData.password}</p>
+
+                    </div>
+                    <div className="flex justify-end mt-6">
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        onClick={() => setShowSuccessModal(false)}
+                      >
+                        ठीक है
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+          {activeTab === 'statics' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>आँकड़े</CardTitle>
+              </CardHeader>
+              <CardContent>
+              </CardContent>
+            </Card>
+          )}
+          {activeTab === 'user' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>यूज़र प्रबंधन</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {usersLoading ? (
+                  <div className="text-orange-600">लोड हो रहा है...</div>
+                ) : usersError ? (
+                  <div className="text-red-600">{"usersError"}</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[700px] bg-white border border-orange-200 rounded-lg shadow">
+                      <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">ID</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">ईमेल</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">नाम</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">भूमिका</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">सक्रिय</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">निर्माण तिथि</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">कार्रवाई</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users?.map((user: { id: boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<React.AwaitedReactNode> | React.Key | null | undefined; email: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; fullName: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; globalRole: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; isActive: boolean | undefined; createdAt: string | number | Date; }) => (
+                          <tr key={user.id} className="border-b border-orange-100 hover:bg-orange-50">
+                            <td className="px-4 py-2 text-orange-900 text-xs break-all">{user.id}</td>
+                            <td className="px-4 py-2 text-orange-800">{user.email}</td>
+                            <td className="px-4 py-2 text-orange-800">{user.fullName}</td>
+                            <td className="px-4 py-2 text-orange-800">{user.globalRole}</td>
+                            <td className="px-4 py-2">
+                              <Switch checked={user.isActive} onCheckedChange={() => handleToggleActive(user.id, user.isActive)} />
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <Button
-                                variant="outline"
-                                className="border-orange-400 text-orange-600 hover:bg-orange-100 hover:text-orange-800 transition-colors bg-transparent"
-                                onClick={() => router.push(`/admin/chokhla/${chokhla.id}`)}
-                              >
-                                देखें
-                              </Button>
+                            <td className="px-4 py-2 text-orange-700 text-xs">{user.createdAt ? new Date(user.createdAt).toLocaleDateString('hi-IN') : '-'}</td>
+                            <td className="px-4 py-2">
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={8} className="px-6 py-8 text-center">
-                            <div className="flex flex-col items-center justify-center">
-                              <Building2 className="w-12 h-12 text-gray-400 mb-4" />
-                              <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई चौकला नहीं मिला</h3>
-                              <p className="text-gray-500 mb-4">अभी तक कोई चौकला नहीं बनाया गया है।</p>
-                              <Button
-                                onClick={() => setIsAddChokhlaOpen(true)}
-                                className="bg-orange-500 hover:bg-orange-600 text-white"
-                              >
-                                <Plus className="w-4 h-4 mr-2" />
-                                पहला चौकला जोड़ें
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {activeTab === 'profile' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>सुपर एडमिन प्रोफ़ाइल</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div><strong>ID:</strong> {userData?.user?.id}</div>
+                <div><strong>Email:</strong> {userData?.user?.email}</div>
+                <div><strong>Role:</strong> {userData?.user?.role}</div>
+                <div><strong>Chokla ID:</strong> {userData?.user?.choklaId}</div>
+                <div><strong>Village ID:</strong> {userData?.user?.villageId ?? 'N/A'}</div>
+                <div><strong>Token Expires:</strong> {new Date(userData?.expires).toLocaleString()}</div>
+              </CardContent>
+            </Card>
 
-      {/* Success Modal */}
-      <ChokhlaSuccessModal open={showSuccessModal} onOpenChange={setShowSuccessModal} successData={successData} />
+          )}
+        </section>
+      </main>
     </div>
-  )
+  );
 }
+
+export default SuperAdmin;
