@@ -1,78 +1,82 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import type { AuthOptions, Session, User } from "next-auth";
-import type { JWT } from "next-auth/jwt";
+import NextAuth from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
 
+const handler = NextAuth({
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        // Demo credentials for testing
+        const validCredentials = [
+          {
+            id: "1",
+            email: "admin@panchalsamaj.org",
+            password: "admin123",
+            name: "मुकेश पंचाल",
+            role: "chokhra_admin",
+            chokhra: "लोहारिया",
+          },
+          {
+            id: "2",
+            email: "village@panchalsamaj.org",
+            password: "village123",
+            name: "राम पंचाल",
+            role: "village_admin",
+            village: "गांव 1",
+            chokhra: "लोहारिया",
+          },
+        ]
 
-const authOptions: AuthOptions = {
-    providers: [
-        CredentialsProvider({
-            name: "Credentials",
-            credentials: {
-                email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" },
-            },
-            async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    return null;
-                }
-                const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        email: credentials.email,
-                        password: credentials.password,
-                    }),
-                });
-                const data = await res.json();
+        if (credentials?.email && credentials?.password) {
+          const user = validCredentials.find(
+            (u) => u.email === credentials.email && u.password === credentials.password,
+          )
 
-                if (data && data.userId) {
-                    return {
-                        id: data.userId,
-                        email: data.email,
-                        role: data.role,
-                        token: data.token,
-                        choklaId: data.choklaId,
-                        villageId: data.villageId,
-                    };
-                }
-                return null;
-            },
-        }),
-    ],
-    callbacks: {
-        async jwt({ token, user }: { token: JWT; user?: User }) {
-            if (user) {
-                token.id = (user as any).id;
-                token.role = (user as any).role;
-                token.token = (user as any).token;
-                token.choklaId = (user as any).choklaId;
-                token.villageId = (user as any).villageId;
+          if (user) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              chokhra: user.chokhra,
+              village: user.village || null,
             }
-            return token;
-        },
-        async session({ session, token }: { session: Session; token: JWT }) {
-            if (session.user) {
-                (session.user as any).id = (token as any).id;
-                (session.user as any).role = (token as any).role;
-                (session.user as any).token = (token as any).token;
-                (session.user as any).choklaId = (token as any).choklaId;
-                (session.user as any).villageId = (token as any).villageId;
-
-            }
-            return session;
-        },
+          }
+        }
+        return null
+      },
+    }),
+  ],
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role
+        token.chokhra = user.chokhra
+        token.village = user.village
+      }
+      return token
     },
-    pages: {
-        signIn: "/login",
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.sub
+        session.user.role = token.role
+        session.user.chokhra = token.chokhra
+        session.user.village = token.village
+      }
+      return session
     },
-    session: {
-        strategy: 'jwt',
-    },
-    secret: process.env.NEXTAUTH_SECRET,
-};
+  },
+  session: {
+    strategy: "jwt",
+  },
+})
 
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
-export { authOptions };
+export { handler as GET, handler as POST }

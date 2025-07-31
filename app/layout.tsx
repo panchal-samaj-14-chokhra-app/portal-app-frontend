@@ -5,7 +5,6 @@ import "./globals.css"
 import { QueryProvider } from "@/lib/providers/query-provider"
 import { ToastProvider } from "@/components/ui/toast/toast-provider"
 import { AuthProvider } from "@/lib/providers/auth-provider"
-import { AdminErrorBoundary } from "@/components/admin-error-boundary"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,7 +23,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Panchal Samaj 14 Chokhra" }],
   viewport: "width=device-width, initial-scale=1",
   themeColor: "#f97316",
-  generator: "v0.dev",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -37,7 +36,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background font-sans antialiased">
         <AuthProvider>
           <QueryProvider>
-            <AdminErrorBoundary>{children}</AdminErrorBoundary>
+            {children}
             <ToastProvider />
           </QueryProvider>
         </AuthProvider>

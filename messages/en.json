@@ -5,8 +5,9 @@
     "success": "Success",
     "cancel": "Cancel",
     "save": "Save",
-    "edit": "Edit",
     "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
@@ -16,51 +17,164 @@
     "previous": "Previous",
     "submit": "Submit",
     "reset": "Reset",
-    "close": "Close"
+    "close": "Close",
+    "open": "Open",
+    "yes": "Yes",
+    "no": "No"
   },
   "auth": {
     "login": "Login",
     "logout": "Logout",
-    "email": "Email Address",
+    "email": "Email",
     "password": "Password",
     "forgotPassword": "Forgot Password?",
     "resetPassword": "Reset Password",
-    "loginButton": "Sign In",
-    "loggingIn": "Signing in...",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "loginTitle": "Admin Login Portal",
+    "loginDescription": "Sign in to access the census management system",
     "invalidCredentials": "Invalid email or password. Please try again.",
-    "loginError": "Login error occurred. Please try again.",
-    "backToHome": "Back to Home"
+    "loginSuccess": "Login successful! Redirecting...",
+    "logoutSuccess": "Logged out successfully",
+    "resetPasswordTitle": "Reset Your Password",
+    "resetPasswordDescription": "Enter your email address and we'll send you a link to reset your password",
+    "resetPasswordSuccess": "Password reset link sent to your email",
+    "backToLogin": "Back to Login"
   },
   "navigation": {
+    "home": "Home",
     "dashboard": "Dashboard",
-    "familyRegistration": "Family Registration",
-    "memberManagement": "Member Management",
-    "villageManagement": "Village Management",
-    "reports": "Reports",
+    "families": "Families",
+    "members": "Members",
+    "villages": "Villages",
     "analytics": "Analytics",
+    "reports": "Reports",
     "settings": "Settings",
     "help": "Help",
     "profile": "Profile"
   },
-  "dashboard": {
+  "home": {
     "title": "Panchal Samaj 14 Chokhra",
-    "subtitle": "Digital Census 2025 - Admin Portal",
-    "welcome": "Welcome",
-    "totalFamilies": "Total Families",
-    "totalMembers": "Total Members",
-    "totalVillages": "Total Villages",
-    "recentActivity": "Recent Activity"
+    "subtitle": "Digital Census Portal 2025",
+    "description": "Comprehensive community management system for 14 Chokhra villages",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More",
+    "features": {
+      "title": "Key Features",
+      "familyManagement": {
+        "title": "Family Management",
+        "description": "Complete family registration and member management system"
+      },
+      "villageAdmin": {
+        "title": "Village Administration",
+        "description": "Comprehensive management for all 14 Chokhra villages"
+      },
+      "analytics": {
+        "title": "Data Analytics",
+        "description": "Detailed insights into population and community development"
+      },
+      "security": {
+        "title": "Secure & Private",
+        "description": "End-to-end encryption with role-based access control"
+      },
+      "mobile": {
+        "title": "Mobile Friendly",
+        "description": "Responsive design with offline support capabilities"
+      },
+      "multilingual": {
+        "title": "Multilingual Support",
+        "description": "Available in Hindi and English for better accessibility"
+      }
+    },
+    "stats": {
+      "villages": "Villages",
+      "families": "Registered Families",
+      "members": "Community Members",
+      "digitalization": "Digitalization Rate"
+    }
   },
   "help": {
     "title": "Help & Support",
     "subtitle": "Get assistance with the census portal",
-    "contactInfo": "Contact Information",
-    "adminName": "Admin Name",
-    "email": "Email",
-    "phone": "Phone Number",
-    "address": "Organization Address",
-    "faq": "Frequently Asked Questions",
-    "supportHours": "Support Hours",
-    "technicalSupport": "Technical Support"
+    "contactInfo": {
+      "title": "Contact Information",
+      "adminName": "Admin Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "address": "Office Address"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": {
+        "question": "How do I register a new family?",
+        "answer": "Navigate to the Families section and click 'Add New Family'. Fill in all required information and submit the form."
+      },
+      "q2": {
+        "question": "How can I update member information?",
+        "answer": "Go to the Members section, find the member you want to update, and click the edit button."
+      },
+      "q3": {
+        "question": "How do I generate reports?",
+        "answer": "Visit the Reports section where you can generate various types of reports including family lists, member statistics, and village summaries."
+      },
+      "q4": {
+        "question": "What if I forgot my password?",
+        "answer": "Click on 'Forgot Password' on the login page and follow the instructions to reset your password."
+      }
+    },
+    "support": {
+      "title": "Technical Support",
+      "description": "For technical issues or questions about using the portal, please contact our support team using the information above."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "overview": "Overview",
+    "quickActions": "Quick Actions",
+    "recentActivity": "Recent Activity",
+    "addFamily": "Add New Family",
+    "addMember": "Add New Member",
+    "viewReports": "View Reports",
+    "manageVillages": "Manage Villages"
+  },
+  "families": {
+    "title": "Family Management",
+    "addFamily": "Add New Family",
+    "editFamily": "Edit Family",
+    "deleteFamily": "Delete Family",
+    "familyDetails": "Family Details",
+    "headOfFamily": "Head of Family",
+    "totalMembers": "Total Members",
+    "village": "Village",
+    "address": "Address",
+    "phoneNumber": "Phone Number",
+    "registrationDate": "Registration Date"
+  },
+  "members": {
+    "title": "Member Management",
+    "addMember": "Add New Member",
+    "editMember": "Edit Member",
+    "deleteMember": "Delete Member",
+    "memberDetails": "Member Details",
+    "fullName": "Full Name",
+    "age": "Age",
+    "gender": "Gender",
+    "relation": "Relation to Head",
+    "occupation": "Occupation",
+    "education": "Education",
+    "maritalStatus": "Marital Status"
+  },
+  "villages": {
+    "title": "Village Management",
+    "addVillage": "Add New Village",
+    "editVillage": "Edit Village",
+    "deleteVillage": "Delete Village",
+    "villageDetails": "Village Details",
+    "villageName": "Village Name",
+    "totalFamilies": "Total Families",
+    "totalPopulation": "Total Population",
+    "villageHead": "Village Head",
+    "established": "Established"
   }
 }
