@@ -19,6 +19,8 @@ import {
   Menu,
   X,
   Share,
+  ExternalLink,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
@@ -35,6 +37,8 @@ export default function VillageDetailPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [mapLoading, setMapLoading] = useState(true)
+  const [mapError, setMapError] = useState(false)
   const { data: villageData, isLoading, error } = useVillageDetails(villageId)
   const { mutate: deleteFamily } = useDeleteFamilyUsingID()
 
@@ -105,6 +109,42 @@ export default function VillageDetailPage() {
 
   const handleDeleteFamily = async (familyId: string) => {
     return await deleteFamily(familyId)
+  }
+
+  const handleMapLoad = () => {
+    setMapLoading(false)
+    setMapError(false)
+  }
+
+  const handleMapError = () => {
+    setMapLoading(false)
+    setMapError(true)
+  }
+
+  const shareLocation = async () => {
+    const locationUrl = `https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=15`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${villageData.name} का स्थान`,
+          text: `${villageData.name}, ${villageData.district}, ${villageData.state} का स्थान देखें`,
+          url: locationUrl,
+        })
+      } catch (error) {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(locationUrl)
+      }
+    } else {
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(locationUrl)
+        // You could add a toast notification here
+        alert("स्थान लिंक कॉपी हो गया!")
+      } catch (error) {
+        console.error("Failed to copy location:", error)
+      }
+    }
   }
 
   return (
@@ -555,17 +595,47 @@ export default function VillageDetailPage() {
             </CardHeader>
             <CardContent className="p-3 sm:p-6">
               {villageData?.latitude && villageData?.longitude ? (
-                <div className="relative w-full h-48 sm:h-64 lg:h-72 rounded-xl overflow-hidden shadow-lg border border-gray-200">
+                <div className="relative w-full h-48 sm:h-64 lg:h-72 rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-gray-50">
                   {/* Map Loading Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center z-10 opacity-0 transition-opacity duration-300">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                      <p className="text-blue-700 text-sm">मैप लोड हो रहा है...</p>
+                  {mapLoading && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center z-20">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <p className="text-blue-700 text-sm">मैप लोड हो रहा है...</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Google Map Iframe */}
+                  {/* Map Error Overlay */}
+                  {mapError && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center z-20">
+                      <div className="text-center p-4">
+                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-red-700 mb-2">मैप लोड नहीं हो सका</h3>
+                        <p className="text-sm text-red-600 mb-4">कृपया अपना इंटरनेट कनेक्शन जांचें</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setMapError(false)
+                            setMapLoading(true)
+                            // Force iframe reload
+                            const iframe = document.querySelector("#village-map-iframe")
+                            if (iframe) {
+                              iframe.src = iframe.src
+                            }
+                          }}
+                          className="bg-white text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          पुनः प्रयास करें
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Enhanced Google Map Iframe with Pin */}
                   <iframe
+                    id="village-map-iframe"
                     title="Village Location on Google Map"
                     width="100%"
                     height="100%"
@@ -573,91 +643,110 @@ export default function VillageDetailPage() {
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=15&output=embed&maptype=hybrid`}
-                    className="rounded-xl transition-opacity duration-300"
-                    onLoad={(e) => {
-                      const overlay = e.target.parentElement.querySelector(".absolute")
-                      if (overlay) overlay.style.opacity = "0"
-                    }}
+                    src={`https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=16&output=embed&maptype=roadmap&markers=color:red%7Clabel:${encodeURIComponent(villageData.name?.charAt(0) || "V")}%7C${villageData.latitude},${villageData.longitude}`}
+                    className="rounded-xl"
+                    onLoad={handleMapLoad}
+                    onError={handleMapError}
                   />
 
-                  {/* Map Info Overlay */}
-                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-red-500" />
-                      <div>
-                        <p className="text-xs font-semibold text-gray-800">{villageData?.name}</p>
-                        <p className="text-xs text-gray-600">
-                          {villageData?.district}, {villageData?.state}
-                        </p>
+                  {/* Village Info Overlay */}
+                  {!mapLoading && !mapError && (
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-white/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-800 truncate max-w-[120px]">
+                            {villageData?.name}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate max-w-[120px]">
+                            {villageData?.district}, {villageData?.state}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Coordinates Display */}
-                  <div className="absolute bottom-3 right-3 bg-black/70 text-white rounded-lg px-2 py-1">
-                    <p className="text-xs font-mono">
+                  {!mapLoading && !mapError && (
+                    <div className="absolute bottom-3 right-3 bg-black/80 text-white rounded-lg px-2 py-1 text-xs font-mono">
                       {Number.parseFloat(villageData.latitude).toFixed(4)},{" "}
                       {Number.parseFloat(villageData.longitude).toFixed(4)}
-                    </p>
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Zoom Controls Hint */}
+                  {!mapLoading && !mapError && (
+                    <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-gray-600">
+                      स्क्रॉल करके ज़ूम करें
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="w-full h-48 sm:h-64 lg:h-72 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
                   <div className="text-center p-6">
                     <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <MapPin className="w-8 h-8 text-gray-400" />
+                      <AlertCircle className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">स्थान उपलब्ध नहीं है</h3>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">स्थान डेटा उपलब्ध नहीं है</h3>
                     <p className="text-sm text-gray-500 mb-4">इस गांव के लिए GPS निर्देशांक उपलब्ध नहीं हैं</p>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <p className="text-xs text-yellow-700">
-                        <strong>सुझाव:</strong> गांव के सटीक स्थान के लिए GPS निर्देशांक अपडेट करें
-                      </p>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-left">
+                          <p className="text-xs text-amber-700 font-medium mb-1">समस्या:</p>
+                          <p className="text-xs text-amber-600">
+                            गांव के सटीक स्थान के लिए GPS निर्देशांक (अक्षांश और देशांतर) की आवश्यकता है
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Map Actions */}
+              {/* Enhanced Map Actions */}
               {villageData?.latitude && villageData?.longitude && (
-                <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs bg-transparent"
-                    onClick={() =>
-                      window.open(
-                        `https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=15`,
-                        "_blank",
-                      )
-                    }
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Google Maps में खोलें
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs bg-transparent"
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: `${villageData.name} का स्थान`,
-                          text: `${villageData.name}, ${villageData.district}, ${villageData.state} का स्थान देखें`,
-                          url: `https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=15`,
-                        })
-                      } else {
-                        navigator.clipboard.writeText(
-                          `https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=15`,
+                <div className="mt-4 space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs bg-white hover:bg-blue-50 border-blue-200 text-blue-700"
+                      onClick={() =>
+                        window.open(
+                          `https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=16`,
+                          "_blank",
                         )
-                        // You could add a toast notification here
                       }
-                    }}
-                  >
-                    <Share className="w-4 h-4 mr-2" />
-                    स्थान साझा करें
-                  </Button>
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Google Maps में खोलें
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs bg-white hover:bg-green-50 border-green-200 text-green-700"
+                      onClick={shareLocation}
+                    >
+                      <Share className="w-4 h-4 mr-2" />
+                      स्थान साझा करें
+                    </Button>
+                  </div>
+
+                  {/* Additional Map Info */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-left">
+                        <p className="text-xs text-blue-700 font-medium mb-1">मैप की जानकारी:</p>
+                        <p className="text-xs text-blue-600">
+                          • लाल पिन गांव का सटीक स्थान दिखाता है
+                          <br />• मैप पर स्क्रॉल करके ज़ूम इन/आउट करें
+                          <br />• पूर्ण स्क्रीन के लिए "Google Maps में खोलें" पर क्लिक करें
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
