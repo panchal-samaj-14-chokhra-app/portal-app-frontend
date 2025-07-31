@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { useCreateFamily, useGetFamilyDetails, useUpdateFamily } from '@/data-hooks/mutation-query/useQueryAndMutation';
+import { useCreateFamily, useGetFamilyDetails, useUpdateFamily } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import Image from "next/image"
 
 import {
@@ -36,8 +36,6 @@ import { Checkbox } from "@/components/ui/checkbox/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 import { Badge } from "@/components/ui/badge/badge"
-
-
 
 interface FamilyMember {
   id: string
@@ -166,55 +164,55 @@ const initialMember: Omit<FamilyMember, "id"> = {
 }
 
 interface FamilyFormProps {
-  mode: 'add' | 'edit';
-  familyId?: string;
-  onSuccess?: () => void;
+  mode: "add" | "edit"
+  familyId?: string
+  onSuccess?: () => void
 }
 
 export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const params = useParams();
-  const villageId = params.villageId as string;
-  const searchParams = useSearchParams();
-  const chakolaId = searchParams.get('chakolaId');
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const params = useParams()
+  const villageId = params.villageId as string
+  const searchParams = useSearchParams()
+  const chakolaId = searchParams.get("chakolaId")
   console.log(chakolaId)
-  const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || '');
+  const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || "")
 
-  const { mutation } = useCreateFamily();
-  const { mutation: updateMutation } = useUpdateFamily();
+  const { mutation } = useCreateFamily()
+  const { mutation: updateMutation } = useUpdateFamily()
 
   // If edit mode and data is loaded, use it as initial state
   const [familyData, setFamilyData] = useState<FamilyData>(() => {
-    if (mode === 'edit' && familyDetails) {
+    if (mode === "edit" && familyDetails) {
       return {
-        currentAddress: familyDetails.currentAddress || '',
-        permanentAddress: familyDetails.permanentAddress || '',
-        economicStatus: familyDetails.economicStatus || 'bpl',
-        status: familyDetails.status || 'draft',
+        currentAddress: familyDetails.currentAddress || "",
+        permanentAddress: familyDetails.permanentAddress || "",
+        economicStatus: familyDetails.economicStatus || "bpl",
+        status: familyDetails.status || "draft",
         members: familyDetails.Person || [],
-      };
+      }
     }
     return {
-      currentAddress: '',
-      permanentAddress: '',
-      economicStatus: 'bpl',
-      status: 'draft',
+      currentAddress: "",
+      permanentAddress: "",
+      economicStatus: "bpl",
+      status: "draft",
       members: [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
-    };
-  });
+    }
+  })
 
   useEffect(() => {
-    if (mode === 'edit' && familyDetails) {
+    if (mode === "edit" && familyDetails) {
       setFamilyData({
-        currentAddress: familyDetails.currentAddress || '',
-        permanentAddress: familyDetails.permanentAddress || '',
-        economicStatus: familyDetails.economicStatus || 'bpl',
-        status: familyDetails.status || 'draft',
+        currentAddress: familyDetails.currentAddress || "",
+        permanentAddress: familyDetails.permanentAddress || "",
+        economicStatus: familyDetails.economicStatus || "bpl",
+        status: familyDetails.status || "draft",
         members: familyDetails.Person || [],
-      });
+      })
     }
-  }, [mode, familyDetails]);
+  }, [mode, familyDetails])
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -243,10 +241,10 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-orange-700 hindi-text">लोड हो रहा है...</p>
+          <p className="text-orange-700 hindi-text text-sm sm:text-base">लोड हो रहा है...</p>
         </div>
       </div>
     )
@@ -297,16 +295,16 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
           // If updating date of birth, also update age
           if (field === "dateOfBirth") {
-            if (!value) return { ...member }; // skip if empty or undefined
+            if (!value) return { ...member } // skip if empty or undefined
 
-            const isoDate = new Date(value).toISOString();
-            const age = calculateAge(value); // make sure calculateAge can handle raw date string or Date
+            const isoDate = new Date(value).toISOString()
+            const age = calculateAge(value) // make sure calculateAge can handle raw date string or Date
 
             return {
               ...member,
               [field]: isoDate,
-              age
-            };
+              age,
+            }
           }
 
           return { ...member, [field]: value }
@@ -408,10 +406,10 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
     try {
       // Simulate API
       //  call
-      const mukhiya = familyData.members.find((m) => m.isMukhiya);
-      const mukhiyaName = mukhiya ? mukhiya.name : "";
-      if (mode === 'edit') updateMutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId });
-      else mutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId });
+      const mukhiya = familyData.members.find((m) => m.isMukhiya)
+      const mukhiyaName = mukhiya ? mukhiya.name : ""
+      if (mode === "edit") updateMutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId })
+      else mutation.mutate({ ...familyData, mukhiyaName, villageId, chakolaId })
       // await new Promise((resolve) => setTimeout(resolve, 2000))
 
       alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
@@ -428,28 +426,31 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
       {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-6">
+      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg sticky top-0 z-10">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <Button
                 onClick={() => router.back()}
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                size="sm"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 touch-target flex-shrink-0"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                <span className="hindi-text">वापस</span>
+                <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hindi-text text-xs sm:text-sm">वापस</span>
               </Button>
               <Image
                 src="/images/main-logo.png"
                 alt="Panchal Samaj Logo"
-                width={50}
-                height={50}
-                className="rounded-full shadow-lg"
+                width={40}
+                height={40}
+                className="rounded-full shadow-lg flex-shrink-0 sm:w-[50px] sm:h-[50px]"
               />
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-white hindi-text">नया परिवार जोड़ें</h1>
-                <p className="text-orange-100 text-sm hindi-text">परिवार पंजीकरण फॉर्म</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white hindi-text truncate">
+                  {mode === "edit" ? "परिवार संपादित करें" : "नया परिवार जोड़ें"}
+                </h1>
+                <p className="text-orange-100 text-xs sm:text-sm hindi-text truncate">परिवार पंजीकरण फॉर्म</p>
               </div>
             </div>
           </div>
@@ -457,12 +458,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
         {/* Error Alerts */}
         {(errors.mukhiya || errors.aadhaar || errors.mobile) && (
-          <Alert className="mb-6 border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+          <Alert className="mb-4 sm:mb-6 border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+            <AlertDescription className="text-red-800 text-sm">
               {errors.mukhiya && <div className="hindi-text">{errors.mukhiya}</div>}
               {errors.aadhaar && <div className="hindi-text">{errors.aadhaar}</div>}
               {errors.mobile && <div className="hindi-text">{errors.mobile}</div>}
@@ -471,18 +472,18 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
         )}
 
         {/* Family Level Information */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center hindi-text">
-              <Home className="w-5 h-5 mr-2" />
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center hindi-text text-lg sm:text-xl">
+              <Home className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
               परिवार की जानकारी
             </CardTitle>
-            <CardDescription className="hindi-text">परिवार स्तर की बुनियादी जानकारी</CardDescription>
+            <CardDescription className="hindi-text text-sm">परिवार स्तर की बुनियादी जानकारी</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="currentAddress" className="hindi-text">
+                <Label htmlFor="currentAddress" className="hindi-text text-sm font-medium">
                   वर्तमान पता *
                 </Label>
                 <Textarea
@@ -490,11 +491,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                   value={familyData.currentAddress}
                   onChange={(e) => setFamilyData((prev) => ({ ...prev, currentAddress: e.target.value }))}
                   placeholder="वर्तमान पता दर्ज करें"
-                  className="mt-1"
+                  className="mt-1 min-h-[80px] text-sm"
+                  rows={3}
                 />
               </div>
               <div>
-                <Label htmlFor="permanentAddress" className="hindi-text">
+                <Label htmlFor="permanentAddress" className="hindi-text text-sm font-medium">
                   स्थायी पता *
                 </Label>
                 <Textarea
@@ -502,12 +504,13 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                   value={familyData.permanentAddress}
                   onChange={(e) => setFamilyData((prev) => ({ ...prev, permanentAddress: e.target.value }))}
                   placeholder="स्थायी पता दर्ज करें"
-                  className="mt-1"
+                  className="mt-1 min-h-[80px] text-sm"
+                  rows={3}
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="economicStatus" className="hindi-text">
+            <div className="max-w-md">
+              <Label htmlFor="economicStatus" className="hindi-text text-sm font-medium">
                 आर्थिक स्थिति
               </Label>
               <Select
@@ -529,54 +532,66 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
         </Card>
 
         {/* Members Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center hindi-text">
-                  <User className="w-5 h-5 mr-2" />
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <CardTitle className="flex items-center hindi-text text-lg sm:text-xl">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
                   परिवार के सदस्य ({familyData.members.length})
                 </CardTitle>
-                <div className="flex items-center">
-                  <CardDescription className="hindi-text">
-                    सभी परिवारिक सदस्यों की विस्तृत जानकारी
-                  </CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
+                  <CardDescription className="hindi-text text-sm">सभी परिवारिक सदस्यों की विस्तृत जानकारी</CardDescription>
                   {mukhiyaCount === 1 && (
-                    <Badge className="ml-2 bg-green-100 text-green-700">
+                    <Badge className="bg-green-100 text-green-700 text-xs w-fit">
                       <UserCheck className="w-3 h-3 mr-1" />
                       <span className="hindi-text">मुखिया चुना गया</span>
                     </Badge>
                   )}
                 </div>
               </div>
-              <Button onClick={addMember} className="bg-orange-500 hover:bg-orange-600">
+              <Button
+                onClick={addMember}
+                className="bg-orange-500 hover:bg-orange-600 touch-target w-full sm:w-auto"
+                size="sm"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 <span className="hindi-text">सदस्य जोड़ें</span>
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="space-y-4">
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <Accordion type="single" collapsible className="space-y-3 sm:space-y-4">
               {familyData.members.map((member, index) => (
                 <AccordionItem key={member.id} value={member.id} className="border rounded-lg">
-                  <AccordionTrigger className="px-4 hover:no-underline">
-                    <div className="flex items-center justify-between w-full mr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          <span className="font-medium">{member.name || `सदस्य ${index + 1}`}</span>
-                          {member.isMukhiya && (
-                            <Badge className="bg-orange-100 text-orange-700">
-                              <UserCheck className="w-3 h-3 mr-1" />
-                              <span className="hindi-text">मुखिया</span>
-                            </Badge>
-                          )}
+                  <AccordionTrigger className="mobile-accordion-trigger hover:no-underline">
+                    <div className="flex items-center justify-between w-full mr-2 sm:mr-4 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <User className="w-4 h-4 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="font-medium text-sm sm:text-base truncate">
+                                {member.name || `सदस्य ${index + 1}`}
+                              </span>
+                              {member.isMukhiya && (
+                                <Badge className="bg-orange-100 text-orange-700 text-xs w-fit">
+                                  <UserCheck className="w-3 h-3 mr-1" />
+                                  <span className="hindi-text">मुखिया</span>
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {member.age > 0 && <Badge variant="outline">{member.age} वर्ष</Badge>}
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        {member.age > 0 && (
+                          <Badge variant="outline" className="text-xs hidden sm:inline-flex">
+                            {member.age} वर्ष
+                          </Badge>
+                        )}
                         {member.gender && (
-                          <Badge variant="outline">
+                          <Badge variant="outline" className="text-xs hidden sm:inline-flex">
                             {member.gender === "MALE" ? "पुरुष" : member.gender === "FEMALE" ? "महिला" : "अन्य"}
                           </Badge>
                         )}
@@ -588,7 +603,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               e.stopPropagation()
                               removeMember(member.id)
                             }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 touch-target p-2"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -596,44 +611,44 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                       </div>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
+                  <AccordionContent className="px-3 sm:px-4 pb-4">
                     <div className="space-y-6">
                       {/* Personal Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <User className="w-4 h-4 mr-2" />
                           व्यक्तिगत जानकारी
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="mobile-form-grid">
                           <div>
-                            <Label className="hindi-text">पूरा नाम *</Label>
+                            <Label className="hindi-text text-sm">पूरा नाम *</Label>
                             <Input
                               value={member.name}
                               onChange={(e) => updateMember(member.id, "name", e.target.value)}
                               placeholder="पूरा नाम दर्ज करें"
-                              className={errors[`member-${index}-name`] ? "border-red-500" : ""}
+                              className={`mt-1 text-sm ${errors[`member-${index}-name`] ? "border-red-500" : ""}`}
                             />
                             {errors[`member-${index}-name`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-name`]}</p>
+                              <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-name`]}</p>
                             )}
                           </div>
                           <div>
-                            <Label className="hindi-text">आधार नंबर *</Label>
+                            <Label className="hindi-text text-sm">आधार नंबर *</Label>
                             <Input
                               value={member.aadhaarNumber}
                               onChange={(e) => updateMember(member.id, "aadhaarNumber", e.target.value)}
                               placeholder="12 अंकों का आधार नंबर"
                               maxLength={12}
-                              className={errors[`member-${index}-aadhaar`] ? "border-red-500" : ""}
+                              className={`mt-1 text-sm ${errors[`member-${index}-aadhaar`] ? "border-red-500" : ""}`}
                             />
                             {errors[`member-${index}-aadhaar`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">
+                              <p className="text-red-500 text-xs mt-1 hindi-text">
                                 {errors[`member-${index}-aadhaar`]}
                               </p>
                             )}
                           </div>
                           <div>
-                            <Label className="hindi-text flex items-center">
+                            <Label className="hindi-text flex items-center text-sm">
                               <Calendar className="w-4 h-4 mr-1" />
                               जन्म तिथि *
                             </Label>
@@ -641,26 +656,26 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               type="date"
                               value={member.dateOfBirth}
                               onChange={(e) => updateMember(member.id, "dateOfBirth", e.target.value)}
-                              className={errors[`member-${index}-dob`] ? "border-red-500" : ""}
+                              className={`mt-1 text-sm ${errors[`member-${index}-dob`] ? "border-red-500" : ""}`}
                               max={new Date().toISOString().split("T")[0]}
                             />
                             {errors[`member-${index}-dob`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-dob`]}</p>
+                              <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-dob`]}</p>
                             )}
                           </div>
                           <div>
-                            <Label className="hindi-text">उम्र</Label>
+                            <Label className="hindi-text text-sm">उम्र</Label>
                             <Input
                               type="number"
                               value={member.age || ""}
                               readOnly
                               placeholder="जन्म तिथि से गणना होगी"
-                              className="bg-gray-50 cursor-not-allowed"
+                              className="bg-gray-50 cursor-not-allowed mt-1 text-sm"
                             />
                             <p className="text-xs text-gray-500 mt-1 hindi-text">जन्म तिथि के आधार पर स्वचालित गणना</p>
                           </div>
                           <div>
-                            <Label className="hindi-text flex items-center">
+                            <Label className="hindi-text flex items-center text-sm">
                               <Phone className="w-4 h-4 mr-1" />
                               मोबाइल नंबर
                             </Label>
@@ -669,14 +684,14 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               onChange={(e) => updateMember(member.id, "mobileNumber", e.target.value)}
                               placeholder="10 अंकों का मोबाइल नंबर"
                               maxLength={10}
-                              className={errors[`member-${index}-mobile`] ? "border-red-500" : ""}
+                              className={`mt-1 text-sm ${errors[`member-${index}-mobile`] ? "border-red-500" : ""}`}
                             />
                             {errors[`member-${index}-mobile`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-mobile`]}</p>
+                              <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-mobile`]}</p>
                             )}
                           </div>
                           <div>
-                            <Label className="hindi-text flex items-center">
+                            <Label className="hindi-text flex items-center text-sm">
                               <Mail className="w-4 h-4 mr-1" />
                               ईमेल पता
                             </Label>
@@ -685,19 +700,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               value={member.email}
                               onChange={(e) => updateMember(member.id, "email", e.target.value)}
                               placeholder="example@email.com"
-                              className={errors[`member-${index}-email`] ? "border-red-500" : ""}
+                              className={`mt-1 text-sm ${errors[`member-${index}-email`] ? "border-red-500" : ""}`}
                             />
                             {errors[`member-${index}-email`] && (
-                              <p className="text-red-500 text-sm mt-1 hindi-text">{errors[`member-${index}-email`]}</p>
+                              <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-email`]}</p>
                             )}
                           </div>
                           <div>
-                            <Label className="hindi-text">लिंग</Label>
+                            <Label className="hindi-text text-sm">लिंग</Label>
                             <Select
                               value={member.gender}
                               onValueChange={(value) => updateMember(member.id, "gender", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -708,12 +723,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                           <div>
-                            <Label className="hindi-text">रिश्ता</Label>
+                            <Label className="hindi-text text-sm">रिश्ता</Label>
                             <Select
                               value={member.relation}
                               onValueChange={(value) => updateMember(member.id, "relation", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue placeholder="रिश्ता चुनें" />
                               </SelectTrigger>
                               <SelectContent>
@@ -738,12 +753,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                           <div>
-                            <Label className="hindi-text">वैवाहिक स्थिति</Label>
+                            <Label className="hindi-text text-sm">वैवाहिक स्थिति</Label>
                             <Select
                               value={member.maritalStatus}
                               onValueChange={(value) => updateMember(member.id, "maritalStatus", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -758,12 +773,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                           <div>
-                            <Label className="hindi-text">धर्म</Label>
+                            <Label className="hindi-text text-sm">धर्म</Label>
                             <Select
                               value={member.religion}
                               onValueChange={(value) => updateMember(member.id, "religion", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -778,12 +793,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                           <div>
-                            <Label className="hindi-text">जाति</Label>
+                            <Label className="hindi-text text-sm">जाति</Label>
                             <Select
                               value={member.caste}
                               onValueChange={(value) => updateMember(member.id, "caste", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -795,12 +810,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                           <div>
-                            <Label className="hindi-text">ब्लड ग्रुप</Label>
+                            <Label className="hindi-text text-sm">ब्लड ग्रुप</Label>
                             <Select
                               value={member.bloodGroup}
                               onValueChange={(value) => updateMember(member.id, "bloodGroup", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue placeholder="ब्लड ग्रुप चुनें" />
                               </SelectTrigger>
                               <SelectContent>
@@ -816,14 +831,14 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                         </div>
-                        <div className="mt-4 flex items-center space-x-6">
+                        <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                           <div className="flex items-center space-x-2">
                             <Checkbox
                               id={`disability-${member.id}`}
                               checked={member.disability}
                               onCheckedChange={(checked) => updateMember(member.id, "disability", checked)}
                             />
-                            <Label htmlFor={`disability-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`disability-${member.id}`} className="hindi-text text-sm">
                               विकलांगता है
                             </Label>
                           </div>
@@ -833,7 +848,10 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.isMukhiya}
                               onCheckedChange={(checked) => updateMember(member.id, "isMukhiya", checked)}
                             />
-                            <Label htmlFor={`mukhiya-${member.id}`} className="font-medium text-orange-700 hindi-text">
+                            <Label
+                              htmlFor={`mukhiya-${member.id}`}
+                              className="font-medium text-orange-700 hindi-text text-sm"
+                            >
                               मुखिया है
                             </Label>
                           </div>
@@ -842,26 +860,30 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                       {/* Address Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <MapPin className="w-4 h-4 mr-2" />
                           पता की जानकारी
                         </h4>
                         <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div>
-                              <Label className="hindi-text">स्थायी पता</Label>
+                              <Label className="hindi-text text-sm">स्थायी पता</Label>
                               <Textarea
                                 value={member.permanentAddress}
                                 onChange={(e) => updateMember(member.id, "permanentAddress", e.target.value)}
                                 placeholder="स्थायी पता दर्ज करें"
+                                className="mt-1 text-sm"
+                                rows={3}
                               />
                             </div>
                             <div>
-                              <Label className="hindi-text">वर्तमान पता</Label>
+                              <Label className="hindi-text text-sm">वर्तमान पता</Label>
                               <Textarea
                                 value={member.currentAddress}
                                 onChange={(e) => updateMember(member.id, "currentAddress", e.target.value)}
                                 placeholder="वर्तमान पता दर्ज करें"
+                                className="mt-1 text-sm"
+                                rows={3}
                               />
                             </div>
                           </div>
@@ -872,14 +894,14 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.isCurrentAddressInIndia}
                               onCheckedChange={(checked) => updateMember(member.id, "isCurrentAddressInIndia", checked)}
                             />
-                            <Label htmlFor={`currentAddressIndia-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`currentAddressIndia-${member.id}`} className="hindi-text text-sm">
                               वर्तमान पता भारत में है
                             </Label>
                           </div>
 
                           {!member.isCurrentAddressInIndia && (
-                            <div>
-                              <Label className="hindi-text flex items-center">
+                            <div className="max-w-md">
+                              <Label className="hindi-text flex items-center text-sm">
                                 <Globe className="w-4 h-4 mr-1" />
                                 देश का नाम
                               </Label>
@@ -887,42 +909,47 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 value={member.currentCountry}
                                 onChange={(e) => updateMember(member.id, "currentCountry", e.target.value)}
                                 placeholder="देश का नाम दर्ज करें"
+                                className="mt-1 text-sm"
                               />
                             </div>
                           )}
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="mobile-form-grid">
                             <div>
-                              <Label className="hindi-text">गांव का नाम</Label>
+                              <Label className="hindi-text text-sm">गांव का नाम</Label>
                               <Input
                                 value={member.village}
                                 onChange={(e) => updateMember(member.id, "village", e.target.value)}
                                 placeholder="गांव का नाम"
+                                className="mt-1 text-sm"
                               />
                             </div>
                             <div>
-                              <Label className="hindi-text">पिनकोड</Label>
+                              <Label className="hindi-text text-sm">पिनकोड</Label>
                               <Input
                                 value={member.pincode}
                                 onChange={(e) => updateMember(member.id, "pincode", e.target.value)}
                                 placeholder="पिनकोड"
                                 maxLength={6}
+                                className="mt-1 text-sm"
                               />
                             </div>
                             <div>
-                              <Label className="hindi-text">जिला</Label>
+                              <Label className="hindi-text text-sm">जिला</Label>
                               <Input
                                 value={member.district}
                                 onChange={(e) => updateMember(member.id, "district", e.target.value)}
                                 placeholder="जिला"
+                                className="mt-1 text-sm"
                               />
                             </div>
                             <div>
-                              <Label className="hindi-text">राज्य</Label>
+                              <Label className="hindi-text text-sm">राज्य</Label>
                               <Input
                                 value={member.state}
                                 onChange={(e) => updateMember(member.id, "state", e.target.value)}
                                 placeholder="राज्य"
+                                className="mt-1 text-sm"
                               />
                             </div>
                           </div>
@@ -931,7 +958,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                       {/* Education Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <GraduationCap className="w-4 h-4 mr-2" />
                           शिक्षा की जानकारी
                         </h4>
@@ -942,19 +969,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.isStudent}
                               onCheckedChange={(checked) => updateMember(member.id, "isStudent", checked)}
                             />
-                            <Label htmlFor={`student-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`student-${member.id}`} className="hindi-text text-sm">
                               वर्तमान में छात्र/छात्रा है
                             </Label>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="mobile-form-grid">
                             <div>
-                              <Label className="hindi-text">शिक्षा का स्तर</Label>
+                              <Label className="hindi-text text-sm">शिक्षा का स्तर</Label>
                               <Select
                                 value={member.educationLevel}
                                 onValueChange={(value) => updateMember(member.id, "educationLevel", value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="शिक्षा का स्तर चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -973,12 +1000,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </div>
 
                             <div>
-                              <Label className="hindi-text">पूर्ण की गई कक्षा</Label>
+                              <Label className="hindi-text text-sm">पूर्ण की गई कक्षा</Label>
                               <Select
                                 value={member.classCompleted}
                                 onValueChange={(value) => updateMember(member.id, "classCompleted", value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="पूर्ण की गई कक्षा चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1001,12 +1028,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                             {member.isStudent && (
                               <div>
-                                <Label className="hindi-text">वर्तमान कक्षा</Label>
+                                <Label className="hindi-text text-sm">वर्तमान कक्षा</Label>
                                 <Select
                                   value={member.currentClass}
                                   onValueChange={(value) => updateMember(member.id, "currentClass", value)}
                                 >
-                                  <SelectTrigger>
+                                  <SelectTrigger className="mt-1">
                                     <SelectValue placeholder="वर्तमान कक्षा चुनें" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1028,12 +1055,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             )}
 
                             <div>
-                              <Label className="hindi-text">कॉलेज कोर्स (यदि कोई हो)</Label>
+                              <Label className="hindi-text text-sm">कॉलेज कोर्स (यदि कोई हो)</Label>
                               <Select
                                 value={member.collegeCourse}
                                 onValueChange={(value) => updateMember(member.id, "collegeCourse", value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="कॉलेज कोर्स चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1139,12 +1166,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </div>
 
                             <div>
-                              <Label className="hindi-text">नामांकन स्थिति</Label>
+                              <Label className="hindi-text text-sm">नामांकन स्थिति</Label>
                               <Select
                                 value={member.enrollmentStatus}
                                 onValueChange={(value) => updateMember(member.id, "enrollmentStatus", value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="नामांकन स्थिति चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1160,21 +1187,23 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </div>
 
                             <div>
-                              <Label className="hindi-text">संस्थान का नाम</Label>
+                              <Label className="hindi-text text-sm">संस्थान का नाम</Label>
                               <Input
                                 value={member.institutionName}
                                 onChange={(e) => updateMember(member.id, "institutionName", e.target.value)}
                                 placeholder="स्कूल/कॉलेज/विश्वविद्यालय का नाम"
+                                className="mt-1 text-sm"
                               />
                             </div>
 
                             {member.enrollmentStatus === "dropped" && (
                               <div>
-                                <Label className="hindi-text">छोड़ने का कारण</Label>
+                                <Label className="hindi-text text-sm">छोड़ने का कारण</Label>
                                 <Input
                                   value={member.dropoutReason || ""}
                                   onChange={(e) => updateMember(member.id, "dropoutReason", e.target.value)}
                                   placeholder="छोड़ने का कारण बताएं"
+                                  className="mt-1 text-sm"
                                 />
                               </div>
                             )}
@@ -1184,7 +1213,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                       {/* Employment Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <Briefcase className="w-4 h-4 mr-2" />
                           रोजगार की जानकारी
                         </h4>
@@ -1195,18 +1224,18 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.isEmployed}
                               onCheckedChange={(checked) => updateMember(member.id, "isEmployed", checked)}
                             />
-                            <Label htmlFor={`employed-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`employed-${member.id}`} className="hindi-text text-sm">
                               रोजगार में है
                             </Label>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="mobile-form-grid">
                             <div>
-                              <Label className="hindi-text">व्यवसाय का प्रकार</Label>
+                              <Label className="hindi-text text-sm">व्यवसाय का प्रकार</Label>
                               <Select
                                 value={member.occupation}
                                 onValueChange={(value) => updateMember(member.id, "occupation", value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="व्यवसाय चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1225,12 +1254,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </div>
 
                             <div>
-                              <Label className="hindi-text">सेवा का प्रकार</Label>
+                              <Label className="hindi-text text-sm">सेवा का प्रकार</Label>
                               <Select
                                 value={member.serviceType}
                                 onValueChange={(value) => updateMember(member.id, "serviceType", value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="सेवा का प्रकार चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1251,7 +1280,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </div>
 
                             <div>
-                              <Label className="hindi-text">मासिक आय (₹)</Label>
+                              <Label className="hindi-text text-sm">मासिक आय (₹)</Label>
                               <Input
                                 type="number"
                                 value={member.monthlyIncome || ""}
@@ -1260,16 +1289,17 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 }
                                 placeholder="मासिक आय"
                                 min="0"
+                                className="mt-1 text-sm"
                               />
                             </div>
 
                             <div>
-                              <Label className="hindi-text">आय का मुख्य स्रोत</Label>
+                              <Label className="hindi-text text-sm">आय का मुख्य स्रोत</Label>
                               <Select
                                 value={member.incomeSource}
                                 onValueChange={(value) => updateMember(member.id, "incomeSource", value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="आय का स्रोत चुनें" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1284,20 +1314,24 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               </Select>
                             </div>
 
-                            <div className="flex items-center space-x-2 col-span-full">
-                              <Checkbox
-                                id={`incomeSourceIndia-${member.id}`}
-                                checked={member.isIncomeSourceInIndia}
-                                onCheckedChange={(checked) => updateMember(member.id, "isIncomeSourceInIndia", checked)}
-                              />
-                              <Label htmlFor={`incomeSourceIndia-${member.id}`} className="hindi-text">
-                                आय का स्रोत भारत में है
-                              </Label>
+                            <div className="col-span-full">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`incomeSourceIndia-${member.id}`}
+                                  checked={member.isIncomeSourceInIndia}
+                                  onCheckedChange={(checked) =>
+                                    updateMember(member.id, "isIncomeSourceInIndia", checked)
+                                  }
+                                />
+                                <Label htmlFor={`incomeSourceIndia-${member.id}`} className="hindi-text text-sm">
+                                  आय का स्रोत भारत में है
+                                </Label>
+                              </div>
                             </div>
 
                             {!member.isIncomeSourceInIndia && (
                               <div>
-                                <Label className="hindi-text flex items-center">
+                                <Label className="hindi-text flex items-center text-sm">
                                   <Globe className="w-4 h-4 mr-1" />
                                   आय स्रोत देश का नाम
                                 </Label>
@@ -1305,12 +1339,13 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   value={member.incomeSourceCountry}
                                   onChange={(e) => updateMember(member.id, "incomeSourceCountry", e.target.value)}
                                   placeholder="देश का नाम दर्ज करें"
+                                  className="mt-1 text-sm"
                                 />
                               </div>
                             )}
 
                             <div>
-                              <Label className="hindi-text">भूमि स्वामित्व (एकड़)</Label>
+                              <Label className="hindi-text text-sm">भूमि स्वामित्व (एकड़)</Label>
                               <Input
                                 type="number"
                                 value={member.landOwned || ""}
@@ -1320,14 +1355,16 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 placeholder="भूमि का क्षेत्रफल"
                                 min="0"
                                 step="0.1"
+                                className="mt-1 text-sm"
                               />
                             </div>
                             <div>
-                              <Label className="hindi-text">पशुधन</Label>
+                              <Label className="hindi-text text-sm">पशुधन</Label>
                               <Input
                                 value={member.livestock}
                                 onChange={(e) => updateMember(member.id, "livestock", e.target.value)}
                                 placeholder="गाय, भैंस, बकरी आदि"
+                                className="mt-1 text-sm"
                               />
                             </div>
                           </div>
@@ -1336,18 +1373,18 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                       {/* Housing Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <Home className="w-4 h-4 mr-2" />
                           आवास की जानकारी
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="mobile-form-grid">
                           <div>
-                            <Label className="hindi-text">घर का प्रकार</Label>
+                            <Label className="hindi-text text-sm">घर का प्रकार</Label>
                             <Select
                               value={member.houseType}
                               onValueChange={(value) => updateMember(member.id, "houseType", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1359,12 +1396,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                           </div>
 
                           <div>
-                            <Label className="hindi-text">घर का स्वामित्व</Label>
+                            <Label className="hindi-text text-sm">घर का स्वामित्व</Label>
                             <Select
                               value={member.houseOwnership}
                               onValueChange={(value) => updateMember(member.id, "houseOwnership", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1378,12 +1415,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                           </div>
 
                           <div>
-                            <Label className="hindi-text">पानी का स्रोत</Label>
+                            <Label className="hindi-text text-sm">पानी का स्रोत</Label>
                             <Select
                               value={member.waterSource}
                               onValueChange={(value) => updateMember(member.id, "waterSource", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1396,12 +1433,12 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                           <div>
-                            <Label className="hindi-text">खाना पकाने का ईंधन</Label>
+                            <Label className="hindi-text text-sm">खाना पकाने का ईंधन</Label>
                             <Select
                               value={member.cookingFuel}
                               onValueChange={(value) => updateMember(member.id, "cookingFuel", value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1414,14 +1451,14 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Select>
                           </div>
                         </div>
-                        <div className="mt-4 flex flex-wrap gap-6">
+                        <div className="mt-4 flex flex-col sm:flex-row gap-4 sm:gap-6">
                           <div className="flex items-center space-x-2">
                             <Checkbox
                               id={`electricity-${member.id}`}
                               checked={member.hasElectricity}
                               onCheckedChange={(checked) => updateMember(member.id, "hasElectricity", checked)}
                             />
-                            <Label htmlFor={`electricity-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`electricity-${member.id}`} className="hindi-text text-sm">
                               बिजली की सुविधा
                             </Label>
                           </div>
@@ -1431,7 +1468,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.hasToilet}
                               onCheckedChange={(checked) => updateMember(member.id, "hasToilet", checked)}
                             />
-                            <Label htmlFor={`toilet-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`toilet-${member.id}`} className="hindi-text text-sm">
                               शौचालय की सुविधा
                             </Label>
                           </div>
@@ -1440,19 +1477,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                       {/* Health Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <Heart className="w-4 h-4 mr-2" />
                           स्वास्थ्य की जानकारी
                         </h4>
                         <div className="space-y-4">
-                          <div className="flex flex-wrap gap-6">
+                          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id={`health-issues-${member.id}`}
                                 checked={member.hasHealthIssues}
                                 onCheckedChange={(checked) => updateMember(member.id, "hasHealthIssues", checked)}
                               />
-                              <Label htmlFor={`health-issues-${member.id}`} className="hindi-text">
+                              <Label htmlFor={`health-issues-${member.id}`} className="hindi-text text-sm">
                                 स्वास्थ्य समस्या है
                               </Label>
                             </div>
@@ -1462,7 +1499,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 checked={member.isVaccinated}
                                 onCheckedChange={(checked) => updateMember(member.id, "isVaccinated", checked)}
                               />
-                              <Label htmlFor={`vaccinated-${member.id}`} className="hindi-text">
+                              <Label htmlFor={`vaccinated-${member.id}`} className="hindi-text text-sm">
                                 टीकाकरण हुआ है
                               </Label>
                             </div>
@@ -1472,18 +1509,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                 checked={member.hasHealthInsurance}
                                 onCheckedChange={(checked) => updateMember(member.id, "hasHealthInsurance", checked)}
                               />
-                              <Label htmlFor={`health-insurance-${member.id}`} className="hindi-text">
+                              <Label htmlFor={`health-insurance-${member.id}`} className="hindi-text text-sm">
                                 स्वास्थ्य बीमा है
                               </Label>
                             </div>
                           </div>
                           {member.hasHealthIssues && (
-                            <div>
-                              <Label className="hindi-text">पुरानी बीमारी (यदि कोई हो)</Label>
+                            <div className="max-w-md">
+                              <Label className="hindi-text text-sm">पुरानी बीमारी (यदि कोई हो)</Label>
                               <Input
                                 value={member.chronicDisease || ""}
                                 onChange={(e) => updateMember(member.id, "chronicDisease", e.target.value)}
                                 placeholder="बीमारी का नाम"
+                                className="mt-1 text-sm"
                               />
                             </div>
                           )}
@@ -1492,18 +1530,18 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                       {/* Digital Access */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
                           <Smartphone className="w-4 h-4 mr-2" />
                           डिजिटल पहुंच और बैंकिंग
                         </h4>
-                        <div className="flex flex-wrap gap-6">
+                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                           <div className="flex items-center space-x-2">
                             <Checkbox
                               id={`smartphone-${member.id}`}
                               checked={member.hasSmartphone}
                               onCheckedChange={(checked) => updateMember(member.id, "hasSmartphone", checked)}
                             />
-                            <Label htmlFor={`smartphone-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`smartphone-${member.id}`} className="hindi-text text-sm">
                               स्मार्टफोन है
                             </Label>
                           </div>
@@ -1513,7 +1551,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.hasInternet}
                               onCheckedChange={(checked) => updateMember(member.id, "hasInternet", checked)}
                             />
-                            <Label htmlFor={`internet-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`internet-${member.id}`} className="hindi-text text-sm">
                               इंटरनेट की सुविधा
                             </Label>
                           </div>
@@ -1523,7 +1561,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.hasBankAccount}
                               onCheckedChange={(checked) => updateMember(member.id, "hasBankAccount", checked)}
                             />
-                            <Label htmlFor={`bank-account-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`bank-account-${member.id}`} className="hindi-text text-sm">
                               बैंक खाता है
                             </Label>
                           </div>
@@ -1533,7 +1571,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               checked={member.hasJanDhan}
                               onCheckedChange={(checked) => updateMember(member.id, "hasJanDhan", checked)}
                             />
-                            <Label htmlFor={`jan-dhan-${member.id}`} className="hindi-text">
+                            <Label htmlFor={`jan-dhan-${member.id}`} className="hindi-text text-sm">
                               जन धन योजना में नामांकित
                             </Label>
                           </div>
@@ -1548,20 +1586,21 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
         </Card>
 
         {/* Submit Buttons */}
-        <div className="flex justify-center gap-4 flex-wrap">
-          <Button onClick={() => router.back()} variant="outline" className="bg-transparent">
+        <div className="mobile-button-group px-4 pb-4 sm:px-0 sm:pb-0">
+          <Button onClick={() => router.back()} variant="outline" className="bg-transparent touch-target" size="lg">
             <span className="hindi-text">रद्द करें</span>
           </Button>
           <Button
             onClick={handleSaveAsDraft}
             disabled={savingDraft}
             variant="outline"
-            className="border-orange-300 text-orange-600 hover:bg-orange-50 min-w-[180px] bg-transparent"
+            className="border-orange-300 text-orange-600 hover:bg-orange-50 bg-transparent touch-target"
+            size="lg"
           >
             {savingDraft ? (
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
-                <span className="hindi-text">ड्राफ्ट सहेजा जा रहा है...</span>
+                <span className="hindi-text text-sm">ड्राफ्ट सहेजा जा रहा है...</span>
               </div>
             ) : (
               <div className="flex items-center">
@@ -1570,11 +1609,16 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
               </div>
             )}
           </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="bg-orange-500 hover:bg-orange-600 min-w-[200px]">
+          <Button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="bg-orange-500 hover:bg-orange-600 touch-target"
+            size="lg"
+          >
             {loading ? (
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                <span className="hindi-text">सहेजा जा रहा है...</span>
+                <span className="hindi-text text-sm">सहेजा जा रहा है...</span>
               </div>
             ) : (
               <div className="flex items-center">

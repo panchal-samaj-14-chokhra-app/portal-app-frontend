@@ -26,6 +26,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 24 100% 50%;
     --radius: 0.5rem;
+    --min-touch: 44px;
   }
 
   .dark {
@@ -66,7 +67,8 @@
 
   /* Mobile-first touch targets */
   .touch-target {
-    @apply min-h-touch min-w-[44px];
+    min-height: var(--min-touch);
+    min-width: var(--min-touch);
   }
 
   /* Custom scrollbar */
@@ -85,6 +87,19 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/50;
   }
+
+  /* Mobile responsive text sizes */
+  @media (max-width: 640px) {
+    .responsive-text-xl {
+      @apply text-lg;
+    }
+    .responsive-text-2xl {
+      @apply text-xl;
+    }
+    .responsive-text-3xl {
+      @apply text-2xl;
+    }
+  }
 }
 
 @layer components {
@@ -98,5 +113,44 @@
 
   .card-shadow-lg {
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+
+  /* Mobile-optimized form layouts */
+  .mobile-form-grid {
+    @apply grid grid-cols-1 gap-4;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-form-grid {
+      @apply grid-cols-2;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-form-grid {
+      @apply grid-cols-3;
+    }
+  }
+
+  /* Mobile-friendly button spacing */
+  .mobile-button-group {
+    @apply flex flex-col gap-3 w-full;
+  }
+
+  @media (min-width: 640px) {
+    .mobile-button-group {
+      @apply flex-row justify-center;
+    }
+  }
+
+  /* Mobile accordion improvements */
+  .mobile-accordion-trigger {
+    @apply px-3 py-4 text-left;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-accordion-trigger {
+      @apply px-4 py-3;
+    }
   }
 }
