@@ -1,5 +1,5 @@
 import type React from "react"
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "./table"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "./table/table"
 
 interface Column<T> {
   label: string
@@ -29,7 +29,7 @@ function ReusableTable<T extends { id: string | number }>({
     <div className="rounded-lg shadow overflow-hidden border border-orange-200 bg-white w-full">
       <div className="overflow-x-auto">
         <Table>
-          {caption && <TableCaption className="text-sm sm:text-base">{caption}</TableCaption>}
+          {caption && <TableCaption className="text-sm sm:text-base p-2 sm:p-4">{caption}</TableCaption>}
           <TableHeader>
             <TableRow className="bg-gradient-to-r from-orange-400 to-orange-500">
               {columns.map((col, idx) => (
@@ -54,7 +54,10 @@ function ReusableTable<T extends { id: string | number }>({
                   colSpan={columns.length + (actions ? 1 : 0)}
                   className="text-center text-orange-500 font-semibold py-8 text-sm sm:text-base"
                 >
-                  लोड हो रहा है...
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+                    लोड हो रहा है...
+                  </div>
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (
@@ -81,14 +84,20 @@ function ReusableTable<T extends { id: string | number }>({
                       key={col.label + cidx}
                       className={`${col.className || ""} px-2 py-2 sm:px-4 lg:px-6 sm:py-4 text-xs sm:text-sm`}
                     >
-                      <div className="max-w-[150px] sm:max-w-none truncate">
-                        {col.render ? col.render(row) : (row as any)[col.accessor]}
+                      <div className="max-w-[120px] sm:max-w-[200px] lg:max-w-none">
+                        {col.render ? (
+                          col.render(row)
+                        ) : (
+                          <span className="truncate block" title={String((row as any)[col.accessor])}>
+                            {(row as any)[col.accessor]}
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                   ))}
                   {actions && (
                     <TableCell className="px-2 py-2 sm:px-4 lg:px-6 sm:py-4 whitespace-nowrap">
-                      <div className="flex gap-1 sm:gap-2">{actions(row)}</div>
+                      <div className="flex gap-1 sm:gap-2 flex-wrap">{actions(row)}</div>
                     </TableCell>
                   )}
                 </TableRow>
