@@ -18,6 +18,10 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        hindi: ["var(--font-hindi)", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -71,6 +75,18 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      spacing: {
+        touch: "44px", // Minimum touch target size
+      },
+      minHeight: {
+        touch: "44px",
+      },
+      minWidth: {
+        touch: "44px",
+      },
+      screens: {
+        xs: "475px",
       },
     },
   },
