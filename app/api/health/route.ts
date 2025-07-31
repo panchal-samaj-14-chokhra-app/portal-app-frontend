@@ -2,16 +2,39 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    // Basic health check
-    const timestamp = new Date().toISOString()
+    // Check backend API health
+    const backendHealth = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_URL}/health`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    const isBackendHealthy = backendHealth.ok
 
     return NextResponse.json({
-      status: "healthy",
-      timestamp,
-      environment: process.env.NODE_ENV,
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      services: {
+        frontend: "healthy",
+        backend: isBackendHealthy ? "healthy" : "unhealthy",
+        database: isBackendHealthy ? "healthy" : "unknown",
+      },
       version: process.env.npm_package_version || "1.0.0",
     })
   } catch (error) {
-    return NextResponse.json({ status: "unhealthy", error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      {
+        status: "error",
+        timestamp: new Date().toISOString(),
+        services: {
+          frontend: "healthy",
+          backend: "unhealthy",
+          database: "unknown",
+        },
+        error: "Backend connection failed",
+      },
+      { status: 503 },
+    )
   }
 }

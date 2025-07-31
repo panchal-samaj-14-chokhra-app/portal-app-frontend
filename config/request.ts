@@ -1,73 +1,175 @@
-import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { getSession, signIn } from 'next-auth/react';
+import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from "axios"
+import { getSession } from "next-auth/react"
+
+const baseURL = process.env.NEXT_PUBLIC_REQUEST_URL || "http://localhost:3001"
 
 const request = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_REQUEST_URL,
+  baseURL,
+  timeout: 30000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "X-Client-Version": process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0",
   },
-});
+})
 
-// request.interceptors.request.use(
-//   async (config: InternalAxiosRequestConfig) => {
-//     if (config.headers.Authorization) {
-//       return config;
-//     } else {
-//       await getSession().then((res) => {
-//         return res?.user ? (config.headers.Authorization = `Bearer ${res?.user.token}`) : delete config.headers.Authorization;
-//       });
-//       return config;
-//     }
-//   },
-//   (error) => {
-//     return Promise.reject(error);
-//   }
-// );
+request.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    config.metadata = { startTime: new Date() }
+
+    const publicEndpoints = ["/health", "/api/public"]
+    const isPublicEndpoint = publicEndpoints.some((endpoint) => config.url?.includes(endpoint))
+
+    if (!isPublicEndpoint && !config.headers.Authorization) {
+      try {
+        const session = await getSession()
+        if (session?.user?.token) {
+          config.headers.Authorization = `Bearer ${session.user.token}`
+        }
+      } catch (error) {
+        console.warn("Failed to get session for request:", error)
+      }
+    }
+
+    // Add auth token if available
+    const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // Log request in development
+    if (process.env.NODE_ENV === "development") {
+      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+        headers: config.headers,
+        data: config.data,
+      })
+    }
+
+    return config
+  },
+  (error) => {
+    console.error("Request interceptor error:", error)
+    return Promise.reject(error)
+  },
+)
 
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    return response;
+    const duration = new Date().getTime() - response.config.metadata?.startTime?.getTime()
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} (${duration}ms)`, {
+        status: response.status,
+        data: response.data,
+      })
+    }
+
+    return response
   },
   async (error) => {
     if (error.response) {
       if (
-        error.request.responseType === 'blob' &&
+        error.request.responseType === "blob" &&
         error.response.data instanceof Blob &&
         error.response.data.type &&
-        error.response.data.type.toLowerCase().indexOf('json') != -1
+        error.response.data.type.toLowerCase().indexOf("json") !== -1
       ) {
         await new Promise((resolve) => {
-          let reader: FileReader = new FileReader();
+          const reader: FileReader = new FileReader()
           reader.onload = () => {
-            error.response.data = JSON.parse((reader?.result || '') as string);
-            resolve('');
-          };
+            try {
+              error.response.data = JSON.parse((reader?.result || "") as string)
+            } catch (parseError) {
+              console.error("Failed to parse blob error response:", parseError)
+            }
+            resolve("")
+          }
           reader.onerror = () => {
-            resolve('');
-          };
-          reader.readAsText(error.response.data);
-        });
+            resolve("")
+          }
+          reader.readAsText(error.response.data)
+        })
       }
-      const { status, data } = error.response;
+
+      const { status, data } = error.response
+
+      if (process.env.NODE_ENV === "development") {
+        console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+          status,
+          data,
+          message: error.message,
+        })
+      }
+
       switch (status) {
         case 400:
-          console.error('Bad Request:', data);
-          break;
+          console.error("Bad Request:", data)
+          break
         case 401:
-          signIn(process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID);
-          console.error('Unauthorized:', data);
-          break;
+          console.error("Unauthorized:", data)
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("authToken")
+            window.location.href = "/login"
+          }
+          break
+        case 403:
+          console.error("Forbidden:", data)
+          break
         case 404:
-          console.error('Not Found:', data);
-          break;
+          console.error("Not Found:", data)
+          break
+        case 422:
+          console.error("Validation Error:", data)
+          break
+        case 429:
+          console.error("Rate Limited:", data)
+          break
+        case 500:
+          console.error("Internal Server Error:", data)
+          break
+        case 502:
+          console.error("Bad Gateway:", data)
+          break
+        case 503:
+          console.error("Service Unavailable:", data)
+          break
         default:
-          console.error('Error:', data);
-          break;
+          console.error("API Error:", data)
+          break
       }
+    } else if (error.request) {
+      console.error("Network Error:", error.message)
     } else {
-      console.error('Error:', error.message);
+      console.error("Request Setup Error:", error.message)
     }
-    return Promise.reject(error);
+
+    return Promise.reject(error)
+  },
+)
+
+export default request
+
+export const checkBackendHealth = async (): Promise<boolean> => {
+  try {
+    const response = await request.get("/health")
+    return response.status === 200
+  } catch (error) {
+    console.error("Backend health check failed:", error)
+    return false
   }
-);
-export default request;
+}
+
+export const checkApiCompatibility = async (): Promise<{ compatible: boolean; backendVersion?: string }> => {
+  try {
+    const response = await request.get("/api/version")
+    const backendVersion = response.data.version
+    const frontendVersion = process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"
+
+    const compatible = backendVersion === frontendVersion
+
+    return { compatible, backendVersion }
+  } catch (error) {
+    console.error("API compatibility check failed:", error)
+    return { compatible: false }
+  }
+}
