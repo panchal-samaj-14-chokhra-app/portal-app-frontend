@@ -170,17 +170,27 @@ export const useGetAllVillageswithChokhlaID = (chokhlaID: string) => {
     queryKey: ["all-villages-with-chokhla-id", chokhlaID],
     queryFn: () => getAllVillagesWithChokhlaID(chokhlaID),
     enabled: !!chokhlaID,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   })
 }
 
-export const useCreateVillage = () => {
+export const useCreateVillage = (onSuccess?: (data: any) => void, onError?: (error: Error) => void) => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: createVillage,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all village-related queries
       queryClient.invalidateQueries({ queryKey: ["all-villages"] })
       queryClient.invalidateQueries({ queryKey: ["all-villages-with-chokhla-id"] })
+      queryClient.invalidateQueries({ queryKey: ["village-statistics"] })
+
+      if (onSuccess) onSuccess(data)
+    },
+    onError: (error: Error) => {
+      console.error("Create village error:", error)
+      if (onError) onError(error)
     },
   })
 }
@@ -193,6 +203,7 @@ export const useUpdateVillage = () => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["village-details", variables.id] })
       queryClient.invalidateQueries({ queryKey: ["all-villages"] })
+      queryClient.invalidateQueries({ queryKey: ["all-villages-with-chokhla-id"] })
     },
   })
 }
@@ -254,16 +265,23 @@ export const useAllChokhlas = (page = 1, limit = 50) => {
   return useQuery({
     queryKey: ["all-chokhlas", page, limit],
     queryFn: () => getAllChokhlas(page, limit),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   })
 }
 
-export const useCreateChokhla = () => {
+export const useCreateChokhla = (onSuccess?: (data: any) => void, onError?: (error: Error) => void) => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: createChokhla,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["all-chokhlas"] })
+      if (onSuccess) onSuccess(data)
+    },
+    onError: (error: Error) => {
+      console.error("Create chokhla error:", error)
+      if (onError) onError(error)
     },
   })
 }
@@ -278,6 +296,9 @@ export const useDeleteChokhla = () => {
     },
   })
 }
+
+// Alias for backward compatibility
+export const useGetAllChokhlas = useAllChokhlas
 
 // User hooks
 export const useGetAllUserList = (page = 1, limit = 50) => {
