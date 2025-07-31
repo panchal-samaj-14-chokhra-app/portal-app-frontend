@@ -39,8 +39,8 @@ import { Badge } from "@/components/ui/badge/badge"
 
 interface FamilyMember {
   id: string
-  name: string
-  aadhaarNumber: string
+  firstName: string
+  lastName: string
   dateOfBirth: string
   age: number
   gender: "MALE" | "FEMALE" | "OTHER"
@@ -155,8 +155,8 @@ interface FamilyData {
 }
 
 const initialMember: Omit<FamilyMember, "id"> = {
-  name: "",
-  aadhaarNumber: "",
+  firstName: "",
+  lastName: "",
   dateOfBirth: "",
   age: 0,
   gender: "MALE",
@@ -337,6 +337,30 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
     return Math.max(0, age)
   }
 
+  useEffect(() => {
+    // Get current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFamilyData((prev) => ({
+            ...prev,
+            longitude: position.coords.longitude,
+            latitude: position.coords.latitude,
+          }))
+        },
+        (error) => {
+          console.log("Geolocation error:", error)
+          // Set to null if location access is denied
+          setFamilyData((prev) => ({
+            ...prev,
+            longitude: null,
+            latitude: null,
+          }))
+        },
+      )
+    }
+  }, [])
+
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
@@ -392,7 +416,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
             // Update family mukhiya name
             setFamilyData((prevFamily) => ({
               ...prevFamily,
-              mukhiyaName: updatedMember.name,
+              mukhiyaName: `${updatedMember.firstName} ${updatedMember.lastName}`,
             }))
             return updatedMember
           }
@@ -431,13 +455,6 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
         newErrors.mukhiya = "केवल एक मुखिया हो सकता है"
       }
 
-      // Check for unique Aadhaar numbers
-      const aadhaarNumbers = familyData.members.map((m) => m.aadhaarNumber).filter(Boolean)
-      const duplicateAadhaar = aadhaarNumbers.find((num, index) => aadhaarNumbers.indexOf(num) !== index)
-      if (duplicateAadhaar) {
-        newErrors.aadhaar = `आधार नंबर ${duplicateAadhaar} डुप्लिकेट है`
-      }
-
       // Check for unique mobile numbers
       const mobileNumbers = familyData.members.map((m) => m.mobileNumber).filter(Boolean)
       const duplicateMobile = mobileNumbers.find((num, index) => mobileNumbers.indexOf(num) !== index)
@@ -447,11 +464,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
       // Check required fields for each member
       familyData.members.forEach((member, index) => {
-        if (!member.name.trim()) {
-          newErrors[`member-${index}-name`] = "नाम आवश्यक है"
+        if (!member.firstName.trim()) {
+          newErrors[`member-${index}-firstName`] = "पहला नाम आवश्यक है"
         }
-        if (!member.aadhaarNumber.trim()) {
-          newErrors[`member-${index}-aadhaar`] = "आधार नंबर आवश्यक है"
+        if (!member.lastName.trim()) {
+          newErrors[`member-${index}-lastName`] = "अंतिम नाम आवश्यक है"
         }
         if (!member.dateOfBirth) {
           newErrors[`member-${index}-dob`] = "जन्म तिथि आवश्यक है"
@@ -507,7 +524,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
     setLoading(true)
     try {
       const mukhiya = familyData.members.find((m) => m.isMukhiya)
-      const mukhiyaName = mukhiya ? mukhiya.name : ""
+      const mukhiyaName = mukhiya ? `${mukhiya.firstName} ${mukhiya.lastName}` : ""
 
       const submitData = {
         ...familyData,
@@ -681,42 +698,6 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                 />
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="longitude" className="hindi-text text-sm font-medium">
-                  देशांतर (Longitude)
-                </Label>
-                <Input
-                  id="longitude"
-                  type="number"
-                  step="any"
-                  value={familyData.longitude || ""}
-                  onChange={(e) =>
-                    setFamilyData((prev) => ({ ...prev, longitude: Number.parseFloat(e.target.value) || undefined }))
-                  }
-                  placeholder="देशांतर निर्देशांक"
-                  className="mt-1 text-sm"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="latitude" className="hindi-text text-sm font-medium">
-                  अक्षांश (Latitude)
-                </Label>
-                <Input
-                  id="latitude"
-                  type="number"
-                  step="any"
-                  value={familyData.latitude || ""}
-                  onChange={(e) =>
-                    setFamilyData((prev) => ({ ...prev, latitude: Number.parseFloat(e.target.value) || undefined }))
-                  }
-                  placeholder="अक्षांश निर्देशांक"
-                  className="mt-1 text-sm"
-                />
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -761,7 +742,9 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                               <span className="font-medium text-sm sm:text-base truncate">
-                                {member.name || `सदस्य ${index + 1}`}
+                                {member.firstName && member.lastName
+                                  ? `${member.firstName} ${member.lastName}`
+                                  : `सदस्य ${index + 1}`}
                               </span>
                               {member.isMukhiya && (
                                 <Badge className="bg-orange-100 text-orange-700 text-xs w-fit">
@@ -810,29 +793,30 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                         </h4>
                         <div className="mobile-form-grid">
                           <div>
-                            <Label className="hindi-text text-sm">पूरा नाम *</Label>
+                            <Label className="hindi-text text-sm">पहला नाम *</Label>
                             <Input
-                              value={member.name}
-                              onChange={(e) => updateMember(member.id, "name", e.target.value)}
-                              placeholder="पूरा नाम दर्ज करें"
-                              className={`mt-1 text-sm ${errors[`member-${index}-name`] ? "border-red-500" : ""}`}
+                              value={member.firstName}
+                              onChange={(e) => updateMember(member.id, "firstName", e.target.value)}
+                              placeholder="पहला नाम दर्ज करें"
+                              className={`mt-1 text-sm ${errors[`member-${index}-firstName`] ? "border-red-500" : ""}`}
                             />
-                            {errors[`member-${index}-name`] && (
-                              <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-name`]}</p>
+                            {errors[`member-${index}-firstName`] && (
+                              <p className="text-red-500 text-xs mt-1 hindi-text">
+                                {errors[`member-${index}-firstName`]}
+                              </p>
                             )}
                           </div>
                           <div>
-                            <Label className="hindi-text text-sm">आधार नंबर *</Label>
+                            <Label className="hindi-text text-sm">अंतिम नाम *</Label>
                             <Input
-                              value={member.aadhaarNumber}
-                              onChange={(e) => updateMember(member.id, "aadhaarNumber", e.target.value)}
-                              placeholder="12 अंकों का आधार नंबर"
-                              maxLength={12}
-                              className={`mt-1 text-sm ${errors[`member-${index}-aadhaar`] ? "border-red-500" : ""}`}
+                              value={member.lastName}
+                              onChange={(e) => updateMember(member.id, "lastName", e.target.value)}
+                              placeholder="अंतिम नाम दर्ज करें"
+                              className={`mt-1 text-sm ${errors[`member-${index}-lastName`] ? "border-red-500" : ""}`}
                             />
-                            {errors[`member-${index}-aadhaar`] && (
+                            {errors[`member-${index}-lastName`] && (
                               <p className="text-red-500 text-xs mt-1 hindi-text">
-                                {errors[`member-${index}-aadhaar`]}
+                                {errors[`member-${index}-lastName`]}
                               </p>
                             )}
                           </div>
@@ -843,7 +827,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Label>
                             <Input
                               type="date"
-                              value={member.dateOfBirth}
+                              value={member.dateOfBirth ? new Date(member.dateOfBirth).toISOString().split("T")[0] : ""}
                               onChange={(e) => updateMember(member.id, "dateOfBirth", e.target.value)}
                               className={`mt-1 text-sm ${errors[`member-${index}-dob`] ? "border-red-500" : ""}`}
                               max={new Date().toISOString().split("T")[0]}
@@ -1663,20 +1647,61 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                             <div>
                               <Label className="hindi-text text-sm">कार्य स्थान राज्य</Label>
-                              <Input
+                              <Select
                                 value={member.occupationState || ""}
-                                onChange={(e) => updateMember(member.id, "occupationState", e.target.value)}
-                                placeholder="कार्य स्थान का राज्य"
-                                className="mt-1 text-sm"
-                              />
+                                onValueChange={(value) => updateMember(member.id, "occupationState", value)}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="राज्य चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="andhra_pradesh">आंध्र प्रदेश</SelectItem>
+                                  <SelectItem value="arunachal_pradesh">अरुणाचल प्रदेश</SelectItem>
+                                  <SelectItem value="assam">असम</SelectItem>
+                                  <SelectItem value="bihar">बिहार</SelectItem>
+                                  <SelectItem value="chhattisgarh">छत्तीसगढ़</SelectItem>
+                                  <SelectItem value="goa">गोवा</SelectItem>
+                                  <SelectItem value="gujarat">गुजरात</SelectItem>
+                                  <SelectItem value="haryana">हरियाणा</SelectItem>
+                                  <SelectItem value="himachal_pradesh">हिमाचल प्रदेश</SelectItem>
+                                  <SelectItem value="jharkhand">झारखंड</SelectItem>
+                                  <SelectItem value="karnataka">कर्नाटक</SelectItem>
+                                  <SelectItem value="kerala">केरल</SelectItem>
+                                  <SelectItem value="madhya_pradesh">मध्य प्रदेश</SelectItem>
+                                  <SelectItem value="maharashtra">महाराष्ट्र</SelectItem>
+                                  <SelectItem value="manipur">मणिपुर</SelectItem>
+                                  <SelectItem value="meghalaya">मेघालय</SelectItem>
+                                  <SelectItem value="mizoram">मिजोरम</SelectItem>
+                                  <SelectItem value="nagaland">नागालैंड</SelectItem>
+                                  <SelectItem value="odisha">ओडिशा</SelectItem>
+                                  <SelectItem value="punjab">पंजाब</SelectItem>
+                                  <SelectItem value="rajasthan">राजस्थान</SelectItem>
+                                  <SelectItem value="sikkim">सिक्किम</SelectItem>
+                                  <SelectItem value="tamil_nadu">तमिल नाडु</SelectItem>
+                                  <SelectItem value="telangana">तेलंगाना</SelectItem>
+                                  <SelectItem value="tripura">त्रिपुरा</SelectItem>
+                                  <SelectItem value="uttar_pradesh">उत्तर प्रदेश</SelectItem>
+                                  <SelectItem value="uttarakhand">उत्तराखंड</SelectItem>
+                                  <SelectItem value="west_bengal">पश्चिम बंगाल</SelectItem>
+                                  <SelectItem value="andaman_nicobar">अंडमान और निकोबार द्वीप समूह</SelectItem>
+                                  <SelectItem value="chandigarh">चंडीगढ़</SelectItem>
+                                  <SelectItem value="dadra_nagar_haveli">दादरा और नगर हवेली</SelectItem>
+                                  <SelectItem value="daman_diu">दमन और दीव</SelectItem>
+                                  <SelectItem value="delhi">दिल्ली</SelectItem>
+                                  <SelectItem value="jammu_kashmir">जम्मू और कश्मीर</SelectItem>
+                                  <SelectItem value="ladakh">लद्दाख</SelectItem>
+                                  <SelectItem value="lakshadweep">लक्षद्वीप</SelectItem>
+                                  <SelectItem value="puducherry">पुडुचेरी</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
 
                             <div>
-                              <Label className="hindi-text text-sm">कार्य स्थान शहर</Label>
+                              <Label className="hindi-text text-sm">कार्य स्थान जिला</Label>
                               <Input
                                 value={member.occupationCity || ""}
                                 onChange={(e) => updateMember(member.id, "occupationCity", e.target.value)}
-                                placeholder="कार्य स्थान का शहर"
+                                placeholder="जिला का नाम दर्ज करें"
                                 className="mt-1 text-sm"
                               />
                             </div>
@@ -1733,7 +1758,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   <Label className="hindi-text text-sm">व्यापार की श्रेणी</Label>
                                   <Select
                                     value={member.businessCategory || ""}
-                                    onValueChange={(value) => updateMember(member.id, "businessCategory", value)}
+                                    onChange={(value) => updateMember(member.id, "businessCategory", value)}
                                   >
                                     <SelectTrigger className="mt-1">
                                       <SelectValue placeholder="व्यापार की श्रेणी चुनें" />
@@ -1757,7 +1782,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   <Label className="hindi-text text-sm">व्यापार का आकार</Label>
                                   <Select
                                     value={member.sizeOfBusiness || ""}
-                                    onValueChange={(value) => updateMember(member.id, "sizeOfBusiness", value)}
+                                    onChange={(value) => updateMember(member.id, "sizeOfBusiness", value)}
                                   >
                                     <SelectTrigger className="mt-1">
                                       <SelectValue placeholder="व्यापार का आकार चुनें" />
