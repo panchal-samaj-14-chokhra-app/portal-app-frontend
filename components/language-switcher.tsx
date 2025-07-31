@@ -1,42 +1,45 @@
 "use client"
-import { useRouter, usePathname } from "next/navigation"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
+
+import { useState } from "react"
 import { Globe } from "lucide-react"
-import { locales, localeNames, type Locale } from "@/lib/i18n/config"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
 
 interface LanguageSwitcherProps {
   currentLocale: string
 }
 
 export function LanguageSwitcher({ currentLocale }: LanguageSwitcherProps) {
-  const router = useRouter()
-  const pathname = usePathname()
+  const [locale, setLocale] = useState(currentLocale)
 
-  const handleLocaleChange = (newLocale: string) => {
-    // Remove current locale from pathname
-    const segments = pathname.split("/")
-    if (locales.includes(segments[1] as Locale)) {
-      segments.splice(1, 1)
-    }
+  const languages = [
+    { code: "hin", name: "हिंदी", flag: "🇮🇳" },
+    { code: "en", name: "English", flag: "🇺🇸" },
+  ]
 
-    // Add new locale
-    const newPath = `/${newLocale}${segments.join("/")}`
-    router.push(newPath)
+  const handleLanguageChange = (newLocale: string) => {
+    setLocale(newLocale)
+    // In a real app, you would update the locale context or router
+    console.log("Language changed to:", newLocale)
   }
 
   return (
-    <Select value={currentLocale} onValueChange={handleLocaleChange}>
-      <SelectTrigger className="w-32">
-        <Globe className="w-4 h-4 mr-2" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {locales.map((locale) => (
-          <SelectItem key={locale} value={locale}>
-            {localeNames[locale]}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex items-center space-x-2">
+      <Globe className="h-4 w-4 text-white" />
+      <Select value={locale} onValueChange={handleLanguageChange}>
+        <SelectTrigger className="w-32 bg-white/10 border-white/20 text-white">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {languages.map((lang) => (
+            <SelectItem key={lang.code} value={lang.code}>
+              <span className="flex items-center space-x-2">
+                <span>{lang.flag}</span>
+                <span>{lang.name}</span>
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   )
 }
