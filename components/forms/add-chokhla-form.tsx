@@ -7,300 +7,165 @@ import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, Loader2, Building2, User, Phone, Mail, MapPin, Lock } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
-const chokhlaFormSchema = z.object({
-  // Chokhla Information
+const addChokhlaSchema = z.object({
   name: z.string().min(2, "चौकला का नाम कम से कम 2 अक्षर का होना चाहिए"),
-  adhyaksh: z.string().min(2, "अध्यक्ष का नाम कम से कम 2 अक्षर का होना चाहिए"),
-  contactNumber: z.string().min(10, "संपर्क नंबर कम से कम 10 अंकों का होना चाहिए"),
-  address: z.string().min(5, "पता कम से कम 5 अक्षर का होना चाहिए"),
-  state: z.string().min(2, "राज्य का नाम कम से कम 2 अक्षर का होना चाहिए"),
-  district: z.string().min(2, "जिला का नाम कम से कम 2 अक्षर का होना चाहिए"),
-  villageName: z.string().min(2, "गांव का नाम कम से कम 2 अक्षर का होना चाहिए"),
-
-  // Admin User Information
-  fullName: z.string().min(2, "पूरा नाम कम से कम 2 अक्षर का होना चाहिए"),
-  email: z.string().email("वैध ईमेल पता दर्ज करें"),
+  adminName: z.string().min(2, "एडमिन का नाम कम से कम 2 अक्षर का होना चाहिए"),
+  adminEmail: z.string().email("वैध ईमेल पता दर्ज करें"),
+  adminPhone: z.string().min(10, "फोन नंबर कम से कम 10 अंकों का होना चाहिए"),
   password: z.string().min(6, "पासवर्ड कम से कम 6 अक्षर का होना चाहिए"),
 })
 
-type ChokhlaFormData = z.infer<typeof chokhlaFormSchema>
+type AddChokhlaFormData = z.infer<typeof addChokhlaSchema>
 
 interface AddChokhlaFormProps {
-  onSubmit: (data: ChokhlaFormData) => void
-  isLoading?: boolean
+  onSuccess: (data: any) => void
+  onCancel: () => void
 }
 
-export function AddChokhlaForm({ onSubmit, isLoading = false }: AddChokhlaFormProps) {
+export function AddChokhlaForm({ onSuccess, onCancel }: AddChokhlaFormProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<ChokhlaFormData>({
-    resolver: zodResolver(chokhlaFormSchema),
+  } = useForm<AddChokhlaFormData>({
+    resolver: zodResolver(addChokhlaSchema),
   })
 
-  const handleFormSubmit = (data: ChokhlaFormData) => {
-    onSubmit(data)
-  }
+  const onSubmit = async (data: AddChokhlaFormData) => {
+    setIsSubmitting(true)
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
+      const newChokhla = {
+        id: Date.now().toString(),
+        name: data.name,
+        adminName: data.adminName,
+        adminEmail: data.adminEmail,
+        adminPhone: data.adminPhone,
+        password: data.password,
+        createdAt: new Date().toISOString(),
+        status: "active",
+      }
+
+      onSuccess(newChokhla)
+      reset()
+      toast.success("चौकला सफलतापूर्वक जोड़ा गया!")
+    } catch (error) {
+      toast.error("चौकला जोड़ने में त्रुटि हुई")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <ScrollArea className="h-[70vh] pr-4">
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-        {/* Chokhla Information Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold text-orange-700">
-            <Building2 className="w-5 h-5" />
-            चौकला की जानकारी
-          </div>
-          <Separator className="bg-orange-200" />
-
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-xl font-semibold text-center">नया चौकला जोड़ें</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-orange-700 font-medium">
-                चौकला का नाम *
-              </Label>
+              <Label htmlFor="name">चौकला का नाम *</Label>
               <Input
                 id="name"
                 {...register("name")}
                 placeholder="चौकला का नाम दर्ज करें"
-                className={`border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                  errors.name ? "border-red-500" : ""
-                }`}
-                disabled={isLoading}
+                className={errors.name ? "border-red-500" : ""}
               />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="adhyaksh" className="text-orange-700 font-medium">
-                अध्यक्ष का नाम *
-              </Label>
+              <Label htmlFor="adminName">एडमिन का नाम *</Label>
               <Input
-                id="adhyaksh"
-                {...register("adhyaksh")}
-                placeholder="अध्यक्ष का नाम दर्ज करें"
-                className={`border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                  errors.adhyaksh ? "border-red-500" : ""
-                }`}
-                disabled={isLoading}
+                id="adminName"
+                {...register("adminName")}
+                placeholder="एडमिन का नाम दर्ज करें"
+                className={errors.adminName ? "border-red-500" : ""}
               />
-              {errors.adhyaksh && <p className="text-red-500 text-sm">{errors.adhyaksh.message}</p>}
+              {errors.adminName && <p className="text-sm text-red-500">{errors.adminName.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contactNumber" className="text-orange-700 font-medium">
-                संपर्क नंबर *
-              </Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-orange-500" />
-                <Input
-                  id="contactNumber"
-                  {...register("contactNumber")}
-                  placeholder="संपर्क नंबर दर्ज करें"
-                  className={`pl-10 border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                    errors.contactNumber ? "border-red-500" : ""
-                  }`}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.contactNumber && <p className="text-red-500 text-sm">{errors.contactNumber.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="villageName" className="text-orange-700 font-medium">
-                गांव का नाम *
-              </Label>
+              <Label htmlFor="adminEmail">एडमिन का ईमेल *</Label>
               <Input
-                id="villageName"
-                {...register("villageName")}
-                placeholder="गांव का नाम दर्ज करें"
-                className={`border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                  errors.villageName ? "border-red-500" : ""
-                }`}
-                disabled={isLoading}
+                id="adminEmail"
+                type="email"
+                {...register("adminEmail")}
+                placeholder="admin@example.com"
+                className={errors.adminEmail ? "border-red-500" : ""}
               />
-              {errors.villageName && <p className="text-red-500 text-sm">{errors.villageName.message}</p>}
+              {errors.adminEmail && <p className="text-sm text-red-500">{errors.adminEmail.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="state" className="text-orange-700 font-medium">
-                राज्य *
-              </Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-orange-500" />
-                <Input
-                  id="state"
-                  {...register("state")}
-                  placeholder="राज्य का नाम दर्ज करें"
-                  className={`pl-10 border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                    errors.state ? "border-red-500" : ""
-                  }`}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.state && <p className="text-red-500 text-sm">{errors.state.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="district" className="text-orange-700 font-medium">
-                जिला *
-              </Label>
+              <Label htmlFor="adminPhone">फोन नंबर *</Label>
               <Input
-                id="district"
-                {...register("district")}
-                placeholder="जिला का नाम दर्ज करें"
-                className={`border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                  errors.district ? "border-red-500" : ""
-                }`}
-                disabled={isLoading}
+                id="adminPhone"
+                {...register("adminPhone")}
+                placeholder="1234567890"
+                className={errors.adminPhone ? "border-red-500" : ""}
               />
-              {errors.district && <p className="text-red-500 text-sm">{errors.district.message}</p>}
+              {errors.adminPhone && <p className="text-sm text-red-500">{errors.adminPhone.message}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address" className="text-orange-700 font-medium">
-              पूरा पता *
-            </Label>
-            <Textarea
-              id="address"
-              {...register("address")}
-              placeholder="पूरा पता दर्ज करें"
-              className={`border-orange-300 focus:border-orange-500 focus:ring-orange-500 min-h-[80px] ${
-                errors.address ? "border-red-500" : ""
-              }`}
-              disabled={isLoading}
-            />
-            {errors.address && <p className="text-red-500 text-sm">{errors.address.message}</p>}
-          </div>
-        </div>
-
-        {/* Admin User Information Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold text-orange-700">
-            <User className="w-5 h-5" />
-            चौकला एडमिन की जानकारी
-          </div>
-          <Separator className="bg-orange-200" />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-orange-700 font-medium">
-                पूरा नाम *
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-orange-500" />
-                <Input
-                  id="fullName"
-                  {...register("fullName")}
-                  placeholder="पूरा नाम दर्ज करें"
-                  className={`pl-10 border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                    errors.fullName ? "border-red-500" : ""
-                  }`}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName.message}</p>}
+            <Label htmlFor="password">पासवर्ड *</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                {...register("password")}
+                placeholder="पासवर्ड दर्ज करें"
+                className={errors.password ? "border-red-500 pr-10" : "pr-10"}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-orange-700 font-medium">
-                ईमेल पता *
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-orange-500" />
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  placeholder="ईमेल पता दर्ज करें"
-                  className={`pl-10 border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                    errors.email ? "border-red-500" : ""
-                  }`}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="password" className="text-orange-700 font-medium">
-                पासवर्ड *
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-orange-500" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  {...register("password")}
-                  placeholder="पासवर्ड दर्ज करें"
-                  className={`pl-10 pr-10 border-orange-300 focus:border-orange-500 focus:ring-orange-500 ${
-                    errors.password ? "border-red-500" : ""
-                  }`}
-                  disabled={isLoading}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-orange-100"
-                  onClick={togglePasswordVisibility}
-                  disabled={isLoading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-orange-600" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-orange-600" />
-                  )}
-                </Button>
-              </div>
-              {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
-            </div>
+            {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
           </div>
-        </div>
 
-        {/* Submit Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-6">
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-2.5 shadow-lg"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                चौकला बनाया जा रहा है...
-              </>
-            ) : (
-              <>
-                <Building2 className="w-4 h-4 mr-2" />
-                चौकला बनाएं
-              </>
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => reset()}
-            disabled={isLoading}
-            className="flex-1 border-orange-300 text-orange-700 hover:bg-orange-50 font-semibold py-2.5"
-          >
-            रीसेट करें
-          </Button>
-        </div>
-      </form>
-    </ScrollArea>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1 bg-transparent"
+              disabled={isSubmitting}
+            >
+              रद्द करें
+            </Button>
+            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  जोड़ा जा रहा है...
+                </>
+              ) : (
+                "चौकला जोड़ें"
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }

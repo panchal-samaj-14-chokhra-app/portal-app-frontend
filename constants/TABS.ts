@@ -1,9 +1,24 @@
-export const TABS = [
-  { key: "village", label: "गांव प्रबंधन" },
-  { key: "chokhla", label: "चौकला प्रबंधन" },
-  { key: "statics", label: "आँकड़े" },
-  { key: "user", label: "यूज़र प्रबंधन" },
-  { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल" },
+export const SUPERADMIN_TABS = [
+  {
+    id: "chokhlas",
+    label: "चौकला प्रबंधन",
+    value: "chokhlas",
+  },
+  {
+    id: "users",
+    label: "उपयोगकर्ता प्रबंधन",
+    value: "users",
+  },
+  {
+    id: "reports",
+    label: "रिपोर्ट्स",
+    value: "reports",
+  },
+  {
+    id: "settings",
+    label: "सेटिंग्स",
+    value: "settings",
+  },
 ] as const
 
-export type TabKey = (typeof TABS)[number]["key"]
+export type SuperAdminTab = (typeof SUPERADMIN_TABS)[number]["value"]

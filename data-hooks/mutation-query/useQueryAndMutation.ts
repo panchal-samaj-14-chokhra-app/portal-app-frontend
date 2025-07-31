@@ -20,9 +20,6 @@ import {
   // Chokhla operations
   getChokhlaDetails,
   updateChokhla,
-  getAllChokhlas,
-  createChokhla,
-  deleteChokhla,
   // User operations
   getAlluserList,
   createUser,
@@ -41,6 +38,32 @@ import {
   createBackup,
   syncWithBackend,
 } from "../requests/village-family"
+
+// Mock data for chokhlas
+const mockChokhlas = [
+  {
+    id: "1",
+    name: "मुख्य चौकला",
+    adminName: "राम शर्मा",
+    adminEmail: "ram@example.com",
+    adminPhone: "9876543210",
+    status: "active",
+    createdAt: "2024-01-15T10:30:00Z",
+    villageCount: 25,
+    familyCount: 150,
+  },
+  {
+    id: "2",
+    name: "उत्तरी चौकला",
+    adminName: "श्याम गुप्ता",
+    adminEmail: "shyam@example.com",
+    adminPhone: "9876543211",
+    status: "active",
+    createdAt: "2024-01-20T14:15:00Z",
+    villageCount: 18,
+    familyCount: 120,
+  },
+]
 
 // Health and version hooks
 export const useApiHealth = () => {
@@ -249,39 +272,41 @@ export const useChokhlaDetails = (chokhlaId: string) => {
   })
 }
 
-export const useUpdateChokhla = (chokhlaId: string) => {
+export const useUpdateChokhla = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (payload: any) => updateChokhla(chokhlaId, payload),
+    mutationFn: ({ id, data }: { id: string; data: any }) => updateChokhla(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chokhla-details", chokhlaId] })
-      queryClient.invalidateQueries({ queryKey: ["all-chokhlas"] })
+      queryClient.invalidateQueries({ queryKey: ["chokhla-details"] })
+      queryClient.invalidateQueries({ queryKey: ["chokhlas"] })
     },
   })
 }
 
-export const useAllChokhlas = (page = 1, limit = 50) => {
+export const useAllChokhlas = () => {
   return useQuery({
-    queryKey: ["all-chokhlas", page, limit],
-    queryFn: () => getAllChokhlas(page, limit),
+    queryKey: ["chokhlas"],
+    queryFn: async () => {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      return mockChokhlas
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
   })
 }
 
-export const useCreateChokhla = (onSuccess?: (data: any) => void, onError?: (error: Error) => void) => {
+export const useCreateChokhla = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: createChokhla,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["all-chokhlas"] })
-      if (onSuccess) onSuccess(data)
+    mutationFn: async (newChokhla: any) => {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      return { ...newChokhla, id: Date.now().toString() }
     },
-    onError: (error: Error) => {
-      console.error("Create chokhla error:", error)
-      if (onError) onError(error)
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chokhlas"] })
     },
   })
 }
@@ -290,12 +315,31 @@ export const useDeleteChokhla = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: deleteChokhla,
+    mutationFn: async (id: string) => {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      return id
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-chokhlas"] })
+      queryClient.invalidateQueries({ queryKey: ["chokhlas"] })
     },
   })
 }
+
+export const useChokhlaById = (id: string) => {
+  return useQuery({
+    queryKey: ["chokhla", id],
+    queryFn: async () => {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      return mockChokhlas.find((chokhla) => chokhla.id === id) || null
+    },
+    enabled: !!id,
+  })
+}
+
+// Alias for backward compatibility
+export const useGetAllChokhlas = useAllChokhlas
 
 // User hooks
 export const useGetAllUserList = (page = 1, limit = 50) => {
@@ -392,5 +436,3 @@ export const useSyncWithBackend = () => {
     },
   })
 }
-
-export const useGetAllChokhlas = useAllChokhlas
