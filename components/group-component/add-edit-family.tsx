@@ -25,6 +25,7 @@ import {
   MapPin,
   FileText,
   Calendar,
+  Copy,
 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
@@ -33,6 +34,7 @@ import { Label } from "@/components/ui/label/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
 import { Textarea } from "@/components/ui/textarea/textarea"
 import { Checkbox } from "@/components/ui/checkbox/checkbox"
+import { Switch } from "@/components/ui/switch"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 import { Badge } from "@/components/ui/badge/badge"
@@ -143,10 +145,11 @@ interface FamilyMember {
 interface FamilyData {
   mukhiyaName: string
   currentAddress: string
+  permanentAddress: string
   status: string
   economicStatus: string
-  longitude?: number
-  latitude?: number
+  longitude?: number | null
+  latitude?: number | null
   anyComment: string
   familyDistrict: string
   familyState: string
@@ -268,8 +271,9 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       return {
         mukhiyaName: familyDetails.mukhiyaName || "",
         currentAddress: familyDetails.currentAddress || "",
+        permanentAddress: familyDetails.permanentAddress || "",
         status: familyDetails.status || "draft",
-        economicStatus: familyDetails.economicStatus || "bpl",
+        economicStatus: familyDetails.economicStatus || "",
         longitude: familyDetails.longitude,
         latitude: familyDetails.latitude,
         anyComment: familyDetails.anyComment || "",
@@ -282,10 +286,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
     return {
       mukhiyaName: "",
       currentAddress: "",
+      permanentAddress: "",
       status: "draft",
-      economicStatus: "bpl",
-      longitude: undefined,
-      latitude: undefined,
+      economicStatus: "",
+      longitude: null,
+      latitude: null,
       anyComment: "",
       familyDistrict: "",
       familyState: "",
@@ -299,8 +304,9 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       setFamilyData({
         mukhiyaName: familyDetails.mukhiyaName || "",
         currentAddress: familyDetails.currentAddress || "",
+        permanentAddress: familyDetails.permanentAddress || "",
         status: familyDetails.status || "draft",
-        economicStatus: familyDetails.economicStatus || "bpl",
+        economicStatus: familyDetails.economicStatus || "",
         longitude: familyDetails.longitude,
         latitude: familyDetails.latitude,
         anyComment: familyDetails.anyComment || "",
@@ -315,6 +321,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
+  const [sameAsPermanent, setSameAsPermanent] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -425,12 +432,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           if (field === "dateOfBirth") {
             if (!value) return { ...member }
 
-            const isoDate = new Date(value).toISOString()
             const age = calculateAge(value)
 
             return {
               ...member,
-              [field]: isoDate,
+              [field]: value,
               age,
             }
           }
@@ -440,6 +446,29 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
         return member
       }),
     }))
+  }
+
+  const copyFamilyAddressToMember = (memberId: string) => {
+    updateMember(memberId, "permanentAddress", familyData.permanentAddress)
+    updateMember(memberId, "currentAddress", familyData.currentAddress)
+    updateMember(memberId, "state", familyData.familyState)
+    updateMember(memberId, "district", familyData.familyDistrict)
+    updateMember(memberId, "pincode", familyData.familyPincode)
+  }
+
+  const copyPermanentToCurrent = () => {
+    setFamilyData((prev) => ({
+      ...prev,
+      currentAddress: prev.permanentAddress,
+    }))
+    setSameAsPermanent(true)
+  }
+
+  const copyPermanentToCurrentMember = (memberId: string) => {
+    const member = familyData.members.find((m) => m.id === memberId)
+    if (member) {
+      updateMember(memberId, "currentAddress", member.permanentAddress)
+    }
   }
 
   const validateForm = (isDraft = false): boolean => {
@@ -474,6 +503,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           newErrors[`member-${index}-dob`] = "जन्म तिथि आवश्यक है"
         }
       })
+
+      // Check economic status is selected
+      if (!familyData.economicStatus) {
+        newErrors.economicStatus = "आर्थिक स्थिति का चयन आवश्यक है"
+      }
     }
 
     // Validate format for filled fields (both draft and final)
@@ -491,7 +525,15 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           newErrors[`member-${index}-dob`] = "जन्म तिथि भविष्य में नहीं हो सकती"
         }
       }
+      if (member.pincode && !/^\d{6}$/.test(member.pincode)) {
+        newErrors[`member-${index}-pincode`] = "पिनकोड 6 अंकों का होना चाहिए"
+      }
     })
+
+    // Validate family pincode
+    if (familyData.familyPincode && !/^\d{6}$/.test(familyData.familyPincode)) {
+      newErrors.familyPincode = "पिनकोड 6 अंकों का होना चाहिए"
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -587,13 +629,14 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
         {/* Error Alerts */}
-        {(errors.mukhiya || errors.aadhaar || errors.mobile) && (
+        {(errors.mukhiya || errors.mobile || errors.economicStatus || errors.familyPincode) && (
           <Alert className="mb-4 sm:mb-6 border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
             <AlertDescription className="text-red-800 text-sm">
               {errors.mukhiya && <div className="hindi-text">{errors.mukhiya}</div>}
-              {errors.aadhaar && <div className="hindi-text">{errors.aadhaar}</div>}
               {errors.mobile && <div className="hindi-text">{errors.mobile}</div>}
+              {errors.economicStatus && <div className="hindi-text">{errors.economicStatus}</div>}
+              {errors.familyPincode && <div className="hindi-text">{errors.familyPincode}</div>}
             </AlertDescription>
           </Alert>
         )}
@@ -610,43 +653,72 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="currentAddress" className="hindi-text text-sm font-medium">
-                  वर्तमान पता *
+                <Label htmlFor="permanentAddress" className="hindi-text text-sm font-medium">
+                  स्थायी पता *
                 </Label>
                 <Textarea
-                  id="currentAddress"
-                  value={familyData.currentAddress}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, currentAddress: e.target.value }))}
-                  placeholder="वर्तमान पता दर्ज करें"
+                  id="permanentAddress"
+                  value={familyData.permanentAddress}
+                  onChange={(e) => setFamilyData((prev) => ({ ...prev, permanentAddress: e.target.value }))}
+                  placeholder="स्थायी पता दर्ज करें"
                   className="mt-1 min-h-[80px] text-sm"
                   rows={3}
                 />
               </div>
               <div>
-                <Label htmlFor="anyComment" className="hindi-text text-sm font-medium">
-                  कोई टिप्पणी
-                </Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="currentAddress" className="hindi-text text-sm font-medium">
+                    वर्तमान पता *
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyPermanentToCurrent}
+                    className="text-xs bg-transparent"
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    <span className="hindi-text">स्थायी पता कॉपी करें</span>
+                  </Button>
+                </div>
                 <Textarea
-                  id="anyComment"
-                  value={familyData.anyComment}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, anyComment: e.target.value }))}
-                  placeholder="कोई अतिरिक्त जानकारी या टिप्पणी"
+                  id="currentAddress"
+                  value={familyData.currentAddress}
+                  onChange={(e) => {
+                    setFamilyData((prev) => ({ ...prev, currentAddress: e.target.value }))
+                    setSameAsPermanent(false)
+                  }}
+                  placeholder="वर्तमान पता दर्ज करें"
                   className="mt-1 min-h-[80px] text-sm"
                   rows={3}
                 />
               </div>
             </div>
 
+            <div>
+              <Label htmlFor="anyComment" className="hindi-text text-sm font-medium">
+                कोई टिप्पणी
+              </Label>
+              <Textarea
+                id="anyComment"
+                value={familyData.anyComment}
+                onChange={(e) => setFamilyData((prev) => ({ ...prev, anyComment: e.target.value }))}
+                placeholder="कोई अतिरिक्त जानकारी या टिप्पणी"
+                className="mt-1 min-h-[80px] text-sm"
+                rows={3}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="economicStatus" className="hindi-text text-sm font-medium">
-                  आर्थिक स्थिति
+                  आर्थिक स्थिति *
                 </Label>
                 <Select
                   value={familyData.economicStatus}
                   onValueChange={(value) => setFamilyData((prev) => ({ ...prev, economicStatus: value }))}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className={`mt-1 ${errors.economicStatus ? "border-red-500" : ""}`}>
                     <SelectValue placeholder="आर्थिक स्थिति चुनें" />
                   </SelectTrigger>
                   <SelectContent>
@@ -656,6 +728,9 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                     <SelectItem value="upper">उच्च वर्गीय</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.economicStatus && (
+                  <p className="text-red-500 text-xs mt-1 hindi-text">{errors.economicStatus}</p>
+                )}
               </div>
 
               <div>
@@ -691,11 +766,15 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                 <Input
                   id="familyPincode"
                   value={familyData.familyPincode}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyPincode: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                    setFamilyData((prev) => ({ ...prev, familyPincode: value }))
+                  }}
                   placeholder="पिनकोड"
                   maxLength={6}
-                  className="mt-1 text-sm"
+                  className={`mt-1 text-sm ${errors.familyPincode ? "border-red-500" : ""}`}
                 />
+                {errors.familyPincode && <p className="text-red-500 text-xs mt-1 hindi-text">{errors.familyPincode}</p>}
               </div>
             </div>
           </CardContent>
@@ -827,7 +906,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </Label>
                             <Input
                               type="date"
-                              value={member.dateOfBirth ? new Date(member.dateOfBirth).toISOString().split("T")[0] : ""}
+                              value={member.dateOfBirth || ""}
                               onChange={(e) => updateMember(member.id, "dateOfBirth", e.target.value)}
                               className={`mt-1 text-sm ${errors[`member-${index}-dob`] ? "border-red-500" : ""}`}
                               max={new Date().toISOString().split("T")[0]}
@@ -1017,10 +1096,22 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                       {/* Address Information */}
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          पता की जानकारी
-                        </h4>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-gray-700 flex items-center hindi-text text-sm sm:text-base">
+                            <MapPin className="w-4 h-4 mr-2" />
+                            पता की जानकारी
+                          </h4>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyFamilyAddressToMember(member.id)}
+                            className="text-xs"
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            <span className="hindi-text">परिवार का पता कॉपी करें</span>
+                          </Button>
+                        </div>
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div>
@@ -1034,7 +1125,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               />
                             </div>
                             <div>
-                              <Label className="hindi-text text-sm">वर्तमान पता</Label>
+                              <div className="flex items-center justify-between mb-2">
+                                <Label className="hindi-text text-sm">वर्तमान पता</Label>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyPermanentToCurrentMember(member.id)}
+                                  className="text-xs"
+                                >
+                                  <Copy className="w-3 h-3 mr-1" />
+                                  <span className="hindi-text">स्थायी पता कॉपी करें</span>
+                                </Button>
+                              </div>
                               <Textarea
                                 value={member.currentAddress}
                                 onChange={(e) => updateMember(member.id, "currentAddress", e.target.value)}
@@ -1046,7 +1149,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                           </div>
 
                           <div className="flex items-center space-x-2">
-                            <Checkbox
+                            <Switch
                               id={`currentAddressIndia-${member.id}`}
                               checked={member.isCurrentAddressInIndia}
                               onCheckedChange={(checked) => updateMember(member.id, "isCurrentAddressInIndia", checked)}
@@ -1103,11 +1206,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               <Label className="hindi-text text-sm">पिनकोड</Label>
                               <Input
                                 value={member.pincode}
-                                onChange={(e) => updateMember(member.id, "pincode", e.target.value)}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                                  updateMember(member.id, "pincode", value)
+                                }}
                                 placeholder="पिनकोड"
                                 maxLength={6}
-                                className="mt-1 text-sm"
+                                className={`mt-1 text-sm ${errors[`member-${index}-pincode`] ? "border-red-500" : ""}`}
                               />
+                              {errors[`member-${index}-pincode`] && (
+                                <p className="text-red-500 text-xs mt-1 hindi-text">
+                                  {errors[`member-${index}-pincode`]}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1758,7 +1869,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   <Label className="hindi-text text-sm">व्यापार की श्रेणी</Label>
                                   <Select
                                     value={member.businessCategory || ""}
-                                    onChange={(value) => updateMember(member.id, "businessCategory", value)}
+                                    onValueChange={(value) => updateMember(member.id, "businessCategory", value)}
                                   >
                                     <SelectTrigger className="mt-1">
                                       <SelectValue placeholder="व्यापार की श्रेणी चुनें" />
@@ -1782,7 +1893,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   <Label className="hindi-text text-sm">व्यापार का आकार</Label>
                                   <Select
                                     value={member.sizeOfBusiness || ""}
-                                    onChange={(value) => updateMember(member.id, "sizeOfBusiness", value)}
+                                    onValueChange={(value) => updateMember(member.id, "sizeOfBusiness", value)}
                                   >
                                     <SelectTrigger className="mt-1">
                                       <SelectValue placeholder="व्यापार का आकार चुनें" />
