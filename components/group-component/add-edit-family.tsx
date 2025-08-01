@@ -145,7 +145,7 @@ interface FamilyMember {
 interface FamilyData {
   mukhiyaName: string
   currentAddress: string
-  permanentAddress: string
+  permanentAddress: string // Add this field
   status: string
   economicStatus: string
   longitude?: number | null
@@ -568,11 +568,186 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       const mukhiya = familyData.members.find((m) => m.isMukhiya)
       const mukhiyaName = mukhiya ? `${mukhiya.firstName} ${mukhiya.lastName}` : ""
 
+      // Transform members data to match API structure
+      const transformedMembers = familyData.members.map((member) => ({
+        firstName: member.firstName,
+        lastName: member.lastName,
+        dateOfBirth: member.dateOfBirth ? new Date(member.dateOfBirth).toISOString() : null,
+        age: member.age,
+        gender: member.gender,
+        relation: member.isMukhiya ? "Mukhiya" : member.relation,
+        maritalStatus:
+          member.maritalStatus === "unmarried"
+            ? "Unmarried"
+            : member.maritalStatus === "married"
+              ? "Married"
+              : member.maritalStatus === "widowed"
+                ? "Widowed"
+                : member.maritalStatus === "divorced"
+                  ? "Divorced"
+                  : member.maritalStatus === "separated"
+                    ? "Separated"
+                    : member.maritalStatus === "engaged"
+                      ? "Engaged"
+                      : member.maritalStatus === "remarried"
+                        ? "Remarried"
+                        : member.maritalStatus,
+        gotra: member.gotra,
+        disability: member.disability,
+        bloodGroup: member.bloodGroup,
+        mobileNumber: member.mobileNumber,
+        email: member.email,
+        permanentAddress: member.permanentAddress,
+        currentAddress: member.currentAddress,
+        state: member.state,
+        district: member.district,
+        pincode: member.pincode,
+        village: member.village,
+        isCurrentAddressInIndia: member.isCurrentAddressInIndia,
+        currentCountry: member.currentCountry,
+        isStudent: member.isStudent,
+        educationLevel:
+          member.educationLevel === "illiterate"
+            ? "Illiterate"
+            : member.educationLevel === "primary"
+              ? "Primary"
+              : member.educationLevel === "middle"
+                ? "Middle"
+                : member.educationLevel === "secondary"
+                  ? "Secondary"
+                  : member.educationLevel === "higher_secondary"
+                    ? "Higher Secondary"
+                    : member.educationLevel === "undergraduate"
+                      ? "Graduate"
+                      : member.educationLevel === "postgraduate"
+                        ? "Post Graduate"
+                        : member.educationLevel === "doctorate"
+                          ? "Doctorate"
+                          : member.educationLevel === "diploma"
+                            ? "Diploma"
+                            : member.educationLevel === "certificate"
+                              ? "Certificate"
+                              : member.educationLevel,
+        classCompleted: member.classCompleted,
+        currentClass: member.currentClass || null,
+        collegeCourse: member.collegeCourse,
+        institutionName: member.institutionName,
+        enrollmentStatus: member.enrollmentStatus || null,
+        schoolName: member.schoolName || null,
+        higherEducationType: member.higherEducationType || null,
+        currentEducationCity: member.currentEducationCity || null,
+        currentEducationCountry: member.currentEducationCountry || null,
+        isHelpRequiredFromSamaj: member.isHelpRequiredFromSamaj,
+        isCurrentlyEnrolled: member.isCurrentlyEnrolled || false,
+        dropoutReason: member.dropoutReason || null,
+        educationMode: member.educationMode || null,
+        isStudyingAbroad: member.isStudyingAbroad,
+        scholarshipReceived: member.scholarshipReceived,
+        scholarshipDetails: member.scholarshipDetails || null,
+        boardOrUniversity: member.boardOrUniversity || null,
+        yearOfPassing: member.yearOfPassing || null,
+        fieldOfStudy: member.fieldOfStudy || null,
+        isEmployed: member.isEmployed,
+        occupationType: member.occupationType || null,
+        employmentStatus: member.employmentStatus || null,
+        monthlyIncome: member.monthlyIncome || null,
+        incomeSourceCountry: member.incomeSourceCountry,
+        countryName: member.countryName || null,
+        jobCategory: member.jobCategory || null,
+        employerOrganizationName: member.employerOrganizationName || null,
+        isGovernmentJob: member.isGovernmentJob,
+        jobPosition: member.jobPosition || null,
+        jobType: member.jobType || null,
+        workExperienceYears: member.workExperienceYears || null,
+        isSelfEmployed: member.isSelfEmployed,
+        selfEmployedJobType: member.selfEmployedJobType || null,
+        nameOfBusiness: member.nameOfBusiness || null,
+        businessCategory: member.businessCategory || null,
+        sizeOfBusiness: member.sizeOfBusiness || null,
+        businessRegistration: member.businessRegistration,
+        willingToHirePeople: member.willingToHirePeople,
+        occupationState: member.occupationState || null,
+        occupationCity: member.occupationCity || null,
+        preferredJobLocation: member.preferredJobLocation || null,
+        isOpenToRelocate: member.isOpenToRelocate,
+        workingHoursPerWeek: member.workingHoursPerWeek || null,
+        hasAdditionalSkills: member.hasAdditionalSkills,
+        livestock: member.livestock,
+        landOwned: member.landOwned,
+        houseType:
+          member.houseType === "kutcha"
+            ? "Kutcha"
+            : member.houseType === "pucca"
+              ? "Pucca"
+              : member.houseType === "semi_pucca"
+                ? "Semi Pucca"
+                : member.houseType,
+        houseOwnership:
+          member.houseOwnership === "owned"
+            ? "Owned"
+            : member.houseOwnership === "rented"
+              ? "Rented"
+              : member.houseOwnership === "family"
+                ? "Family"
+                : member.houseOwnership === "government"
+                  ? "Government"
+                  : member.houseOwnership,
+        hasElectricity: member.hasElectricity,
+        waterSource:
+          member.waterSource === "tap"
+            ? "Tap"
+            : member.waterSource === "well"
+              ? "Well"
+              : member.waterSource === "hand_pump"
+                ? "Hand Pump"
+                : member.waterSource === "borewell"
+                  ? "Borewell"
+                  : member.waterSource === "river"
+                    ? "River"
+                    : member.waterSource,
+        hasToilet: member.hasToilet,
+        cookingFuel:
+          member.cookingFuel === "lpg"
+            ? "LPG"
+            : member.cookingFuel === "firewood"
+              ? "Firewood"
+              : member.cookingFuel === "kerosene"
+                ? "Kerosene"
+                : member.cookingFuel === "cow_dung"
+                  ? "Cow Dung"
+                  : member.cookingFuel === "coal"
+                    ? "Coal"
+                    : member.cookingFuel,
+        hasHealthIssues: member.hasHealthIssues,
+        chronicDisease: member.chronicDisease,
+        isVaccinated: member.isVaccinated,
+        hasHealthInsurance: member.hasHealthInsurance,
+        isInterestedInFutureHealthPolicy: member.isInterestedInFutureHealthPolicy,
+        hasSmartphone: member.hasSmartphone,
+        hasInternet: member.hasInternet,
+        hasBankAccount: member.hasBankAccount,
+        hasJanDhan: member.hasJanDhan,
+        isMukhiya: member.isMukhiya,
+        welfareSchemes: member.welfareSchemes,
+        isInterestedInFutureSamuhikVivah: member.isInterestedInFutureSamuhikVivah,
+        vehicleType: member.vehicleType,
+      }))
+
       const submitData = {
-        ...familyData,
-        mukhiyaName,
+        currentAddress: familyData.currentAddress,
+        permanentAddress: familyData.permanentAddress,
+        economicStatus: familyData.economicStatus,
+        status: familyData.status,
         villageId,
         chakolaId,
+        mukhiyaName,
+        anyComment: familyData.anyComment,
+        familyDistrict: familyData.familyDistrict,
+        familyState: familyData.familyState,
+        familyPincode: familyData.familyPincode,
+        longitude: familyData.longitude,
+        latitude: familyData.latitude,
+        members: transformedMembers,
       }
 
       if (mode === "edit") {
@@ -1400,7 +1575,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               <Label className="hindi-text text-sm">शिक्षा का तरीका</Label>
                               <Select
                                 value={member.educationMode || ""}
-                                onValueChange={(value) => updateMember(member.id, "educationMode", value)}
+                                onChange={(e) => updateMember(member.id, "educationMode", value)}
                               >
                                 <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="शिक्षा का तरीका चुनें" />
@@ -1869,7 +2044,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   <Label className="hindi-text text-sm">व्यापार की श्रेणी</Label>
                                   <Select
                                     value={member.businessCategory || ""}
-                                    onValueChange={(value) => updateMember(member.id, "businessCategory", value)}
+                                    onChange={(e) => updateMember(member.id, "businessCategory", value)}
                                   >
                                     <SelectTrigger className="mt-1">
                                       <SelectValue placeholder="व्यापार की श्रेणी चुनें" />
@@ -1893,7 +2068,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                                   <Label className="hindi-text text-sm">व्यापार का आकार</Label>
                                   <Select
                                     value={member.sizeOfBusiness || ""}
-                                    onValueChange={(value) => updateMember(member.id, "sizeOfBusiness", value)}
+                                    onChange={(e) => updateMember(member.id, "sizeOfBusiness", value)}
                                   >
                                     <SelectTrigger className="mt-1">
                                       <SelectValue placeholder="व्यापार का आकार चुनें" />
