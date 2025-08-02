@@ -1,15 +1,13 @@
 "use client"
 
 import { User, Calendar, Phone, Mail } from "lucide-react"
-import { Label } from "@/components/ui/label/label"
-import { Input } from "@/components/ui/input/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
-import { Checkbox } from "@/components/ui/checkbox/checkbox"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { MemberFormProps } from "./types"
 
-interface PersonalInfoSectionProps extends MemberFormProps {}
-
-export function PersonalInfoSection({ member, index, errors, onUpdateMember }: PersonalInfoSectionProps) {
+export function PersonalInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   return (
     <div>
       <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
@@ -29,7 +27,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-firstName`]}</p>
           )}
         </div>
-
         <div>
           <Label className="hindi-text text-sm">अंतिम नाम *</Label>
           <Input
@@ -42,7 +39,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-lastName`]}</p>
           )}
         </div>
-
         <div>
           <Label className="hindi-text flex items-center text-sm">
             <Calendar className="w-4 h-4 mr-1" />
@@ -59,7 +55,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-dob`]}</p>
           )}
         </div>
-
         <div>
           <Label className="hindi-text text-sm">उम्र</Label>
           <Input
@@ -71,7 +66,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
           />
           <p className="text-xs text-gray-500 mt-1 hindi-text">जन्म तिथि के आधार पर स्वचालित गणना</p>
         </div>
-
         <div>
           <Label className="hindi-text flex items-center text-sm">
             <Phone className="w-4 h-4 mr-1" />
@@ -88,7 +82,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-mobile`]}</p>
           )}
         </div>
-
         <div>
           <Label className="hindi-text flex items-center text-sm">
             <Mail className="w-4 h-4 mr-1" />
@@ -105,7 +98,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-email`]}</p>
           )}
         </div>
-
         <div>
           <Label className="hindi-text text-sm">लिंग</Label>
           <Select value={member.gender} onValueChange={(value) => onUpdateMember(member.id, "gender", value)}>
@@ -119,7 +111,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             </SelectContent>
           </Select>
         </div>
-
         <div>
           <Label className="hindi-text text-sm">रिश्ता</Label>
           <Select value={member.relation} onValueChange={(value) => onUpdateMember(member.id, "relation", value)}>
@@ -147,7 +138,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             </SelectContent>
           </Select>
         </div>
-
         <div>
           <Label className="hindi-text text-sm">वैवाहिक स्थिति</Label>
           <Select
@@ -168,7 +158,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             </SelectContent>
           </Select>
         </div>
-
         <div>
           <Label className="hindi-text text-sm">गोत्र</Label>
           <Input
@@ -178,7 +167,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             className="mt-1 text-sm"
           />
         </div>
-
         <div>
           <Label className="hindi-text text-sm">ब्लड ग्रुप</Label>
           <Select value={member.bloodGroup} onValueChange={(value) => onUpdateMember(member.id, "bloodGroup", value)}>
@@ -198,7 +186,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
           </Select>
         </div>
       </div>
-
       <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
         <div className="flex items-center space-x-2">
           <Checkbox
@@ -210,7 +197,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             विकलांगता है
           </Label>
         </div>
-
         <div className="flex items-center space-x-2">
           <Checkbox
             id={`mukhiya-${member.id}`}
@@ -221,7 +207,6 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: P
             मुखिया है
           </Label>
         </div>
-
         <div className="flex items-center space-x-2">
           <Checkbox
             id={`samuhikVivah-${member.id}`}

@@ -1,22 +1,19 @@
 "use client"
 
 import { Home } from "lucide-react"
-import { Label } from "@/components/ui/label/label"
-import { Input } from "@/components/ui/input/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
-import { Checkbox } from "@/components/ui/checkbox/checkbox"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { MemberFormProps } from "./types"
 
-interface LivingStatusSectionProps extends MemberFormProps {}
-
-export function LivingStatusSection({ member, onUpdateMember }: LivingStatusSectionProps) {
+export function LivingStatusSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   return (
     <div>
       <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
         <Home className="w-4 h-4 mr-2" />
         आवास और संपत्ति की जानकारी
       </h4>
-
       <div className="mobile-form-grid">
         <div>
           <Label className="hindi-text text-sm">घर का प्रकार</Label>
@@ -117,6 +114,7 @@ export function LivingStatusSection({ member, onUpdateMember }: LivingStatusSect
               <SelectItem value="BICYCLE">साइकिल</SelectItem>
               <SelectItem value="MOTORCYCLE">मोटरसाइकिल</SelectItem>
               <SelectItem value="CAR">कार</SelectItem>
+              <SelectItem value="TRUCK">ट्रक</SelectItem>
               <SelectItem value="OTHER">अन्य</SelectItem>
             </SelectContent>
           </Select>
@@ -134,7 +132,6 @@ export function LivingStatusSection({ member, onUpdateMember }: LivingStatusSect
             बिजली की सुविधा
           </Label>
         </div>
-
         <div className="flex items-center space-x-2">
           <Checkbox
             id={`toilet-${member.id}`}

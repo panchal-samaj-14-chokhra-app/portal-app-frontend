@@ -1,23 +1,20 @@
 "use client"
 
 import { GraduationCap } from "lucide-react"
-import { Label } from "@/components/ui/label/label"
-import { Input } from "@/components/ui/input/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
-import { Textarea } from "@/components/ui/textarea/textarea"
-import { Checkbox } from "@/components/ui/checkbox/checkbox"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
 import type { MemberFormProps } from "./types"
 
-interface EducationInfoSectionProps extends MemberFormProps {}
-
-export function EducationInfoSection({ member, index, errors, onUpdateMember }: EducationInfoSectionProps) {
+export function EducationInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   return (
     <div>
       <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
         <GraduationCap className="w-4 h-4 mr-2" />
         शिक्षा की जानकारी
       </h4>
-
       <div className="space-y-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center space-x-2">
@@ -30,7 +27,6 @@ export function EducationInfoSection({ member, index, errors, onUpdateMember }: 
               वर्तमान में छात्र/छात्रा है
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id={`currentlyEnrolled-${member.id}`}
@@ -41,7 +37,6 @@ export function EducationInfoSection({ member, index, errors, onUpdateMember }: 
               वर्तमान में नामांकित है
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id={`studyingAbroad-${member.id}`}
@@ -52,7 +47,6 @@ export function EducationInfoSection({ member, index, errors, onUpdateMember }: 
               विदेश में पढ़ाई कर रहे हैं
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id={`helpFromSamaj-${member.id}`}
@@ -63,7 +57,6 @@ export function EducationInfoSection({ member, index, errors, onUpdateMember }: 
               समाज से सहायता चाहिए
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id={`scholarship-${member.id}`}

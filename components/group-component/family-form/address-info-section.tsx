@@ -1,22 +1,14 @@
 "use client"
 
-import { MapPin, Globe, Copy } from "lucide-react"
-import { Label } from "@/components/ui/label/label"
-import { Input } from "@/components/ui/input/input"
-import { Textarea } from "@/components/ui/textarea/textarea"
+import { MapPin, Copy, Globe } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button/button"
+import { Button } from "@/components/ui/button"
 import type { MemberFormProps } from "./types"
 
-interface AddressInfoSectionProps extends MemberFormProps {}
-
-export function AddressInfoSection({
-  member,
-  index,
-  errors,
-  onUpdateMember,
-  onCopyFamilyAddress,
-}: AddressInfoSectionProps) {
+export function AddressInfoSection({ member, index, errors, onUpdateMember, onCopyFamilyAddress }: MemberFormProps) {
   const copyPermanentToCurrentMember = () => {
     onUpdateMember(member.id, "currentAddress", member.permanentAddress)
   }
@@ -39,7 +31,6 @@ export function AddressInfoSection({
           <span className="hindi-text">परिवार का पता कॉपी करें</span>
         </Button>
       </div>
-
       <div className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
@@ -53,7 +44,6 @@ export function AddressInfoSection({
             />
           </div>
         </div>
-
         <div className="mobile-form-grid">
           <div>
             <Label className="hindi-text text-sm">राज्य</Label>
@@ -64,7 +54,6 @@ export function AddressInfoSection({
               className="mt-1 text-sm"
             />
           </div>
-
           <div>
             <Label className="hindi-text text-sm">जिला</Label>
             <Input
@@ -74,7 +63,6 @@ export function AddressInfoSection({
               className="mt-1 text-sm"
             />
           </div>
-
           <div>
             <Label className="hindi-text text-sm">गांव / शहर का नाम</Label>
             <Input
@@ -84,7 +72,6 @@ export function AddressInfoSection({
               className="mt-1 text-sm"
             />
           </div>
-
           <div>
             <Label className="hindi-text text-sm">पिनकोड</Label>
             <Input
@@ -102,7 +89,6 @@ export function AddressInfoSection({
             )}
           </div>
         </div>
-
         <div className="flex items-center space-x-2">
           <Switch
             id={`currentAddressIndia-${member.id}`}
@@ -113,7 +99,6 @@ export function AddressInfoSection({
             वर्तमान पता भारत में है
           </Label>
         </div>
-
         {member.isCurrentAddressInIndia && (
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -129,6 +114,7 @@ export function AddressInfoSection({
                 <span className="hindi-text">स्थायी पता कॉपी करें</span>
               </Button>
             </div>
+
             <Textarea
               value={member.currentAddress}
               onChange={(e) => onUpdateMember(member.id, "currentAddress", e.target.value)}
@@ -138,7 +124,6 @@ export function AddressInfoSection({
             />
           </div>
         )}
-
         {!member.isCurrentAddressInIndia && (
           <div className="max-w-md">
             <Label className="hindi-text flex items-center text-sm">

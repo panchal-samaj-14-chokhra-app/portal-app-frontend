@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { MemberFormProps } from "./types"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 
 const occupationTypes = [
   { label: "किसान", value: "farmer" },
@@ -86,17 +86,33 @@ const statesAndDistricts: Record<string, string[]> = {
 export function EmploymentInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   const [districts, setDistricts] = useState<string[]>([])
 
+  // Memoize the update function to prevent infinite loops
+  const updateMemberField = useCallback(
+    (field: string, value: any) => {
+      onUpdateMember(member.id, field as any, value)
+    },
+    [member.id, onUpdateMember],
+  )
+
+  // Handle state change and district updates
   useEffect(() => {
-    if (member.occupationState && statesAndDistricts[member.occupationState]) {
-      setDistricts(statesAndDistricts[member.occupationState])
-      if (!statesAndDistricts[member.occupationState].includes(member.occupationCity || "")) {
-        onUpdateMember(member.id, "occupationCity", "")
+    const currentState = member.occupationState
+    if (currentState && statesAndDistricts[currentState]) {
+      const availableDistricts = statesAndDistricts[currentState]
+      setDistricts(availableDistricts)
+
+      // Only clear city if it's not in the new districts list
+      const currentCity = member.occupationCity
+      if (currentCity && !availableDistricts.includes(currentCity)) {
+        updateMemberField("occupationCity", "")
       }
     } else {
       setDistricts([])
-      onUpdateMember(member.id, "occupationCity", "")
+      if (member.occupationCity) {
+        updateMemberField("occupationCity", "")
+      }
     }
-  }, [member.occupationState, member.id, onUpdateMember])
+  }, [member.occupationState]) // Remove onUpdateMember and member.id from dependencies
 
   const isJobTypeRequired = ["private_job", "government_job", "intern"].includes(member.occupationType || "")
   const isProfessionalOrSelfEmployed = [
@@ -130,8 +146,8 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                 label="रोजगार में है"
                 checked={member.isEmployed || false}
                 onChange={(checked) => {
-                  onUpdateMember(member.id, "isEmployed", checked)
-                  if (checked) onUpdateMember(member.id, "isSeekingJob", false)
+                  updateMemberField("isEmployed", checked)
+                  if (checked) updateMemberField("isSeekingJob", false)
                 }}
               />
               <CheckboxWithLabel
@@ -139,8 +155,8 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                 label="रोजगार की तलाश में है"
                 checked={member.isSeekingJob || false}
                 onChange={(checked) => {
-                  onUpdateMember(member.id, "isSeekingJob", checked)
-                  if (checked) onUpdateMember(member.id, "isEmployed", false)
+                  updateMemberField("isSeekingJob", checked)
+                  if (checked) updateMemberField("isEmployed", false)
                 }}
               />
             </div>
@@ -151,7 +167,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                   id={`incomeSourceCountry-${member.id}`}
                   label="आय का स्रोत विदेश में है"
                   checked={member.incomeSourceCountry || false}
-                  onChange={(checked) => onUpdateMember(member.id, "incomeSourceCountry", checked)}
+                  onChange={(checked) => updateMemberField("incomeSourceCountry", checked)}
                 />
               </div>
             )}
@@ -165,7 +181,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                   label="व्यवसाय का प्रकार"
                   value={member.occupationType}
                   options={occupationTypes}
-                  onChange={(val) => onUpdateMember(member.id, "occupationType", val)}
+                  onChange={(val) => updateMemberField("occupationType", val)}
                   placeholder="व्यवसाय चुनें"
                   required
                 />
@@ -186,7 +202,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         value={member.monthlyIncome || ""}
                         onChange={(e) => {
                           const value = Number.parseInt(e.target.value, 10)
-                          onUpdateMember(member.id, "monthlyIncome", !isNaN(value) && value >= 0 ? value : 0)
+                          updateMemberField("monthlyIncome", !isNaN(value) && value >= 0 ? value : 0)
                         }}
                       />
                     </div>
@@ -207,7 +223,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                       label="नौकरी का प्रकार (प्रोफेशन)"
                       value={member.jobType}
                       options={jobTypes}
-                      onChange={(val) => onUpdateMember(member.id, "jobType", val)}
+                      onChange={(val) => updateMemberField("jobType", val)}
                       placeholder="प्रोफेशन चुनें"
                     />
 
@@ -217,7 +233,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         className="mt-1 text-sm"
                         placeholder="जैसे: सीनियर डेवलपर, मैनेजर"
                         value={member.jobPosition || ""}
-                        onChange={(e) => onUpdateMember(member.id, "jobPosition", e.target.value)}
+                        onChange={(e) => updateMemberField("jobPosition", e.target.value)}
                       />
                     </div>
 
@@ -232,7 +248,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                           value={member.workExperienceYears || ""}
                           onChange={(e) => {
                             const value = Number.parseInt(e.target.value, 10)
-                            onUpdateMember(member.id, "workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
+                            updateMemberField("workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
                           }}
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
@@ -247,7 +263,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         className="mt-1 text-sm"
                         placeholder="कंपनी/संस्थान का नाम"
                         value={member.employerOrganizationName || ""}
-                        onChange={(e) => onUpdateMember(member.id, "employerOrganizationName", e.target.value)}
+                        onChange={(e) => updateMemberField("employerOrganizationName", e.target.value)}
                       />
                     </div>
                   </div>
@@ -274,7 +290,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                           value={member.workExperienceYears || ""}
                           onChange={(e) => {
                             const value = Number.parseInt(e.target.value, 10)
-                            onUpdateMember(member.id, "workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
+                            updateMemberField("workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
                           }}
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
@@ -288,7 +304,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         id={`businessRegistered-${member.id}`}
                         label="व्यवसाय पंजीकृत है"
                         checked={member.isBusinessRegistered || false}
-                        onChange={(checked) => onUpdateMember(member.id, "isBusinessRegistered", checked)}
+                        onChange={(checked) => updateMemberField("isBusinessRegistered", checked)}
                       />
                     </div>
                   </div>
@@ -310,14 +326,14 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         className="mt-1 text-sm"
                         placeholder="व्यापार का नाम दर्ज करें"
                         value={member.employerOrganizationName || ""}
-                        onChange={(e) => onUpdateMember(member.id, "employerOrganizationName", e.target.value)}
+                        onChange={(e) => updateMemberField("employerOrganizationName", e.target.value)}
                       />
                     </div>
 
                     <SelectInput
                       label="व्यवसाय प्रकार"
                       value={member.businessType}
-                      onChange={(val) => onUpdateMember(member.id, "businessType", val)}
+                      onChange={(val) => updateMemberField("businessType", val)}
                       options={businessTypes}
                       placeholder="व्यवसाय प्रकार चुनें"
                     />
@@ -329,7 +345,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                           className="mt-1 text-sm"
                           placeholder="व्यवसाय प्रकार दर्ज करें"
                           value={member.customBusinessType || ""}
-                          onChange={(e) => onUpdateMember(member.id, "customBusinessType", e.target.value)}
+                          onChange={(e) => updateMemberField("customBusinessType", e.target.value)}
                         />
                       </div>
                     )}
@@ -344,7 +360,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         value={member.numberOfEmployees || ""}
                         onChange={(e) => {
                           const value = Number.parseInt(e.target.value, 10)
-                          onUpdateMember(member.id, "numberOfEmployees", !isNaN(value) && value >= 0 ? value : 0)
+                          updateMemberField("numberOfEmployees", !isNaN(value) && value >= 0 ? value : 0)
                         }}
                       />
                     </div>
@@ -354,7 +370,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         id={`needsEmployees-${member.id}`}
                         label="कर्मचारियों की आवश्यकता है"
                         checked={member.needsEmployees || false}
-                        onChange={(checked) => onUpdateMember(member.id, "needsEmployees", checked)}
+                        onChange={(checked) => updateMemberField("needsEmployees", checked)}
                       />
                     </div>
                   </div>
@@ -374,7 +390,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                       label="राज्य"
                       value={member.occupationState}
                       options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
-                      onChange={(val) => onUpdateMember(member.id, "occupationState", val)}
+                      onChange={(val) => updateMemberField("occupationState", val)}
                       placeholder="राज्य चुनें"
                     />
 
@@ -383,7 +399,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                         label="जिला"
                         value={member.occupationCity}
                         options={districts.map((district) => ({ label: district, value: district }))}
-                        onChange={(val) => onUpdateMember(member.id, "occupationCity", val)}
+                        onChange={(val) => updateMemberField("occupationCity", val)}
                         placeholder="जिला चुनें"
                       />
                     )}
@@ -402,7 +418,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                   <SelectInput
                     label="देश का नाम"
                     value={member.incomeSourceCountryName}
-                    onChange={(val) => onUpdateMember(member.id, "incomeSourceCountryName", val)}
+                    onChange={(val) => updateMemberField("incomeSourceCountryName", val)}
                     options={countries}
                     placeholder="देश चुनें"
                   />
@@ -424,7 +440,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                   label="इच्छित कार्य क्षेत्र"
                   value={member.jobSearchSector}
                   options={occupationTypes}
-                  onChange={(val) => onUpdateMember(member.id, "jobSearchSector", val)}
+                  onChange={(val) => updateMemberField("jobSearchSector", val)}
                   placeholder="कार्य क्षेत्र चुनें"
                 />
 
@@ -435,7 +451,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                       className="mt-1 text-sm"
                       placeholder="अपना कार्य क्षेत्र दर्ज करें"
                       value={member.customJobSearchSector || ""}
-                      onChange={(e) => onUpdateMember(member.id, "customJobSearchSector", e.target.value)}
+                      onChange={(e) => updateMemberField("customJobSearchSector", e.target.value)}
                     />
                   </div>
                 )}
@@ -446,7 +462,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                     className="mt-1 text-sm"
                     placeholder="जैसे: IT, Healthcare, Education"
                     value={member.preferredSector || ""}
-                    onChange={(e) => onUpdateMember(member.id, "preferredSector", e.target.value)}
+                    onChange={(e) => updateMemberField("preferredSector", e.target.value)}
                   />
                 </div>
               </div>
@@ -456,14 +472,14 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
                   id={`wantsToGoAbroad-${member.id}`}
                   label="विदेश जाने की इच्छा"
                   checked={member.wantsToGoAbroad || false}
-                  onChange={(checked) => onUpdateMember(member.id, "wantsToGoAbroad", checked)}
+                  onChange={(checked) => updateMemberField("wantsToGoAbroad", checked)}
                 />
 
                 <CheckboxWithLabel
                   id={`hasPassport-${member.id}`}
                   label="पासपोर्ट उपलब्ध है"
                   checked={member.hasPassport || false}
-                  onChange={(checked) => onUpdateMember(member.id, "hasPassport", checked)}
+                  onChange={(checked) => updateMemberField("hasPassport", checked)}
                 />
               </div>
             </div>

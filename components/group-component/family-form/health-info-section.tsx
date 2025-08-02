@@ -1,21 +1,18 @@
 "use client"
 
 import { Heart } from "lucide-react"
-import { Label } from "@/components/ui/label/label"
-import { Input } from "@/components/ui/input/input"
-import { Checkbox } from "@/components/ui/checkbox/checkbox"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { MemberFormProps } from "./types"
 
-interface HealthInfoSectionProps extends MemberFormProps {}
-
-export function HealthInfoSection({ member, onUpdateMember }: HealthInfoSectionProps) {
+export function HealthInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   return (
     <div>
       <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
         <Heart className="w-4 h-4 mr-2" />
         स्वास्थ्य की जानकारी
       </h4>
-
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           <div className="flex items-center space-x-2">
@@ -28,7 +25,6 @@ export function HealthInfoSection({ member, onUpdateMember }: HealthInfoSectionP
               स्वास्थ्य समस्या है
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id={`vaccinated-${member.id}`}
@@ -39,7 +35,6 @@ export function HealthInfoSection({ member, onUpdateMember }: HealthInfoSectionP
               टीकाकरण हुआ है
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id={`health-insurance-${member.id}`}
@@ -50,7 +45,6 @@ export function HealthInfoSection({ member, onUpdateMember }: HealthInfoSectionP
               स्वास्थ्य बीमा है
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id={`futureHealthPolicy-${member.id}`}
@@ -62,7 +56,6 @@ export function HealthInfoSection({ member, onUpdateMember }: HealthInfoSectionP
             </Label>
           </div>
         </div>
-
         {member.hasHealthIssues && (
           <div className="max-w-md">
             <Label className="hindi-text text-sm">पुरानी बीमारी (यदि कोई हो)</Label>

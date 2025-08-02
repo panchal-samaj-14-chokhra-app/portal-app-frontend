@@ -1,18 +1,17 @@
+"use client"
+
 import { Smartphone } from "lucide-react"
-import { Label } from "@/components/ui/label/label"
-import { Checkbox } from "@/components/ui/checkbox/checkbox"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { MemberFormProps } from "./types"
 
-interface DigitalAccessSectionProps extends MemberFormProps {}
-
-export function DigitalAccessSection({ member, onUpdateMember }: DigitalAccessSectionProps) {
+export function DigitalAccessSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   return (
     <div>
       <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
         <Smartphone className="w-4 h-4 mr-2" />
         डिजिटल पहुंच और बैंकिंग
       </h4>
-
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
         <div className="flex items-center space-x-2">
           <Checkbox
@@ -24,7 +23,6 @@ export function DigitalAccessSection({ member, onUpdateMember }: DigitalAccessSe
             स्मार्टफोन है
           </Label>
         </div>
-
         <div className="flex items-center space-x-2">
           <Checkbox
             id={`internet-${member.id}`}
@@ -35,7 +33,6 @@ export function DigitalAccessSection({ member, onUpdateMember }: DigitalAccessSe
             इंटरनेट की सुविधा
           </Label>
         </div>
-
         <div className="flex items-center space-x-2">
           <Checkbox
             id={`bank-account-${member.id}`}
@@ -46,7 +43,6 @@ export function DigitalAccessSection({ member, onUpdateMember }: DigitalAccessSe
             बैंक खाता है
           </Label>
         </div>
-
         <div className="flex items-center space-x-2">
           <Checkbox
             id={`jan-dhan-${member.id}`}

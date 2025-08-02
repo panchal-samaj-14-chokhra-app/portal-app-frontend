@@ -48,10 +48,12 @@ export interface FamilyMember {
 
   // Employment details
   isEmployed: boolean
+  isSeekingJob?: boolean
   occupationType?: string
   employmentStatus?: string
   monthlyIncome?: number
   incomeSourceCountry: boolean
+  incomeSourceCountryName?: string
   countryName?: string
   jobCategory?: string
   employerOrganizationName?: string
@@ -63,21 +65,25 @@ export interface FamilyMember {
   selfEmployedJobType?: string
   nameOfBusiness?: string
   businessCategory?: string
+  businessType?: string
+  customBusinessType?: string
+  numberOfEmployees?: number
   sizeOfBusiness?: string
   businessRegistration?: boolean
+  isBusinessRegistered?: boolean
   willingToHirePeople?: boolean
+  needsEmployees?: boolean
   occupationState?: string
   occupationCity?: string
   preferredJobLocation?: string
+  preferredSector?: string
   isOpenToRelocate?: boolean
   workingHoursPerWeek?: number
   hasAdditionalSkills?: boolean
-
-  isSeekingJob?: boolean;
-  jobSearchSector?: string;
-  wantsToGoAbroad?: boolean;
-  hasPassport?: boolean;
-  preferredSector?: string;
+  jobSearchSector?: string
+  customJobSearchSector?: string
+  wantsToGoAbroad?: boolean
+  hasPassport?: boolean
 
   // Living status
   livestock: string

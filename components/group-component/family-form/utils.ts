@@ -79,21 +79,6 @@ export const validateForm = (familyData: FamilyData, isDraft = false): Record<st
     newErrors.familyPincode = "पिनकोड 6 अंकों का होना चाहिए"
   }
 
-  // Business validation for members with business occupation
-  familyData.members.forEach((member, index) => {
-    if (member.occupationType === "business") {
-      if (!member.nameOfBusiness?.trim()) {
-        newErrors[`member-${index}-businessName`] = "व्यापार का नाम आवश्यक है"
-      }
-      if (!member.businessCategory) {
-        newErrors[`member-${index}-businessCategory`] = "व्यापार की श्रेणी आवश्यक है"
-      }
-      if (!member.sizeOfBusiness) {
-        newErrors[`member-${index}-businessSize`] = "व्यापार का आकार आवश्यक है"
-      }
-    }
-  })
-
   return newErrors
 }
 
