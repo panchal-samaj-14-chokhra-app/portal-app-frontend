@@ -73,6 +73,12 @@ export interface FamilyMember {
   workingHoursPerWeek?: number
   hasAdditionalSkills?: boolean
 
+  isSeekingJob?: boolean;
+  jobSearchSector?: string;
+  wantsToGoAbroad?: boolean;
+  hasPassport?: boolean;
+  preferredSector?: string;
+
   // Living status
   livestock: string
   landOwned: number

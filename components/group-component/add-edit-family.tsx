@@ -5,9 +5,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useCreateFamily, useGetFamilyDetails, useUpdateFamily } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import Image from "next/image"
-
 import { ArrowLeft, Plus, Save, User, Home, AlertCircle, FileText, Copy, UserCheck } from "lucide-react"
-
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
 import { Input } from "@/components/ui/input/input"
@@ -17,7 +15,6 @@ import { Textarea } from "@/components/ui/textarea/textarea"
 import { Accordion } from "@/components/ui/accordion/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 import { Badge } from "@/components/ui/badge/badge"
-
 import type { FamilyData, FamilyMember, FamilyFormProps } from "./family-form/types"
 import { initialMember } from "./family-form/constants"
 import { calculateAge, validateForm, transformMembersForAPI } from "./family-form/utils"

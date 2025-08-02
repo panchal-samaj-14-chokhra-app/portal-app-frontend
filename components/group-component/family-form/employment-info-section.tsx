@@ -1,408 +1,558 @@
 "use client"
 
-import { Briefcase } from "lucide-react"
-import { Label } from "@/components/ui/label/label"
-import { Input } from "@/components/ui/input/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select/select"
-import { Checkbox } from "@/components/ui/checkbox/checkbox"
+import { Briefcase, MapPin, Building, Users, Globe } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import type { MemberFormProps } from "./types"
+import { useState, useEffect } from "react"
 
-interface EmploymentInfoSectionProps extends MemberFormProps {}
+const occupationTypes = [
+  { label: "किसान", value: "farmer" },
+  { label: "मजदूर", value: "laborer" },
+  { label: "निजी नौकरी", value: "private_job" },
+  { label: "सरकारी नौकरी", value: "government_job" },
+  { label: "स्व-रोजगार", value: "self_employed" },
+  { label: "व्यापार", value: "business" },
+  { label: "पेशेवर (डॉक्टर, वकील आदि)", value: "professional" },
+  { label: "फ्रीलांसर", value: "freelancer" },
+  { label: "स्टार्टअप संस्थापक", value: "startup_founder" },
+  { label: "घरेलू सहायक / कामकाजी महिला", value: "domestic_worker" },
+  { label: "गृहिणी", value: "housewife" },
+  { label: "सेवानिवृत्त", value: "retired" },
+  { label: "गिग वर्कर (Zomato, Uber आदि)", value: "gig_worker" },
+  { label: "प्रशिक्षु / इंटर्न", value: "intern" },
+  { label: "विक्रेता / दुकानदार", value: "vendor" },
+  { label: "दस्तकारी / शिल्पकार", value: "artisan" },
+  { label: "अन्य", value: "other" },
+]
 
-export function EmploymentInfoSection({ member, index, errors, onUpdateMember }: EmploymentInfoSectionProps) {
+const jobTypes = [
+  { label: "इंजीनियर", value: "engineer" },
+  { label: "डॉक्टर", value: "doctor" },
+  { label: "मेडिकल वर्कर", value: "medical_worker" },
+  { label: "आईटी प्रोफेशनल", value: "it_professional" },
+  { label: "शिक्षक", value: "teacher" },
+  { label: "वकील", value: "lawyer" },
+  { label: "प्रशासनिक अधिकारी", value: "administrative_officer" },
+  { label: "अकाउंटेंट", value: "accountant" },
+  { label: "बैंकिंग", value: "banking" },
+  { label: "सेल्स & मार्केटिंग", value: "sales_marketing" },
+  { label: "HR", value: "hr" },
+  { label: "अन्य", value: "other" },
+]
+
+const businessTypes = [
+  { label: "MSME", value: "msme" },
+  { label: "प्राइवेट लिमिटेड", value: "private_ltd" },
+  { label: "प्रोप्राइटरशिप", value: "proprietorship" },
+  { label: "पार्टनरशिप", value: "partnership" },
+  { label: "शॉप/दुकान", value: "shop" },
+  { label: "ऑनलाइन बिजनेस", value: "online_business" },
+  { label: "अन्य", value: "other" },
+]
+
+const countries = [
+  { label: "संयुक्त अरब अमीरात (UAE)", value: "UAE" },
+  { label: "सऊदी अरब", value: "Saudi Arabia" },
+  { label: "कतर", value: "Qatar" },
+  { label: "कुवैत", value: "Kuwait" },
+  { label: "ओमान", value: "Oman" },
+  { label: "बहरीन", value: "Bahrain" },
+  { label: "अमेरिका", value: "USA" },
+  { label: "कनाडा", value: "Canada" },
+  { label: "ऑस्ट्रेलिया", value: "Australia" },
+  { label: "ब्रिटेन (UK)", value: "UK" },
+  { label: "सिंगापुर", value: "Singapore" },
+  { label: "जर्मनी", value: "Germany" },
+  { label: "न्यूजीलैंड", value: "New Zealand" },
+  { label: "अन्य", value: "Other" },
+]
+
+const statesAndDistricts: Record<string, string[]> = {
+  महाराष्ट्र: ["मुंबई", "पुणे", "नाशिक", "नागपुर", "औरंगाबाद", "सोलापुर", "अमरावती", "कोल्हापुर"],
+  "उत्तर प्रदेश": ["लखनऊ", "कानपुर", "आगरा", "वाराणसी", "मेरठ", "इलाहाबाद", "बरेली", "अलीगढ़"],
+  तमिलनाडु: ["चेन्नई", "कोयम्बटूर", "मदुरै", "सालेम", "तिरुचिरापल्ली", "तिरुनेलवेली"],
+  कर्नाटक: ["बेंगलुरु", "मैसूर", "हुबली", "मंगलुरु", "बेलगावी", "दावणगेरे"],
+  "पश्चिम बंगाल": ["कोलकाता", "हावड़ा", "दुर्गापुर", "आसनसोल", "सिलीगुड़ी"],
+  गुजरात: ["अहमदाबाद", "सूरत", "वडोदरा", "राजकोट", "भावनगर", "जामनगर"],
+  राजस्थान: ["जयपुर", "जोधपुर", "उदयपुर", "कोटा", "अजमेर", "बीकानेर"],
+  "मध्य प्रदेश": ["भोपाल", "इंदौर", "ग्वालियर", "जबलपुर", "उज्जैन", "सागर"],
+}
+
+export function EmploymentInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
+  const [districts, setDistricts] = useState<string[]>([])
+
+  useEffect(() => {
+    if (member.occupationState && statesAndDistricts[member.occupationState]) {
+      setDistricts(statesAndDistricts[member.occupationState])
+      if (!statesAndDistricts[member.occupationState].includes(member.occupationCity || "")) {
+        onUpdateMember(member.id, "occupationCity", "")
+      }
+    } else {
+      setDistricts([])
+      onUpdateMember(member.id, "occupationCity", "")
+    }
+  }, [member.occupationState, member.id, onUpdateMember])
+
+  const isJobTypeRequired = ["private_job", "government_job", "intern"].includes(member.occupationType || "")
+  const isProfessionalOrSelfEmployed = [
+    "self_employed",
+    "vendor",
+    "artisan",
+    "gig_worker",
+    "retired",
+    "professional",
+    "freelancer",
+    "domestic_worker",
+  ].includes(member.occupationType || "")
+  const isBusinessOrStartup = ["business", "startup_founder"].includes(member.occupationType || "")
+  const showLocationFields = !member.incomeSourceCountry && (isJobTypeRequired || isBusinessOrStartup)
+
   return (
-    <div>
-      <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
-        <Briefcase className="w-4 h-4 mr-2" />
-        रोजगार की जानकारी
-      </h4>
-
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={`employed-${member.id}`}
-              checked={member.isEmployed}
-              onCheckedChange={(checked) => onUpdateMember(member.id, "isEmployed", checked)}
-            />
-            <Label htmlFor={`employed-${member.id}`} className="hindi-text text-sm">
-              रोजगार में है
-            </Label>
-          </div>
-
-          {member.isEmployed && (
-            <>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`selfEmployed-${member.id}`}
-                  checked={member.isSelfEmployed}
-                  onCheckedChange={(checked) => onUpdateMember(member.id, "isSelfEmployed", checked)}
-                />
-                <Label htmlFor={`selfEmployed-${member.id}`} className="hindi-text text-sm">
-                  स्व-रोजगार में है
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`governmentJob-${member.id}`}
-                  checked={member.isGovernmentJob}
-                  onCheckedChange={(checked) => onUpdateMember(member.id, "isGovernmentJob", checked)}
-                />
-                <Label htmlFor={`governmentJob-${member.id}`} className="hindi-text text-sm">
-                  सरकारी नौकरी है
-                </Label>
-              </div>
-
-              {member.isSelfEmployed && (
-                <>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`businessRegistration-${member.id}`}
-                      checked={member.businessRegistration}
-                      onCheckedChange={(checked) => onUpdateMember(member.id, "businessRegistration", checked)}
-                    />
-                    <Label htmlFor={`businessRegistration-${member.id}`} className="hindi-text text-sm">
-                      व्यापार पंजीकृत है
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`willingToHire-${member.id}`}
-                      checked={member.willingToHirePeople}
-                      onCheckedChange={(checked) => onUpdateMember(member.id, "willingToHirePeople", checked)}
-                    />
-                    <Label htmlFor={`willingToHire-${member.id}`} className="hindi-text text-sm">
-                      लोगों को काम देने को तैयार
-                    </Label>
-                  </div>
-                </>
-              )}
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`openToRelocate-${member.id}`}
-                  checked={member.isOpenToRelocate}
-                  onCheckedChange={(checked) => onUpdateMember(member.id, "isOpenToRelocate", checked)}
-                />
-                <Label htmlFor={`openToRelocate-${member.id}`} className="hindi-text text-sm">
-                  स्थानांतरण के लिए तैयार
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`additionalSkills-${member.id}`}
-                  checked={member.hasAdditionalSkills}
-                  onCheckedChange={(checked) => onUpdateMember(member.id, "hasAdditionalSkills", checked)}
-                />
-                <Label htmlFor={`additionalSkills-${member.id}`} className="hindi-text text-sm">
-                  अतिरिक्त कौशल है
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`incomeSourceCountry-${member.id}`}
-                  checked={member.incomeSourceCountry}
-                  onCheckedChange={(checked) => onUpdateMember(member.id, "incomeSourceCountry", checked)}
-                />
-                <Label htmlFor={`incomeSourceCountry-${member.id}`} className="hindi-text text-sm">
-                  आय का स्रोत विदेश में है
-                </Label>
-              </div>
-            </>
-          )}
+    <Card className="border-l-4 border-l-blue-500">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Briefcase className="w-5 h-5 text-blue-600" />
+          <h4 className="font-semibold text-gray-800 hindi-text text-base sm:text-lg">रोजगार की जानकारी</h4>
         </div>
 
-        {member.isEmployed && (
-          <div className="mobile-form-grid">
-            <div>
-              <Label className="hindi-text text-sm">व्यवसाय का प्रकार</Label>
-              <Select
-                value={member.occupationType || ""}
-                onValueChange={(value) => onUpdateMember(member.id, "occupationType", value)}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="व्यवसाय चुनें" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="farmer">किसान</SelectItem>
-                  <SelectItem value="laborer">मजदूर</SelectItem>
-                  <SelectItem value="private_job">निजी नौकरी</SelectItem>
-                  <SelectItem value="government_job">सरकारी नौकरी</SelectItem>
-                  <SelectItem value="self_employed">स्व-रोजगार</SelectItem>
-                  <SelectItem value="business">व्यापार</SelectItem>
-                  <SelectItem value="unemployed">बेरोजगार</SelectItem>
-                  <SelectItem value="student">छात्र</SelectItem>
-                  <SelectItem value="housewife">गृहिणी</SelectItem>
-                  <SelectItem value="retired">सेवानिवृत्त</SelectItem>
-                  <SelectItem value="professional">पेशेवर</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="hindi-text text-sm">रोजगार की स्थिति</Label>
-              <Select
-                value={member.employmentStatus || ""}
-                onValueChange={(value) => onUpdateMember(member.id, "employmentStatus", value)}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="रोजगार की स्थिति चुनें" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="employed">कार्यरत</SelectItem>
-                  <SelectItem value="unemployed">बेरोजगार</SelectItem>
-                  <SelectItem value="self_employed">स्व-रोजगार</SelectItem>
-                  <SelectItem value="retired">सेवानिवृत्त</SelectItem>
-                  <SelectItem value="student">छात्र</SelectItem>
-                  <SelectItem value="homemaker">गृहिणी</SelectItem>
-                  <SelectItem value="looking_for_job">नौकरी की तलाश में</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="hindi-text text-sm">मासिक आय (₹)</Label>
-              <Input
-                type="number"
-                value={member.monthlyIncome || ""}
-                onChange={(e) =>
-                  onUpdateMember(member.id, "monthlyIncome", Number.parseFloat(e.target.value) || undefined)
-                }
-                placeholder="मासिक आय"
-                min="0"
-                className="mt-1 text-sm"
+        <div className="space-y-6">
+          {/* Employment Status */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <Label className="text-sm font-medium text-gray-700 mb-3 block">रोजगार की स्थिति</Label>
+            <div className="flex flex-wrap gap-4">
+              <CheckboxWithLabel
+                id={`employed-${member.id}`}
+                label="रोजगार में है"
+                checked={member.isEmployed || false}
+                onChange={(checked) => {
+                  onUpdateMember(member.id, "isEmployed", checked)
+                  if (checked) onUpdateMember(member.id, "isSeekingJob", false)
+                }}
+              />
+              <CheckboxWithLabel
+                id={`seekingJob-${member.id}`}
+                label="रोजगार की तलाश में है"
+                checked={member.isSeekingJob || false}
+                onChange={(checked) => {
+                  onUpdateMember(member.id, "isSeekingJob", checked)
+                  if (checked) onUpdateMember(member.id, "isEmployed", false)
+                }}
               />
             </div>
 
-            <div>
-              <Label className="hindi-text text-sm">कार्य अनुभव (वर्ष)</Label>
-              <Input
-                type="number"
-                value={member.workExperienceYears || ""}
-                onChange={(e) =>
-                  onUpdateMember(member.id, "workExperienceYears", Number.parseInt(e.target.value) || undefined)
-                }
-                placeholder="कुल कार्य अनुभव"
-                min="0"
-                className="mt-1 text-sm"
-              />
-            </div>
-
-            {/* Business-specific fields */}
-            {member.occupationType === "business" && (
-              <>
-                <div>
-                  <Label className="hindi-text text-sm">व्यापार का नाम *</Label>
-                  <Input
-                    value={member.nameOfBusiness || ""}
-                    onChange={(e) => onUpdateMember(member.id, "nameOfBusiness", e.target.value)}
-                    placeholder="व्यापार/व्यवसाय का नाम"
-                    className={`mt-1 text-sm ${errors[`member-${index}-businessName`] ? "border-red-500" : ""}`}
-                  />
-                  {errors[`member-${index}-businessName`] && (
-                    <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-businessName`]}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="hindi-text text-sm">व्यापार की श्रेणी *</Label>
-                  <Select
-                    value={member.businessCategory || ""}
-                    onValueChange={(value) => onUpdateMember(member.id, "businessCategory", value)}
-                  >
-                    <SelectTrigger
-                      className={`mt-1 ${errors[`member-${index}-businessCategory`] ? "border-red-500" : ""}`}
-                    >
-                      <SelectValue placeholder="व्यापार की श्रेणी चुनें" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="retail">खुदरा व्यापार</SelectItem>
-                      <SelectItem value="wholesale">थोक व्यापार</SelectItem>
-                      <SelectItem value="manufacturing">विनिर्माण</SelectItem>
-                      <SelectItem value="services">सेवा</SelectItem>
-                      <SelectItem value="agriculture">कृषि</SelectItem>
-                      <SelectItem value="construction">निर्माण</SelectItem>
-                      <SelectItem value="transport">परिवहन</SelectItem>
-                      <SelectItem value="food">खाद्य व्यवसाय</SelectItem>
-                      <SelectItem value="technology">प्रौद्योगिकी</SelectItem>
-                      <SelectItem value="other">अन्य</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors[`member-${index}-businessCategory`] && (
-                    <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-businessCategory`]}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="hindi-text text-sm">व्यापार का आकार *</Label>
-                  <Select
-                    value={member.sizeOfBusiness || ""}
-                    onValueChange={(value) => onUpdateMember(member.id, "sizeOfBusiness", value)}
-                  >
-                    <SelectTrigger className={`mt-1 ${errors[`member-${index}-businessSize`] ? "border-red-500" : ""}`}>
-                      <SelectValue placeholder="व्यापार का आकार चुनें" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="micro">सूक्ष्म (1-10 कर्मचारी)</SelectItem>
-                      <SelectItem value="small">लघु (11-50 कर्मचारी)</SelectItem>
-                      <SelectItem value="medium">मध्यम (51-250 कर्मचारी)</SelectItem>
-                      <SelectItem value="large">बड़ा (250+ कर्मचारी)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors[`member-${index}-businessSize`] && (
-                    <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`member-${index}-businessSize`]}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="hindi-text text-sm">स्व-रोजगार का प्रकार</Label>
-                  <Input
-                    value={member.selfEmployedJobType || ""}
-                    onChange={(e) => onUpdateMember(member.id, "selfEmployedJobType", e.target.value)}
-                    placeholder="स्व-रोजगार का प्रकार"
-                    className="mt-1 text-sm"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Employee-specific fields */}
-            {(member.occupationType === "private_job" ||
-              member.occupationType === "government_job" ||
-              member.occupationType === "professional") && (
-              <>
-                <div>
-                  <Label className="hindi-text text-sm">नौकरी की श्रेणी</Label>
-                  <Select
-                    value={member.jobCategory || ""}
-                    onValueChange={(value) => onUpdateMember(member.id, "jobCategory", value)}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="नौकरी की श्रेणी चुनें" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="agriculture">कृषि</SelectItem>
-                      <SelectItem value="healthcare">स्वास्थ्य सेवा</SelectItem>
-                      <SelectItem value="education">शिक्षा</SelectItem>
-                      <SelectItem value="technology">प्रौद्योगिकी</SelectItem>
-                      <SelectItem value="finance">वित्त</SelectItem>
-                      <SelectItem value="manufacturing">विनिर्माण</SelectItem>
-                      <SelectItem value="construction">निर्माण</SelectItem>
-                      <SelectItem value="transport">परिवहन</SelectItem>
-                      <SelectItem value="retail">खुदरा व्यापार</SelectItem>
-                      <SelectItem value="hospitality">आतिथ्य</SelectItem>
-                      <SelectItem value="government">सरकारी सेवा</SelectItem>
-                      <SelectItem value="other">अन्य</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="hindi-text text-sm">नौकरी का प्रकार</Label>
-                  <Select
-                    value={member.jobType || ""}
-                    onValueChange={(value) => onUpdateMember(member.id, "jobType", value)}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="नौकरी का प्रकार चुनें" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="full_time">पूर्णकालिक</SelectItem>
-                      <SelectItem value="part_time">अंशकालिक</SelectItem>
-                      <SelectItem value="contract">अनुबंध आधारित</SelectItem>
-                      <SelectItem value="freelance">फ्रीलांस</SelectItem>
-                      <SelectItem value="temporary">अस्थायी</SelectItem>
-                      <SelectItem value="permanent">स्थायी</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="hindi-text text-sm">पद/पदनाम</Label>
-                  <Input
-                    value={member.jobPosition || ""}
-                    onChange={(e) => onUpdateMember(member.id, "jobPosition", e.target.value)}
-                    placeholder="पद का नाम"
-                    className="mt-1 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <Label className="hindi-text text-sm">नियोक्ता/संगठन का नाम</Label>
-                  <Input
-                    value={member.employerOrganizationName || ""}
-                    onChange={(e) => onUpdateMember(member.id, "employerOrganizationName", e.target.value)}
-                    placeholder="कंपनी/संगठन का नाम"
-                    className="mt-1 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <Label className="hindi-text text-sm">साप्ताहिक कार्य घंटे</Label>
-                  <Input
-                    type="number"
-                    value={member.workingHoursPerWeek || ""}
-                    onChange={(e) =>
-                      onUpdateMember(member.id, "workingHoursPerWeek", Number.parseInt(e.target.value) || undefined)
-                    }
-                    placeholder="प्रति सप्ताह कार्य घंटे"
-                    min="0"
-                    max="168"
-                    className="mt-1 text-sm"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Common fields for all employed members */}
-            <div>
-              <Label className="hindi-text text-sm">कार्य स्थान राज्य</Label>
-              <Input
-                value={member.occupationState || ""}
-                onChange={(e) => onUpdateMember(member.id, "occupationState", e.target.value)}
-                placeholder="राज्य का नाम"
-                className="mt-1 text-sm"
-              />
-            </div>
-
-            <div>
-              <Label className="hindi-text text-sm">कार्य स्थान जिला</Label>
-              <Input
-                value={member.occupationCity || ""}
-                onChange={(e) => onUpdateMember(member.id, "occupationCity", e.target.value)}
-                placeholder="जिला का नाम दर्ज करें"
-                className="mt-1 text-sm"
-              />
-            </div>
-
-            <div>
-              <Label className="hindi-text text-sm">पसंदीदा कार्य स्थान</Label>
-              <Input
-                value={member.preferredJobLocation || ""}
-                onChange={(e) => onUpdateMember(member.id, "preferredJobLocation", e.target.value)}
-                placeholder="पसंदीदा कार्य स्थान"
-                className="mt-1 text-sm"
-              />
-            </div>
-
-            {member.incomeSourceCountry && (
-              <div>
-                <Label className="hindi-text text-sm">आय स्रोत देश का नाम</Label>
-                <Input
-                  value={member.countryName || ""}
-                  onChange={(e) => onUpdateMember(member.id, "countryName", e.target.value)}
-                  placeholder="देश का नाम"
-                  className="mt-1 text-sm"
+            {member.isEmployed && (
+              <div className="mt-4">
+                <CheckboxWithLabel
+                  id={`incomeSourceCountry-${member.id}`}
+                  label="आय का स्रोत विदेश में है"
+                  checked={member.incomeSourceCountry || false}
+                  onChange={(checked) => onUpdateMember(member.id, "incomeSourceCountry", checked)}
                 />
               </div>
             )}
           </div>
-        )}
-      </div>
+
+          {/* Employment Details */}
+          {member.isEmployed && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SelectInput
+                  label="व्यवसाय का प्रकार"
+                  value={member.occupationType}
+                  options={occupationTypes}
+                  onChange={(val) => onUpdateMember(member.id, "occupationType", val)}
+                  placeholder="व्यवसाय चुनें"
+                  required
+                />
+
+                {member.occupationType && (
+                  <div>
+                    <Label className="hindi-text text-sm font-medium">
+                      मासिक आय <span className="text-red-500">*</span>
+                      <span className="text-gray-500 font-normal"> (₹ में)</span>
+                    </Label>
+                    <div className="relative mt-1">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="10000"
+                        className="pl-8 text-sm"
+                        value={member.monthlyIncome || ""}
+                        onChange={(e) => {
+                          const value = Number.parseInt(e.target.value, 10)
+                          onUpdateMember(member.id, "monthlyIncome", !isNaN(value) && value >= 0 ? value : 0)
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Job Type Specific Fields */}
+              {isJobTypeRequired && (
+                <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building className="w-4 h-4 text-blue-600" />
+                    <Label className="font-medium text-blue-800">नौकरी की विस्तृत जानकारी</Label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <SelectInput
+                      label="नौकरी का प्रकार (प्रोफेशन)"
+                      value={member.jobType}
+                      options={jobTypes}
+                      onChange={(val) => onUpdateMember(member.id, "jobType", val)}
+                      placeholder="प्रोफेशन चुनें"
+                    />
+
+                    <div>
+                      <Label className="hindi-text text-sm font-medium">पदनाम</Label>
+                      <Input
+                        className="mt-1 text-sm"
+                        placeholder="जैसे: सीनियर डेवलपर, मैनेजर"
+                        value={member.jobPosition || ""}
+                        onChange={(e) => onUpdateMember(member.id, "jobPosition", e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="hindi-text text-sm font-medium">कार्य अनुभव</Label>
+                      <div className="relative mt-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          className="text-sm pr-12"
+                          placeholder="5"
+                          value={member.workExperienceYears || ""}
+                          onChange={(e) => {
+                            const value = Number.parseInt(e.target.value, 10)
+                            onUpdateMember(member.id, "workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
+                          }}
+                        />
+                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                          वर्ष
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="hindi-text text-sm font-medium">संस्थान का नाम</Label>
+                      <Input
+                        className="mt-1 text-sm"
+                        placeholder="कंपनी/संस्थान का नाम"
+                        value={member.employerOrganizationName || ""}
+                        onChange={(e) => onUpdateMember(member.id, "employerOrganizationName", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Professional/Self-Employed Fields */}
+              {isProfessionalOrSelfEmployed && (
+                <div className="bg-green-50 p-4 rounded-lg space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-green-600" />
+                    <Label className="font-medium text-green-800">व्यावसायिक जानकारी</Label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="hindi-text text-sm font-medium">कार्य अनुभव</Label>
+                      <div className="relative mt-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          className="text-sm pr-12"
+                          placeholder="5"
+                          value={member.workExperienceYears || ""}
+                          onChange={(e) => {
+                            const value = Number.parseInt(e.target.value, 10)
+                            onUpdateMember(member.id, "workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
+                          }}
+                        />
+                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                          वर्ष
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 pt-6">
+                      <CheckboxWithLabel
+                        id={`businessRegistered-${member.id}`}
+                        label="व्यवसाय पंजीकृत है"
+                        checked={member.isBusinessRegistered || false}
+                        onChange={(checked) => onUpdateMember(member.id, "isBusinessRegistered", checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Business/Startup Fields */}
+              {isBusinessOrStartup && (
+                <div className="bg-purple-50 p-4 rounded-lg space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building className="w-4 h-4 text-purple-600" />
+                    <Label className="font-medium text-purple-800">व्यापारिक जानकारी</Label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="hindi-text text-sm font-medium">कंपनी/व्यापार का नाम</Label>
+                      <Input
+                        className="mt-1 text-sm"
+                        placeholder="व्यापार का नाम दर्ज करें"
+                        value={member.employerOrganizationName || ""}
+                        onChange={(e) => onUpdateMember(member.id, "employerOrganizationName", e.target.value)}
+                      />
+                    </div>
+
+                    <SelectInput
+                      label="व्यवसाय प्रकार"
+                      value={member.businessType}
+                      onChange={(val) => onUpdateMember(member.id, "businessType", val)}
+                      options={businessTypes}
+                      placeholder="व्यवसाय प्रकार चुनें"
+                    />
+
+                    {member.businessType === "other" && (
+                      <div>
+                        <Label className="hindi-text text-sm font-medium">अन्य व्यवसाय प्रकार</Label>
+                        <Input
+                          className="mt-1 text-sm"
+                          placeholder="व्यवसाय प्रकार दर्ज करें"
+                          value={member.customBusinessType || ""}
+                          onChange={(e) => onUpdateMember(member.id, "customBusinessType", e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <Label className="hindi-text text-sm font-medium">कर्मचारियों की संख्या</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        className="mt-1 text-sm"
+                        placeholder="10"
+                        value={member.numberOfEmployees || ""}
+                        onChange={(e) => {
+                          const value = Number.parseInt(e.target.value, 10)
+                          onUpdateMember(member.id, "numberOfEmployees", !isNaN(value) && value >= 0 ? value : 0)
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2 pt-6">
+                      <CheckboxWithLabel
+                        id={`needsEmployees-${member.id}`}
+                        label="कर्मचारियों की आवश्यकता है"
+                        checked={member.needsEmployees || false}
+                        onChange={(checked) => onUpdateMember(member.id, "needsEmployees", checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Location Fields */}
+              {showLocationFields && (
+                <div className="bg-orange-50 p-4 rounded-lg space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-orange-600" />
+                    <Label className="font-medium text-orange-800">कार्यस्थल का स्थान</Label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <SelectInput
+                      label="राज्य"
+                      value={member.occupationState}
+                      options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
+                      onChange={(val) => onUpdateMember(member.id, "occupationState", val)}
+                      placeholder="राज्य चुनें"
+                    />
+
+                    {districts.length > 0 && (
+                      <SelectInput
+                        label="जिला"
+                        value={member.occupationCity}
+                        options={districts.map((district) => ({ label: district, value: district }))}
+                        onChange={(val) => onUpdateMember(member.id, "occupationCity", val)}
+                        placeholder="जिला चुनें"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Foreign Income Source */}
+              {member.incomeSourceCountry && (
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe className="w-4 h-4 text-indigo-600" />
+                    <Label className="font-medium text-indigo-800">विदेशी आय स्रोत</Label>
+                  </div>
+
+                  <SelectInput
+                    label="देश का नाम"
+                    value={member.incomeSourceCountryName}
+                    onChange={(val) => onUpdateMember(member.id, "incomeSourceCountryName", val)}
+                    options={countries}
+                    placeholder="देश चुनें"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Job Seeking Details */}
+          {member.isSeekingJob && (
+            <div className="bg-yellow-50 p-4 rounded-lg space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Briefcase className="w-4 h-4 text-yellow-600" />
+                <Label className="font-medium text-yellow-800">रोजगार की तलाश</Label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SelectInput
+                  label="इच्छित कार्य क्षेत्र"
+                  value={member.jobSearchSector}
+                  options={occupationTypes}
+                  onChange={(val) => onUpdateMember(member.id, "jobSearchSector", val)}
+                  placeholder="कार्य क्षेत्र चुनें"
+                />
+
+                {member.jobSearchSector === "other" && (
+                  <div>
+                    <Label className="hindi-text text-sm font-medium">अन्य कार्य क्षेत्र</Label>
+                    <Input
+                      className="mt-1 text-sm"
+                      placeholder="अपना कार्य क्षेत्र दर्ज करें"
+                      value={member.customJobSearchSector || ""}
+                      onChange={(e) => onUpdateMember(member.id, "customJobSearchSector", e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label className="hindi-text text-sm font-medium">पसंदीदा कार्य क्षेत्र</Label>
+                  <Input
+                    className="mt-1 text-sm"
+                    placeholder="जैसे: IT, Healthcare, Education"
+                    value={member.preferredSector || ""}
+                    onChange={(e) => onUpdateMember(member.id, "preferredSector", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-4 pt-2">
+                <CheckboxWithLabel
+                  id={`wantsToGoAbroad-${member.id}`}
+                  label="विदेश जाने की इच्छा"
+                  checked={member.wantsToGoAbroad || false}
+                  onChange={(checked) => onUpdateMember(member.id, "wantsToGoAbroad", checked)}
+                />
+
+                <CheckboxWithLabel
+                  id={`hasPassport-${member.id}`}
+                  label="पासपोर्ट उपलब्ध है"
+                  checked={member.hasPassport || false}
+                  onChange={(checked) => onUpdateMember(member.id, "hasPassport", checked)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Status Badges */}
+          {(member.isEmployed || member.isSeekingJob) && (
+            <div className="flex flex-wrap gap-2">
+              {member.isEmployed && (
+                <Badge variant="default" className="bg-green-100 text-green-800">
+                  रोजगार में
+                </Badge>
+              )}
+              {member.isSeekingJob && (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                  नौकरी की तलाश में
+                </Badge>
+              )}
+              {member.incomeSourceCountry && (
+                <Badge variant="outline" className="border-blue-500 text-blue-700">
+                  विदेशी आय
+                </Badge>
+              )}
+              {member.isBusinessRegistered && (
+                <Badge variant="outline" className="border-purple-500 text-purple-700">
+                  पंजीकृत व्यापार
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function CheckboxWithLabel({
+  id,
+  label,
+  checked,
+  onChange,
+}: {
+  id: string
+  label: string
+  checked: boolean
+  onChange: (val: boolean) => void
+}) {
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox id={id} checked={checked} onCheckedChange={onChange} />
+      <Label htmlFor={id} className="hindi-text text-sm cursor-pointer">
+        {label}
+      </Label>
+    </div>
+  )
+}
+
+function SelectInput({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  required = false,
+}: {
+  label: string
+  value?: string
+  options: { label: string; value: string }[]
+  onChange: (val: string) => void
+  placeholder?: string
+  required?: boolean
+}) {
+  return (
+    <div>
+      <Label className="hindi-text text-sm font-medium">
+        {label} {required && <span className="text-red-500">*</span>}
+      </Label>
+      <Select value={value || ""} onValueChange={onChange}>
+        <SelectTrigger className="mt-1">
+          <SelectValue placeholder={placeholder || "चुनें"} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }

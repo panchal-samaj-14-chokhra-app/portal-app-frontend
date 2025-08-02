@@ -88,4 +88,10 @@ export const initialMember: Omit<FamilyMember, "id"> = {
   welfareSchemes: [],
   isInterestedInFutureSamuhikVivah: false,
   vehicleType: "NONE",
+
+  isSeekingJob: false,
+  jobSearchSector: "",
+  wantsToGoAbroad: false,
+  hasPassport: false,
+  preferredSector: "",
 }

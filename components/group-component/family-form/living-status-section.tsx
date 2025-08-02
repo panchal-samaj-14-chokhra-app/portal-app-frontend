@@ -117,7 +117,6 @@ export function LivingStatusSection({ member, onUpdateMember }: LivingStatusSect
               <SelectItem value="BICYCLE">साइकिल</SelectItem>
               <SelectItem value="MOTORCYCLE">मोटरसाइकिल</SelectItem>
               <SelectItem value="CAR">कार</SelectItem>
-              <SelectItem value="TRUCK">ट्रक</SelectItem>
               <SelectItem value="OTHER">अन्य</SelectItem>
             </SelectContent>
           </Select>
