@@ -7,11 +7,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import type { MemberFormProps } from "./types"
+import { SelectInput } from "./employment-info-section"
+import { countries, statesAndDistricts } from "./constants"
+import { useEffect, useState } from "react"
 
 export function AddressInfoSection({ member, index, errors, onUpdateMember, onCopyFamilyAddress }: MemberFormProps) {
   const copyPermanentToCurrentMember = () => {
     onUpdateMember(member.id, "currentAddress", member.permanentAddress)
   }
+  const [districts, setDistricts] = useState<string[]>([])
+  useEffect(() => { }, [member.currentAddress])
 
   return (
     <div>
@@ -46,22 +51,29 @@ export function AddressInfoSection({ member, index, errors, onUpdateMember, onCo
         </div>
         <div className="mobile-form-grid">
           <div>
-            <Label className="hindi-text text-sm">राज्य</Label>
-            <Input
+            <SelectInput
               value={member.state}
-              onChange={(e) => onUpdateMember(member.id, "state", e.target.value)}
+              onChange={(e) => {
+                onUpdateMember(member.id, "state", e)
+                let districtList = statesAndDistricts[e]
+                setDistricts(districtList)
+              }}
               placeholder="राज्य"
-              className="mt-1 text-sm"
+              label="राज्य"
+              options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
+
             />
           </div>
           <div>
-            <Label className="hindi-text text-sm">जिला</Label>
-            <Input
+            <SelectInput
+              label="जिला"
               value={member.district}
-              onChange={(e) => onUpdateMember(member.id, "district", e.target.value)}
-              placeholder="जिला"
-              className="mt-1 text-sm"
+
+              options={districts.map((district: string) => ({ label: district, value: district }))}
+              onChange={(e) => onUpdateMember(member.id, "district", e)}
+              placeholder="जिला चुनें"
             />
+
           </div>
           <div>
             <Label className="hindi-text text-sm">गांव / शहर का नाम</Label>
@@ -130,11 +142,13 @@ export function AddressInfoSection({ member, index, errors, onUpdateMember, onCo
               <Globe className="w-4 h-4 mr-1" />
               देश का नाम
             </Label>
-            <Input
+            <SelectInput
               value={member.currentCountry}
-              onChange={(e) => onUpdateMember(member.id, "currentCountry", e.target.value)}
+              options={countries}
+              onChange={(e) => onUpdateMember(member.id, "currentCountry", e)}
               placeholder="देश का नाम दर्ज करें"
-              className="mt-1 text-sm"
+              label="देश का नाम दर्ज करें"
+
             />
           </div>
         )}

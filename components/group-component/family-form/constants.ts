@@ -101,3 +101,95 @@ export const initialMember: Omit<FamilyMember, "id"> = {
   isInterestedInFutureSamuhikVivah: false,
   vehicleType: "NONE",
 }
+
+
+export const occupationTypes = [
+  { label: "किसान", value: "farmer" },
+  { label: "मजदूर", value: "laborer" },
+  { label: "निजी नौकरी", value: "private_job" },
+  { label: "सरकारी नौकरी", value: "government_job" },
+  { label: "स्व-रोजगार", value: "self_employed" },
+  { label: "व्यापार", value: "business" },
+  { label: "पेशेवर (डॉक्टर, वकील आदि)", value: "professional" },
+  { label: "फ्रीलांसर", value: "freelancer" },
+  { label: "स्टार्टअप संस्थापक", value: "startup_founder" },
+  { label: "घरेलू सहायक / कामकाजी महिला", value: "domestic_worker" },
+  { label: "गृहिणी", value: "housewife" },
+  { label: "सेवानिवृत्त", value: "retired" },
+  { label: "गिग वर्कर (Zomato, Uber आदि)", value: "gig_worker" },
+  { label: "प्रशिक्षु / इंटर्न", value: "intern" },
+  { label: "विक्रेता / दुकानदार", value: "vendor" },
+  { label: "दस्तकारी / शिल्पकार", value: "artisan" },
+  { label: "अन्य", value: "other" },
+]
+
+export const jobTypes = [
+  { label: "इंजीनियर", value: "engineer" },
+  { label: "डॉक्टर", value: "doctor" },
+  { label: "मेडिकल वर्कर", value: "medical_worker" },
+  { label: "आईटी प्रोफेशनल", value: "it_professional" },
+  { label: "शिक्षक", value: "teacher" },
+  { label: "वकील", value: "lawyer" },
+  { label: "प्रशासनिक अधिकारी", value: "administrative_officer" },
+  { label: "अकाउंटेंट", value: "accountant" },
+  { label: "बैंकिंग", value: "banking" },
+  { label: "सेल्स & मार्केटिंग", value: "sales_marketing" },
+  { label: "HR", value: "hr" },
+  { label: "अन्य", value: "other" },
+]
+
+export const businessTypes = [
+  { label: "MSME", value: "msme" },
+  { label: "प्राइवेट लिमिटेड", value: "private_ltd" },
+  { label: "प्रोप्राइटरशिप", value: "proprietorship" },
+  { label: "पार्टनरशिप", value: "partnership" },
+  { label: "शॉप/दुकान", value: "shop" },
+  { label: "ऑनलाइन बिजनेस", value: "online_business" },
+  { label: "अन्य", value: "other" },
+]
+
+
+export const countries = [
+  { label: "संयुक्त अरब अमीरात (UAE)", value: "UAE" },
+  { label: "सऊदी अरब", value: "Saudi Arabia" },
+  { label: "कतर", value: "Qatar" },
+  { label: "कुवैत", value: "Kuwait" },
+  { label: "ओमान", value: "Oman" },
+  { label: "बहरीन", value: "Bahrain" },
+  { label: "अमेरिका", value: "USA" },
+  { label: "कनाडा", value: "Canada" },
+  { label: "ऑस्ट्रेलिया", value: "Australia" },
+  { label: "ब्रिटेन (UK)", value: "UK" },
+  { label: "सिंगापुर", value: "Singapore" },
+  { label: "जर्मनी", value: "Germany" },
+  { label: "न्यूजीलैंड", value: "New Zealand" },
+  { label: "अन्य", value: "Other" },
+]
+
+export const statesAndDistricts: Record<string, string[]> = {
+  महाराष्ट्र: ["मुंबई", "पुणे", "नाशिक", "नागपुर", "औरंगाबाद", "सोलापुर", "अमरावती", "कोल्हापुर"],
+  "उत्तर प्रदेश": [
+    "Agra", "Aligarh", "Allahabad (Prayagraj)", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Azamgarh",
+    "Badaun", "Bahraich", "Ballia", "Balrampur", "Banda", "Barabanki", "Bareilly", "Basti", "Bhadohi", "Bijnor",
+    "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", "Etawah", "Ayodhya", "Farrukhabad",
+    "Fatehpur", "Firozabad", "Gautam Buddha Nagar", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur",
+    "Hapur", "Hardoi", "Hathras", "Jalaun", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar",
+    "Kasganj", "Kaushambi", "Kheri", "Kushinagar", "Lalitpur", "Lucknow", "Maharajganj", "Mahoba", "Mainpuri",
+    "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Raebareli",
+    "Rampur", "Saharanpur", "Sambhal", "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shravasti",
+    "Siddharthnagar", "Sitapur", "Sonbhadra", "Sultanpur", "Unnao", "Varanasi"
+  ],
+  तमिलनाडु: ["चेन्नई", "कोयम्बटूर", "मदुरै", "सालेम", "तिरुचिरापल्ली", "तिरुनेलवेली"],
+  कर्नाटक: ["बेंगलुरु", "मैसूर", "हुबली", "मंगलुरु", "बेलगावी", "दावणगेरे"],
+  "पश्चिम बंगाल": ["कोलकाता", "हावड़ा", "दुर्गापुर", "आसनसोल", "सिलीगुड़ी"],
+  गुजरात: ["अहमदाबाद", "सूरत", "वडोदरा", "राजकोट", "भावनगर", "जामनगर"],
+  राजस्थान: ["जयपुर", "जोधपुर", "उदयपुर", "कोटा", "अजमेर", "बीकानेर"],
+  "मध्य प्रदेश": [
+    "Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal",
+    "Burhanpur", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior",
+    "Harda", "Hoshangabad", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Mandla", "Mandsaur",
+    "Mauganj", "Morena", "Narmadapuram", "Narsinghpur", "Neemuch", "Niwari", "Panna", "Raisen", "Rajgarh",
+    "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri",
+    "Sidhi", "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"
+  ],
+};

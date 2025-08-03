@@ -16,9 +16,10 @@ import { Accordion } from "@/components/ui/accordion/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 import { Badge } from "@/components/ui/badge/badge"
 import type { FamilyData, FamilyMember, FamilyFormProps } from "./family-form/types"
-import { initialMember } from "./family-form/constants"
+import { initialMember, statesAndDistricts } from "./family-form/constants"
 import { calculateAge, validateForm, transformMembersForAPI } from "./family-form/utils"
 import { MemberForm } from "./family-form/member-form"
+import { SelectInput } from "./family-form/employment-info-section"
 
 export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const { data: session, status } = useSession()
@@ -31,6 +32,8 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || "")
   const { mutation } = useCreateFamily()
   const { mutation: updateMutation } = useUpdateFamily()
+  const [districts, setDistricts] = useState<string[]>([])
+
 
   // Initialize family data
   const [familyData, setFamilyData] = useState<FamilyData>(() => {
@@ -244,9 +247,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
     try {
       const mukhiya = familyData.members.find((m) => m.isMukhiya)
       const mukhiyaName = mukhiya ? `${mukhiya.firstName} ${mukhiya.lastName}` : ""
-
       const transformedMembers = transformMembersForAPI(familyData.members)
-
       const submitData = {
         currentAddress: familyData.currentAddress,
         permanentAddress: familyData.permanentAddress,
@@ -265,13 +266,15 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       }
 
       if (mode === "edit") {
-        updateMutation.mutate(submitData)
+        updateMutation.mutate({ familyId, submitData })
+        alert("परिवार सफलतापूर्वक संशोधित करें हो गया!")
+        // router.back()
       } else {
         mutation.mutate(submitData)
+        alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
+        // router.back()
       }
 
-      alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
-      router.back()
     } catch (error) {
       alert("पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।")
     } finally {
@@ -408,28 +411,28 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
               </div>
 
               <div>
-                <Label htmlFor="familyState" className="hindi-text text-sm font-medium">
-                  राज्य
-                </Label>
-                <Input
+                <SelectInput
                   id="familyState"
                   value={familyData.familyState}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyState: e.target.value }))}
+                  onChange={(e) => {
+                    setFamilyData((prev) => ({ ...prev, familyState: e }))
+                    let districtList = statesAndDistricts[e]
+                    setDistricts(districtList)
+                  }}
                   placeholder="राज्य का नाम"
-                  className="mt-1 text-sm"
+                  options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
+                  label="राज्य का नाम"
                 />
               </div>
 
               <div>
-                <Label htmlFor="familyDistrict" className="hindi-text text-sm font-medium">
-                  जिला
-                </Label>
-                <Input
+                <SelectInput
                   id="familyDistrict"
                   value={familyData.familyDistrict}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyDistrict: e.target.value }))}
+                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyDistrict: e }))}
                   placeholder="जिला का नाम"
-                  className="mt-1 text-sm"
+                  label="जिला का नाम"
+                  options={districts.map((district: string) => ({ label: district, value: district }))}
                 />
               </div>
 
@@ -554,7 +557,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
             ) : (
               <div className="flex items-center">
                 <Save className="w-4 h-4 mr-2" />
-                <span className="hindi-text">परिवार पंजीकृत करें</span>
+                <span className="hindi-text">{mode === "edit" ? "संशोधित करें" : "परिवार पंजीकृत करें"}</span>
               </div>
             )}
           </Button>

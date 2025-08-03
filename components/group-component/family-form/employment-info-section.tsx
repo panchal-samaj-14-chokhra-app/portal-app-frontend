@@ -9,79 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { MemberFormProps } from "./types"
 import { useState, useEffect, useCallback } from "react"
-
-const occupationTypes = [
-  { label: "किसान", value: "farmer" },
-  { label: "मजदूर", value: "laborer" },
-  { label: "निजी नौकरी", value: "private_job" },
-  { label: "सरकारी नौकरी", value: "government_job" },
-  { label: "स्व-रोजगार", value: "self_employed" },
-  { label: "व्यापार", value: "business" },
-  { label: "पेशेवर (डॉक्टर, वकील आदि)", value: "professional" },
-  { label: "फ्रीलांसर", value: "freelancer" },
-  { label: "स्टार्टअप संस्थापक", value: "startup_founder" },
-  { label: "घरेलू सहायक / कामकाजी महिला", value: "domestic_worker" },
-  { label: "गृहिणी", value: "housewife" },
-  { label: "सेवानिवृत्त", value: "retired" },
-  { label: "गिग वर्कर (Zomato, Uber आदि)", value: "gig_worker" },
-  { label: "प्रशिक्षु / इंटर्न", value: "intern" },
-  { label: "विक्रेता / दुकानदार", value: "vendor" },
-  { label: "दस्तकारी / शिल्पकार", value: "artisan" },
-  { label: "अन्य", value: "other" },
-]
-
-const jobTypes = [
-  { label: "इंजीनियर", value: "engineer" },
-  { label: "डॉक्टर", value: "doctor" },
-  { label: "मेडिकल वर्कर", value: "medical_worker" },
-  { label: "आईटी प्रोफेशनल", value: "it_professional" },
-  { label: "शिक्षक", value: "teacher" },
-  { label: "वकील", value: "lawyer" },
-  { label: "प्रशासनिक अधिकारी", value: "administrative_officer" },
-  { label: "अकाउंटेंट", value: "accountant" },
-  { label: "बैंकिंग", value: "banking" },
-  { label: "सेल्स & मार्केटिंग", value: "sales_marketing" },
-  { label: "HR", value: "hr" },
-  { label: "अन्य", value: "other" },
-]
-
-const businessTypes = [
-  { label: "MSME", value: "msme" },
-  { label: "प्राइवेट लिमिटेड", value: "private_ltd" },
-  { label: "प्रोप्राइटरशिप", value: "proprietorship" },
-  { label: "पार्टनरशिप", value: "partnership" },
-  { label: "शॉप/दुकान", value: "shop" },
-  { label: "ऑनलाइन बिजनेस", value: "online_business" },
-  { label: "अन्य", value: "other" },
-]
-
-const countries = [
-  { label: "संयुक्त अरब अमीरात (UAE)", value: "UAE" },
-  { label: "सऊदी अरब", value: "Saudi Arabia" },
-  { label: "कतर", value: "Qatar" },
-  { label: "कुवैत", value: "Kuwait" },
-  { label: "ओमान", value: "Oman" },
-  { label: "बहरीन", value: "Bahrain" },
-  { label: "अमेरिका", value: "USA" },
-  { label: "कनाडा", value: "Canada" },
-  { label: "ऑस्ट्रेलिया", value: "Australia" },
-  { label: "ब्रिटेन (UK)", value: "UK" },
-  { label: "सिंगापुर", value: "Singapore" },
-  { label: "जर्मनी", value: "Germany" },
-  { label: "न्यूजीलैंड", value: "New Zealand" },
-  { label: "अन्य", value: "Other" },
-]
-
-const statesAndDistricts: Record<string, string[]> = {
-  महाराष्ट्र: ["मुंबई", "पुणे", "नाशिक", "नागपुर", "औरंगाबाद", "सोलापुर", "अमरावती", "कोल्हापुर"],
-  "उत्तर प्रदेश": ["लखनऊ", "कानपुर", "आगरा", "वाराणसी", "मेरठ", "इलाहाबाद", "बरेली", "अलीगढ़"],
-  तमिलनाडु: ["चेन्नई", "कोयम्बटूर", "मदुरै", "सालेम", "तिरुचिरापल्ली", "तिरुनेलवेली"],
-  कर्नाटक: ["बेंगलुरु", "मैसूर", "हुबली", "मंगलुरु", "बेलगावी", "दावणगेरे"],
-  "पश्चिम बंगाल": ["कोलकाता", "हावड़ा", "दुर्गापुर", "आसनसोल", "सिलीगुड़ी"],
-  गुजरात: ["अहमदाबाद", "सूरत", "वडोदरा", "राजकोट", "भावनगर", "जामनगर"],
-  राजस्थान: ["जयपुर", "जोधपुर", "उदयपुर", "कोटा", "अजमेर", "बीकानेर"],
-  "मध्य प्रदेश": ["भोपाल", "इंदौर", "ग्वालियर", "जबलपुर", "उज्जैन", "सागर"],
-}
+import { countries, businessTypes, jobTypes, occupationTypes, statesAndDistricts } from "./constants"
 
 export function EmploymentInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   const [districts, setDistricts] = useState<string[]>([])
@@ -178,6 +106,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <SelectInput
+
                   label="व्यवसाय का प्रकार"
                   value={member.occupationType}
                   options={occupationTypes}
@@ -537,13 +466,15 @@ function CheckboxWithLabel({
   )
 }
 
-function SelectInput({
+export function SelectInput({
   label,
   value,
   options,
   onChange,
   placeholder,
   required = false,
+  disabled,
+  id
 }: {
   label: string
   value?: string
@@ -551,13 +482,15 @@ function SelectInput({
   onChange: (val: string) => void
   placeholder?: string
   required?: boolean
+  disabled?: boolean
+  id?: string
 }) {
   return (
     <div>
       <Label className="hindi-text text-sm font-medium">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
-      <Select value={value || ""} onValueChange={onChange}>
+      <Select disabled={disabled} value={value || ""} onValueChange={onChange}>
         <SelectTrigger className="mt-1">
           <SelectValue placeholder={placeholder || "चुनें"} />
         </SelectTrigger>

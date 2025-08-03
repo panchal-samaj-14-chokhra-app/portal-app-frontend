@@ -3,7 +3,7 @@ import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, 
 
 export const useCreateFamily = (onSuccess: any, onError: { (): void; (arg0: Error): void; }) => {
   const mutation = useMutation({
-    mutationFn: (payload) => createFamily(payload),
+    mutationFn: (payload): any => createFamily(payload),
     onSuccess,
     onError: (err) => {
       if (onError) onError(err);
@@ -15,7 +15,7 @@ export const useCreateFamily = (onSuccess: any, onError: { (): void; (arg0: Erro
 
 export const useUpdateFamily = (onSuccess: any, onError: (arg0: Error) => void) => {
   const mutation = useMutation({
-    mutationFn: (id: void, payload: undefined) => updateFamily(id, payload),
+    mutationFn: ({ familyId, submitData }: { familyId: any, submitData: any }) => updateFamily(familyId, submitData),
     onSuccess,
     onError: (err) => {
       if (onError) onError(err);
