@@ -8,6 +8,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Eye, EyeOff, Loader2 } from "lucide-react"
+import { SelectInput } from "@/components/group-component/family-form/employment-info-section"
+import { statesAndDistricts } from "@/components/group-component/family-form/constants"
 
 interface AddVillageFormProps {
   open: boolean
@@ -23,6 +25,31 @@ export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating,
   const [showRepeatPassword, setShowRepeatPassword] = useState(false)
 
   if (userType !== "CHOKHLA_MEMBER") return null
+
+  // Get state options from constants
+  const stateOptions = Object.keys(statesAndDistricts).map((state) => ({
+    label: state,
+    value: state,
+  }))
+
+  // Get district options based on selected state
+  const selectedState = form.watch("state")
+  const districtOptions =
+    selectedState && statesAndDistricts[selectedState]
+      ? statesAndDistricts[selectedState].map((district) => ({
+          label: district,
+          value: district,
+        }))
+      : []
+
+  const handleStateChange = (value: string) => {
+    form.setValue("state", value)
+    form.setValue("district", "") // Clear district when state changes
+  }
+
+  const handleDistrictChange = (value: string) => {
+    form.setValue("district", value)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,15 +182,19 @@ export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating,
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <FormField
-                    name="tehsil"
+                    name="state"
                     control={form.control}
-                    rules={{ required: "तहसील आवश्यक है" }}
+                    rules={{ required: "राज्य आवश्यक है" }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-700 font-medium text-sm">तहसील *</FormLabel>
-                        <FormControl>
-                          <Input {...field} className="border-green-300 focus:border-green-500 text-sm" />
-                        </FormControl>
+                        <SelectInput
+                          label="राज्य"
+                          value={field.value}
+                          options={stateOptions}
+                          onChange={handleStateChange}
+                          placeholder="राज्य चुनें"
+                          required
+                        />
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )}
@@ -174,21 +205,26 @@ export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating,
                     rules={{ required: "जिला आवश्यक है" }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-700 font-medium text-sm">जिला *</FormLabel>
-                        <FormControl>
-                          <Input {...field} className="border-green-300 focus:border-green-500 text-sm" />
-                        </FormControl>
+                        <SelectInput
+                          label="जिला"
+                          value={field.value}
+                          options={districtOptions}
+                          onChange={handleDistrictChange}
+                          placeholder="जिला चुनें"
+                          required
+                          disabled={!selectedState}
+                        />
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    name="state"
+                    name="tehsil"
                     control={form.control}
-                    rules={{ required: "राज्य आवश्यक है" }}
+                    rules={{ required: "तहसील आवश्यक है" }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-700 font-medium text-sm">राज्य *</FormLabel>
+                        <FormLabel className="text-green-700 font-medium text-sm">तहसील *</FormLabel>
                         <FormControl>
                           <Input {...field} className="border-green-300 focus:border-green-500 text-sm" />
                         </FormControl>
