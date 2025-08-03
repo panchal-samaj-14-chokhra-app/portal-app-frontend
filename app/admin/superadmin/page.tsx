@@ -1,441 +1,388 @@
 "use client"
+import React, { useState, } from 'react';
+import ReusableTable from '@/components/ui/ReusableTable';
+import { Button } from '@/components/ui/button';
+import { useAllVillages, useAllChokhlas, useCreateChokhla, useGetAllUserList } from '@/data-hooks/mutation-query/useQueryAndMutation';
+import { useRouter } from 'next/navigation';
+import { Switch } from '@/components/ui/switch';
+import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
+import { LogOut, ArrowLeft, Plus } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { useState, useEffect } from "react"
-import { toast } from "sonner"
-import { SuperAdminHeader } from "@/components/superadmin/superadmin-header"
-import { SuperAdminSidebar } from "@/components/superadmin/superadmin-sidebar"
-import { VillageManagement } from "@/components/superadmin/village-management"
-import { ChokhlaManagement } from "@/components/superadmin/chokhla-management"
-import { UserManagement } from "@/components/superadmin/user-management"
-import { ProfileManagement } from "@/components/superadmin/profile-management"
-import { StatisticsManagement } from "@/components/superadmin/statistics-management"
-import { SuccessDialog } from "@/components/superadmin/success-dialog"
-import { ErrorDialog } from "@/components/superadmin/error-dialog"
-import type {
-  SuperAdminProfile,
-  Village,
-  Chokhla,
-  User,
-  Statistics,
-  ChokhlaFormData,
-  ProfileFormData,
-} from "@/components/superadmin/types"
+const TABS = [
+  { key: 'village', label: 'गांव प्रबंधन' },
+  { key: 'chokhla', label: 'चौकला प्रबंधन' },
+  { key: 'statics', label: 'आँकड़े' },
+  { key: 'user', label: 'यूज़र प्रबंधन' },
+  { key: 'profile', label: 'सुपर एडमिन प्रोफ़ाइल' },
+];
 
-export default function SuperAdminPage() {
-  // State management
-  const [activeTab, setActiveTab] = useState("statistics")
-  const [profile, setProfile] = useState<SuperAdminProfile | null>(null)
-  const [villages, setVillages] = useState<Village[]>([])
-  const [choklas, setChoklas] = useState<Chokhla[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [statistics, setStatistics] = useState<Statistics | null>(null)
+function SuperAdmin() {
+  const [activeTab, setActiveTab] = useState('village');
+  const [openChokhlaModal, setOpenChokhlaModal] = useState(false);
+  const [chokhlaForm, setChokhlaForm] = useState({
+    name: '',
+    adhyaksh: '',
+    contactNumber: '',
+    state: '',
+    district: '',
+    villageName: '',
+    email: '',
+    password: '',
+    repeatPassword: '',
+  });
+  const [formErrors, setFormErrors] = useState({ email: '', password: '', repeatPassword: '' });
+  const { data: villages, isLoading: isVillagesLoading } = useAllVillages();
+  const { data: chokhlas, isLoading: isChokhlasLoading } = useAllChokhlas();
+  const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList();
+  const { mutate: createChokhla } = useCreateChokhla();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdData, setCreatedData] = useState<{ chokhlaId: string, userId: string, email: string, fullName: string, role: string, password: string } | null>(null);
 
-  // Loading states
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
-  const [isLoadingVillages, setIsLoadingVillages] = useState(true)
-  const [isLoadingChoklas, setIsLoadingChoklas] = useState(true)
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true)
-  const [isLoadingStatistics, setIsLoadingStatistics] = useState(true)
+  const router = useRouter();
+  const { data: userData } = useSession()
 
-  // Dialog states
-  const [successDialog, setSuccessDialog] = useState<{
-    isOpen: boolean
-    title: string
-    message: string
-    details?: Record<string, any>
-  }>({
-    isOpen: false,
-    title: "",
-    message: "",
-  })
-
-  const [errorDialog, setErrorDialog] = useState<{
-    isOpen: boolean
-    title: string
-    message: string
-    onRetry?: () => void
-  }>({
-    isOpen: false,
-    title: "",
-    message: "",
-  })
-
-  // Fetch profile data
-  const fetchProfile = async () => {
-    try {
-      setIsLoadingProfile(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/profile`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+  const handleChokhlaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setChokhlaForm({ ...chokhlaForm, [e.target.name]: e.target.value });
+    setFormErrors({ ...formErrors, [e.target.name]: '' });
+  };
+  const validateChokhlaForm = () => {
+    let valid = true;
+    const errors: any = { email: '', password: '', repeatPassword: '' };
+    // Email validation
+    if (!chokhlaForm.email) {
+      errors.email = 'ईमेल आवश्यक है';
+      valid = false;
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(chokhlaForm.email)) {
+      errors.email = 'मान्य ईमेल दर्ज करें';
+      valid = false;
+    }
+    // Password validation
+    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!chokhlaForm.password) {
+      errors.password = 'पासवर्ड आवश्यक है';
+      valid = false;
+    } else if (!strongPassword.test(chokhlaForm.password)) {
+      errors.password = 'पासवर्ड मजबूत होना चाहिए (कम से कम 8 अक्षर, एक बड़ा, एक छोटा, एक संख्या, एक विशेष चिन्ह)';
+      valid = false;
+    }
+    // Repeat password validation
+    if (!chokhlaForm.repeatPassword) {
+      errors.repeatPassword = 'पासवर्ड दोबारा लिखें आवश्यक है';
+      valid = false;
+    } else if (chokhlaForm.password !== chokhlaForm.repeatPassword) {
+      errors.repeatPassword = 'पासवर्ड मेल नहीं खाते';
+      valid = false;
+    }
+    setFormErrors(errors);
+    return valid;
+  };
+  const handleChokhlaSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateChokhlaForm()) return;
+    createChokhla(chokhlaForm, {
+      onSuccess: (data) => {
+        const { chokhla, user } = data;
+        setCreatedData({
+          chokhlaId: chokhla.id,
+          userId: user.id,
+          password: user.passwordHash,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.globalRole,
+        });
+        setOpenChokhlaModal(false);
+        setChokhlaForm({ name: '', adhyaksh: '', contactNumber: '', state: '', district: '', villageName: '', email: '', password: '', repeatPassword: '' });
+        setShowSuccessModal(true);
       }
 
-      const data = await response.json()
-      setProfile(data)
-    } catch (error) {
-      console.error("Error fetching profile:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "प्रोफाइल लोड करने में त्रुटि",
-        message: "प्रोफाइल की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchProfile,
-      })
-    } finally {
-      setIsLoadingProfile(false)
-    }
-  }
+    });
+  };
 
-  // Fetch villages data
-  const fetchVillages = async () => {
-    try {
-      setIsLoadingVillages(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/villages`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+  const handleToggleActive = (userId: string, current: boolean) => {
+    console.log("clicked on the toggle")
+  };
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setVillages(data)
-    } catch (error) {
-      console.error("Error fetching villages:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "गांवों की सूची लोड करने में त्रुटि",
-        message: "गांवों की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchVillages,
-      })
-    } finally {
-      setIsLoadingVillages(false)
-    }
-  }
-
-  // Fetch choklas data
-  const fetchChoklas = async () => {
-    try {
-      setIsLoadingChoklas(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/choklas`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setChoklas(data)
-    } catch (error) {
-      console.error("Error fetching choklas:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "चोखला सूची लोड करने में त्रुटि",
-        message: "चोखला की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchChoklas,
-      })
-    } finally {
-      setIsLoadingChoklas(false)
-    }
-  }
-
-  // Fetch users data
-  const fetchUsers = async () => {
-    try {
-      setIsLoadingUsers(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/users`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setUsers(data)
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "उपयोगकर्ता सूची लोड करने में त्रुटि",
-        message: "उपयोगकर्ता की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchUsers,
-      })
-    } finally {
-      setIsLoadingUsers(false)
-    }
-  }
-
-  // Fetch statistics data
-  const fetchStatistics = async () => {
-    try {
-      setIsLoadingStatistics(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/statistics`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setStatistics(data)
-    } catch (error) {
-      console.error("Error fetching statistics:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "आंकड़े लोड करने में त्रुटि",
-        message: "आंकड़े लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchStatistics,
-      })
-    } finally {
-      setIsLoadingStatistics(false)
-    }
-  }
-
-  // Handle chokhla creation
-  const handleCreateChokhla = async (data: ChokhlaFormData) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/choklas`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
-
-      const newChokhla = await response.json()
-      setChoklas((prev) => [...prev, newChokhla])
-
-      setSuccessDialog({
-        isOpen: true,
-        title: "चोखला सफलतापूर्वक पंजीकृत हुआ",
-        message: "नया चोखला खाता सफलतापूर्वक बनाया गया है।",
-        details: {
-          नाम: `${data.firstName} ${data.lastName}`,
-          ईमेल: data.email,
-          मोबाइल: data.mobileNumber,
-          स्थान: `${data.district}, ${data.state}`,
-        },
-      })
-
-      toast.success("चोखला सफलतापूर्वक पंजीकृत हुआ")
-    } catch (error) {
-      console.error("Error creating chokhla:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "चोखला पंजीकरण में त्रुटि",
-        message: error instanceof Error ? error.message : "चोखला पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-      })
-    }
-  }
-
-  // Handle profile update
-  const handleUpdateProfile = async (data: ProfileFormData) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
-
-      const updatedProfile = await response.json()
-      setProfile(updatedProfile)
-
-      setSuccessDialog({
-        isOpen: true,
-        title: "प्रोफाइल सफलतापूर्वक अपडेट हुई",
-        message: "आपकी प्रोफाइल की जानकारी सफलतापूर्वक अपडेट हो गई है।",
-        details: {
-          नाम: `${data.firstName} ${data.lastName}`,
-          ईमेल: data.email,
-          मोबाइल: data.mobileNumber,
-        },
-      })
-
-      toast.success("प्रोफाइल सफलतापूर्वक अपडेट हुई")
-    } catch (error) {
-      console.error("Error updating profile:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "प्रोफाइल अपडेट में त्रुटि",
-        message: error instanceof Error ? error.message : "प्रोफाइल अपडेट करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-      })
-    }
-  }
-
-  // Handle user status toggle
-  const handleToggleUserStatus = async (id: string, isActive: boolean) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/users/${id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isActive }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, isActive } : user)))
-
-      toast.success(`उपयोगकर्ता ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
-    } catch (error) {
-      console.error("Error toggling user status:", error)
-      toast.error("उपयोगकर्ता स्थिति बदलने में त्रुटि")
-    }
-  }
-
-  // Handle chokhla status toggle
-  const handleToggleChokhlaStatus = async (id: string, isActive: boolean) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/choklas/${id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isActive }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      setChoklas((prev) => prev.map((chokhla) => (chokhla.id === id ? { ...chokhla, isActive } : chokhla)))
-
-      toast.success(`चोखला ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
-    } catch (error) {
-      console.error("Error toggling chokhla status:", error)
-      toast.error("चोखला स्थिति बदलने में त्रुटि")
-    }
-  }
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      // Redirect to login page
-      window.location.href = "/login"
-    } catch (error) {
-      console.error("Error logging out:", error)
-      toast.error("लॉग आउट करने में त्रुटि")
-    }
-  }
-
-  // Load data on component mount
-  useEffect(() => {
-    fetchProfile()
-    fetchVillages()
-    fetchChoklas()
-    fetchUsers()
-    fetchStatistics()
-  }, [])
-
-  // Render content based on active tab
-  const renderContent = () => {
-    switch (activeTab) {
-      case "statistics":
-        return <StatisticsManagement statistics={statistics} isLoading={isLoadingStatistics} />
-
-      case "villages":
-        return <VillageManagement villages={villages} isLoading={isLoadingVillages} onRefresh={fetchVillages} />
-
-      case "choklas":
-        return (
-          <ChokhlaManagement
-            choklas={choklas}
-            isLoading={isLoadingChoklas}
-            onRefresh={fetchChoklas}
-            onCreateChokhla={handleCreateChokhla}
-            onToggleStatus={handleToggleChokhlaStatus}
-          />
-        )
-
-      case "users":
-        return (
-          <UserManagement
-            users={users}
-            isLoading={isLoadingUsers}
-            onRefresh={fetchUsers}
-            onToggleStatus={handleToggleUserStatus}
-          />
-        )
-
-      case "profile":
-        return (
-          <ProfileManagement profile={profile} isLoading={isLoadingProfile} onUpdateProfile={handleUpdateProfile} />
-        )
-
-      default:
-        return <StatisticsManagement statistics={statistics} isLoading={isLoadingStatistics} />
-    }
-  }
+  const handleBack = () => router.push("/");
+  const handleLogout = () => signOut({ callbackUrl: "/login" });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <SuperAdminHeader profile={profile} isLoading={isLoadingProfile} onLogout={handleLogout} />
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
+      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Image
+              src="/images/main-logo.png"
+              alt="Panchal Samaj Logo"
+              width={44}
+              height={44}
+              className="rounded-full shadow-lg"
+            />
+            <span className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</span>
+          </div>
+          <div className="flex items-center gap-2">
 
-      {/* Main Content */}
-      <div className="flex h-[calc(100vh-80px)]">
-        {/* Sidebar */}
-        <SuperAdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        {/* Content Area */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-6">{renderContent()}</div>
+            <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              लॉगआउट
+            </Button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Success Dialog */}
-      <SuccessDialog
-        isOpen={successDialog.isOpen}
-        onClose={() => setSuccessDialog({ ...successDialog, isOpen: false })}
-        title={successDialog.title}
-        message={successDialog.message}
-        details={successDialog.details}
-      />
+      <main className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
+        <aside className="w-full md:w-64 mb-6 md:mb-0">
+          <nav className="bg-white rounded-lg shadow border border-orange-200 p-4 flex md:flex-col gap-2">
+            {TABS.map(tab => (
+              <Button
+                key={tab.key}
+                variant={activeTab === tab.key ? 'default' : 'ghost'}
+                onClick={() => setActiveTab(tab.key)}
+                className={`w-full justify-start text-base font-semibold ${activeTab === tab.key ? 'bg-orange-500 text-white' : 'text-orange-700'}`}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </nav>
+        </aside>
+        <section className="flex-1 min-w-0">
+          {activeTab === 'village' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>गांव सूची</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ReusableTable
+                  columns={[
+                    { label: 'नाम', accessor: 'name' },
+                    { label: 'सदस्य', accessor: 'villageMemberName' },
+                    { label: 'जिला', accessor: 'district' },
+                    { label: 'राज्य', accessor: 'state' },
+                  ]}
+                  data={villages?.data || []}
+                  loading={isVillagesLoading}
+                  actions={row => (
+                    <Button variant="outline" onClick={() => router.push(`/admin/village/${row.id}`)}>
+                      देखें
+                    </Button>
+                  )}
+                  caption="सभी गांवों की सूची"
+                />
+              </CardContent>
+            </Card>
+          )}
+          {activeTab === 'chokhla' && (
+            <Card className="mb-8">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>चौकला सूची</CardTitle>
+                <Button
 
-      {/* Error Dialog */}
-      <ErrorDialog
-        isOpen={errorDialog.isOpen}
-        onClose={() => setErrorDialog({ ...errorDialog, isOpen: false })}
-        title={errorDialog.title}
-        message={errorDialog.message}
-        onRetry={errorDialog.onRetry}
-      />
+                  variant="outline" onClick={() => setOpenChokhlaModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  चौकला जोड़ें
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <ReusableTable
+                  columns={[
+                    { label: 'नाम', accessor: 'name' },
+                    { label: 'अध्यक्ष', accessor: 'adhyaksh' },
+                    { label: 'संपर्क नंबर', accessor: 'contactNumber' },
+                    { label: 'राज्य', accessor: 'state' },
+                    { label: 'जिला', accessor: 'district' },
+                    { label: 'गांव', accessor: 'villageName' },
+                  ]}
+                  data={chokhlas || []}
+                  loading={isChokhlasLoading}
+                  actions={row => (
+                    <Button variant="outline" onClick={() => router.push(`/admin/chokhla/${row.id}`)}>
+                      देखें
+                    </Button>
+                  )}
+                  caption="सभी चौकला की सूची"
+                />
+              </CardContent>
+
+              {openChokhlaModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                  <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] flex flex-col p-6">
+
+                    {/* Title with Outline */}
+                    <h3 className="text-2xl font-bold mb-4 text-orange-700 border border-orange-700 rounded px-3 py-2 text-center">
+                      नया चौकला जोड़ें
+                    </h3>
+
+                    {/* Scrollable Form Container */}
+                    <div className="overflow-y-auto flex-1">
+                      <form onSubmit={handleChokhlaSubmit} className="space-y-4">
+                        {/* All form fields here */}
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम</label>
+                          <input type="text" name="name" value={chokhlaForm.name} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">अध्यक्ष</label>
+                          <input type="text" name="adhyaksh" value={chokhlaForm.adhyaksh} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">संपर्क नंबर</label>
+                          <input type="text" name="contactNumber" value={chokhlaForm.contactNumber} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">राज्य</label>
+                          <input type="text" name="state" value={chokhlaForm.state} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">जिला</label>
+                          <input type="text" name="district" value={chokhlaForm.district} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">गांव</label>
+                          <input type="text" name="villageName" value={chokhlaForm.villageName} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">ईमेल</label>
+                          <input type="email" name="email" value={chokhlaForm.email} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.email && <div className="text-red-600 text-xs mt-1">{formErrors.email}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड</label>
+                          <input type="password" name="password" value={chokhlaForm.password} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.password && <div className="text-red-600 text-xs mt-1">{formErrors.password}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700 mb-1">पासवर्ड दोबारा लिखें</label>
+                          <input type="password" name="repeatPassword" value={chokhlaForm.repeatPassword} onChange={handleChokhlaChange} required className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                          {formErrors.repeatPassword && <div className="text-red-600 text-xs mt-1">{formErrors.repeatPassword}</div>}
+                        </div>
+
+
+
+                      </form>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setOpenChokhlaModal(false)}
+                        className="border border-orange-600 text-orange-700 px-4 py-2 rounded hover:bg-orange-50"
+                      >
+                        रद्द करें
+                      </button>
+                      <button
+                        onClick={handleChokhlaSubmit}
+                        type="submit"
+                        className="border border-orange-600 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+                      >
+                        सहेजें
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {showSuccessModal && createdData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 ">
+                  <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                    <h2 className="text-xl font-semibold text-green-700 text-center mb-4">चौकला सफलतापूर्वक जोड़ा गया!</h2>
+                    <div className="space-y-2 text-sm text-gray-700">
+                      <p><strong>चौकला ID:</strong> {createdData.chokhlaId}</p>
+                      <p><strong>यूज़र ID:</strong> {createdData.userId}</p>
+                      <p><strong>ईमेल:</strong> {createdData.email}</p>
+                      <p><strong>पूरा नाम:</strong> {createdData.fullName}</p>
+                      <p><strong>भूमिका:</strong> {createdData.role}</p>
+                      <p className='text-sm'><strong>password:</strong> {createdData.password}</p>
+
+                    </div>
+                    <div className="flex justify-end mt-6">
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        onClick={() => setShowSuccessModal(false)}
+                      >
+                        ठीक है
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+          {activeTab === 'statics' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>आँकड़े</CardTitle>
+              </CardHeader>
+              <CardContent>
+              </CardContent>
+            </Card>
+          )}
+          {activeTab === 'user' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>यूज़र प्रबंधन</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {usersLoading ? (
+                  <div className="text-orange-600">लोड हो रहा है...</div>
+                ) : usersError ? (
+                  <div className="text-red-600">{"usersError"}</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[700px] bg-white border border-orange-200 rounded-lg shadow">
+                      <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">ID</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">ईमेल</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">नाम</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">भूमिका</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">सक्रिय</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">निर्माण तिथि</th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-white uppercase">कार्रवाई</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users?.map((user: { id: boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<React.AwaitedReactNode> | React.Key | null | undefined; email: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; fullName: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; globalRole: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; isActive: boolean | undefined; createdAt: string | number | Date; }) => (
+                          <tr key={user.id} className="border-b border-orange-100 hover:bg-orange-50">
+                            <td className="px-4 py-2 text-orange-900 text-xs break-all">{user.id}</td>
+                            <td className="px-4 py-2 text-orange-800">{user.email}</td>
+                            <td className="px-4 py-2 text-orange-800">{user.fullName}</td>
+                            <td className="px-4 py-2 text-orange-800">{user.globalRole}</td>
+                            <td className="px-4 py-2">
+                              <Switch checked={user.isActive} onCheckedChange={() => handleToggleActive(user.id, user.isActive)} />
+                            </td>
+                            <td className="px-4 py-2 text-orange-700 text-xs">{user.createdAt ? new Date(user.createdAt).toLocaleDateString('hi-IN') : '-'}</td>
+                            <td className="px-4 py-2">
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {activeTab === 'profile' && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>सुपर एडमिन प्रोफ़ाइल</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div><strong>ID:</strong> {userData?.user?.id}</div>
+                <div><strong>Email:</strong> {userData?.user?.email}</div>
+                <div><strong>Role:</strong> {userData?.user?.role}</div>
+                <div><strong>Chokla ID:</strong> {userData?.user?.choklaId}</div>
+                <div><strong>Village ID:</strong> {userData?.user?.villageId ?? 'N/A'}</div>
+                <div><strong>Token Expires:</strong> {new Date(userData?.expires).toLocaleString()}</div>
+              </CardContent>
+            </Card>
+
+          )}
+        </section>
+      </main>
     </div>
-  )
+  );
 }
+
+export default SuperAdmin;

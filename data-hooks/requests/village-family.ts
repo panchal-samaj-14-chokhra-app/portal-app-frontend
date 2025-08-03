@@ -13,8 +13,9 @@ export const createFamily = async (payload: void) => {
   return { data }
 }
 
-export const updateFamily = async (id: string, payload: any) => {
-  const { data } = await request.put(`/family/update/${id}`, payload)
+export const updateFamily = async (id: void, payload: undefined) => {
+  const { data } = await request.put(`/family/${id}`, payload)
+
   return { data }
 }
 

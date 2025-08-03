@@ -319,8 +319,7 @@ export default function VillageDetailPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => router.push(`/admin/village/${villageId}/family/${family.id}/edit?choklaId=${villageData.choklaId}`)}
-
+                            onClick={() => router.push(`/village/${villageId}/family/${family.id}/edit?choklaId=${villageData.choklaId}`)}
                             className="bg-transparent"
                           >
                             <Edit className="w-4 h-4" />
