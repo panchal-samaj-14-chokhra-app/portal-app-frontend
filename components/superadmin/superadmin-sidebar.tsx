@@ -4,78 +4,52 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { BarChart3, MapPin, Users, UserCheck, User, Activity } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface SuperAdminSidebarProps {
   activeTab: string
   onTabChange: (tab: string) => void
 }
 
-const sidebarItems = [
+const menuItems = [
   {
     id: "statistics",
     label: "डैशबोर्ड",
     icon: BarChart3,
-    badge: null,
+    description: "आंकड़े और रिपोर्ट",
   },
   {
     id: "villages",
     label: "गांव प्रबंधन",
     icon: MapPin,
-    badge: "125",
+    description: "गांवों की सूची",
   },
   {
     id: "choklas",
     label: "चोखला प्रबंधन",
-    icon: Users,
-    badge: "15",
+    icon: UserCheck,
+    description: "चोखला खाते",
   },
   {
     id: "users",
-    label: "उपयोगकर्ता प्रबंधन",
-    icon: UserCheck,
-    badge: "450",
+    label: "उपयोगकर्ता",
+    icon: Users,
+    description: "सभी उपयोगकर्ता",
   },
   {
     id: "profile",
     label: "प्रोफाइल",
     icon: User,
-    badge: null,
+    description: "व्यक्तिगत जानकारी",
   },
 ]
 
 export function SuperAdminSidebar({ activeTab, onTabChange }: SuperAdminSidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* System Status */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-2 mb-3">
-          <Activity className="w-4 h-4 text-green-500" />
-          <span className="text-sm font-medium text-gray-900">सिस्टम स्थिति</span>
-          <Badge variant="default" className="bg-green-100 text-green-800">
-            ऑनलाइन
-          </Badge>
-        </div>
-        <div className="space-y-2 text-xs text-gray-600">
-          <div className="flex justify-between">
-            <span>सर्वर:</span>
-            <span className="text-green-600">चालू</span>
-          </div>
-          <div className="flex justify-between">
-            <span>डेटाबेस:</span>
-            <span className="text-green-600">कनेक्टेड</span>
-          </div>
-          <div className="flex justify-between">
-            <span>अपटाइम:</span>
-            <span>99.9%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
+      {/* Navigation Menu */}
+      <div className="flex-1 p-4">
         <div className="space-y-2">
-          {sidebarItems.map((item) => {
+          {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = activeTab === item.id
 
@@ -83,39 +57,52 @@ export function SuperAdminSidebar({ activeTab, onTabChange }: SuperAdminSidebarP
               <Button
                 key={item.id}
                 variant={isActive ? "default" : "ghost"}
-                className={cn(
-                  "w-full justify-start h-11 px-3",
-                  isActive
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
-                )}
+                className={`w-full justify-start h-auto p-3 ${
+                  isActive ? "bg-blue-600 text-white hover:bg-blue-700" : "text-gray-700 hover:bg-gray-100"
+                }`}
                 onClick={() => onTabChange(item.id)}
               >
                 <Icon className="w-5 h-5 mr-3" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge && (
-                  <Badge
-                    variant={isActive ? "secondary" : "outline"}
-                    className={cn(
-                      "ml-2 text-xs",
-                      isActive ? "bg-white/20 text-white border-white/30" : "bg-gray-100 text-gray-600",
-                    )}
-                  >
-                    {item.badge}
-                  </Badge>
-                )}
+                <div className="text-left">
+                  <div className="font-medium">{item.label}</div>
+                  <div className={`text-xs ${isActive ? "text-blue-100" : "text-gray-500"}`}>{item.description}</div>
+                </div>
               </Button>
             )
           })}
         </div>
-      </nav>
+      </div>
 
       <Separator />
 
-      {/* Footer */}
-      <div className="p-4 text-center">
-        <p className="text-xs text-gray-500">संस्करण 1.0.0</p>
-        <p className="text-xs text-gray-400 mt-1">© 2024 पंचाल समाज</p>
+      {/* System Status */}
+      <div className="p-4">
+        <div className="bg-green-50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-800">सिस्टम स्थिति</span>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-green-700">सर्वर</span>
+              <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                ऑनलाइन
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-green-700">डेटाबेस</span>
+              <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                कनेक्टेड
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-green-700">बैकअप</span>
+              <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-300">
+                अपडेटेड
+              </Badge>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

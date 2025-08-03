@@ -7,12 +7,24 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, Search, Filter, RefreshCw, UserPlus, Eye, Mail, Phone, MapPin, Calendar } from "lucide-react"
+import {
+  UserCheck,
+  Search,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar,
+  ToggleLeft,
+  ToggleRight,
+} from "lucide-react"
 import { ChokhlaForm } from "./chokhla-form"
 import type { Chokhla, ChokhlaFormData } from "./types"
+import { STATES_DISTRICTS } from "./constants"
 
 interface ChokhlaManagementProps {
   choklas: Chokhla[]
@@ -30,8 +42,9 @@ export function ChokhlaManagement({
   onToggleStatus,
 }: ChokhlaManagementProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [stateFilter, setStateFilter] = useState<string>("all")
+  const [selectedState, setSelectedState] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const filteredChoklas = choklas.filter((chokhla) => {
@@ -39,9 +52,9 @@ export function ChokhlaManagement({
       chokhla.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       chokhla.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       chokhla.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      chokhla.district.toLowerCase().includes(searchTerm.toLowerCase())
+      chokhla.mobileNumber.includes(searchTerm)
 
-    const matchesState = stateFilter === "all" || chokhla.state === stateFilter
+    const matchesState = selectedState === "all" || chokhla.state === selectedState
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "active" && chokhla.isActive) ||
@@ -50,32 +63,17 @@ export function ChokhlaManagement({
     return matchesSearch && matchesState && matchesStatus
   })
 
+  const activeChoklas = choklas.filter((c) => c.isActive)
+  const inactiveChoklas = choklas.filter((c) => !c.isActive)
+
   const handleCreateChokhla = async (data: ChokhlaFormData) => {
     setIsSubmitting(true)
     try {
       await onCreateChokhla(data)
+      setIsFormOpen(false)
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("hi-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    })
-  }
-
-  const formatLastLogin = (lastLogin: string | null) => {
-    if (!lastLogin) return "कभी नहीं"
-    return new Date(lastLogin).toLocaleDateString("hi-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
   }
 
   if (isLoading) {
@@ -85,22 +83,27 @@ export function ChokhlaManagement({
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-10 w-32" />
         </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-32" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex gap-2">
+                    {Array.from({ length: 3 }).map((_, j) => (
+                      <Skeleton key={j} className="h-6 w-16" />
+                    ))}
                   </div>
-                  <Skeleton className="h-6 w-16" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     )
   }
@@ -108,193 +111,322 @@ export function ChokhlaManagement({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">चोखला प्रबंधन</h2>
-          <p className="text-gray-600">कुल {choklas.length} चोखला पंजीकृत हैं</p>
+          <p className="text-gray-600">
+            कुल {choklas.length} चोखला पंजीकृत हैं ({activeChoklas.length} सक्रिय)
+          </p>
         </div>
-        <Button onClick={onRefresh} variant="outline" className="flex items-center gap-2 bg-transparent">
-          <RefreshCw className="w-4 h-4" />
-          रीफ्रेश करें
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onRefresh}>
+            <Search className="w-4 h-4 mr-2" />
+            रिफ्रेश करें
+          </Button>
+          <Button onClick={() => setIsFormOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            नया चोखला जोड़ें
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="list" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            चोखला सूची
-          </TabsTrigger>
-          <TabsTrigger value="add" className="flex items-center gap-2">
-            <UserPlus className="w-4 h-4" />
-            नया चोखला जोड़ें
-          </TabsTrigger>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <UserCheck className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-900">{choklas.length}</div>
+            <div className="text-sm text-gray-600">कुल चोखला</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+            </div>
+            <div className="text-2xl font-bold text-green-600">{activeChoklas.length}</div>
+            <div className="text-sm text-gray-600">सक्रिय</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <div className="w-3 h-3 bg-red-600 rounded-full"></div>
+            </div>
+            <div className="text-2xl font-bold text-red-600">{inactiveChoklas.length}</div>
+            <div className="text-sm text-gray-600">निष्क्रिय</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <MapPin className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-900">
+              {choklas.reduce((sum, c) => sum + c.villageCount, 0)}
+            </div>
+            <div className="text-sm text-gray-600">कुल गांव</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="नाम, ईमेल या मोबाइल खोजें..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={selectedState} onValueChange={setSelectedState}>
+              <SelectTrigger>
+                <SelectValue placeholder="राज्य चुनें" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">सभी राज्य</SelectItem>
+                {Object.keys(STATES_DISTRICTS).map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="स्थिति फिल्टर" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">सभी स्थिति</SelectItem>
+                <SelectItem value="active">सक्रिय</SelectItem>
+                <SelectItem value="inactive">निष्क्रिय</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">{filteredChoklas.length} परिणाम</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Choklas List */}
+      <Tabs defaultValue="grid" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="grid">ग्रिड व्यू</TabsTrigger>
+          <TabsTrigger value="list">लिस्ट व्यू</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="नाम, ईमेल या जिले से खोजें..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Select value={stateFilter} onValueChange={setStateFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="राज्य चुनें" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">सभी राज्य</SelectItem>
-                    <SelectItem value="गुजरात">गुजरात</SelectItem>
-                    <SelectItem value="राजस्थान">राजस्थान</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <Filter className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="स्थिति फिल्टर" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">सभी स्थिति</SelectItem>
-                    <SelectItem value="active">सक्रिय</SelectItem>
-                    <SelectItem value="inactive">निष्क्रिय</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="grid">
+          {filteredChoklas.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <UserCheck className="w-12 h-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">कोई चोखला नहीं मिला</h3>
+                <p className="text-gray-500 text-center">
+                  {searchTerm || selectedState !== "all" || statusFilter !== "all"
+                    ? "फिल्टर बदलकर दोबारा कोशिश करें"
+                    : "अभी तक कोई चोखला पंजीकृत नहीं है"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredChoklas.map((chokhla) => (
+                <Card key={chokhla.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg text-blue-800 flex items-center gap-2">
+                          <UserCheck className="w-5 h-5" />
+                          {chokhla.firstName} {chokhla.lastName}
+                        </CardTitle>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {chokhla.district}, {chokhla.state}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={chokhla.isActive ? "default" : "secondary"}>
+                          {chokhla.isActive ? "सक्रिय" : "निष्क्रिय"}
+                        </Badge>
+                        <Button variant="ghost" size="sm" onClick={() => onToggleStatus(chokhla.id, !chokhla.isActive)}>
+                          {chokhla.isActive ? (
+                            <ToggleRight className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="w-4 h-4 text-gray-400" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Contact Info */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Mail className="w-4 h-4" />
+                        {chokhla.email}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Phone className="w-4 h-4" />
+                        {chokhla.mobileNumber}
+                      </div>
+                    </div>
 
-          {/* Choklas Table */}
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <div className="text-lg font-bold text-blue-800">{chokhla.villageCount}</div>
+                        <div className="text-xs text-blue-600">गांव</div>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="text-lg font-bold text-green-800">{chokhla.familyCount}</div>
+                        <div className="text-xs text-green-600">परिवार</div>
+                      </div>
+                    </div>
+
+                    {/* Last Login */}
+                    {chokhla.lastLogin && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Calendar className="w-3 h-3" />
+                        अंतिम लॉगिन: {new Date(chokhla.lastLogin).toLocaleDateString("hi-IN")}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2">
+                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                        <Eye className="w-4 h-4 mr-1" />
+                        देखें
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                        <Edit className="w-4 h-4 mr-1" />
+                        संपादित करें
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 bg-transparent">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    {/* Registration Date */}
+                    <div className="text-xs text-gray-500 pt-2 border-t">
+                      पंजीकृत: {new Date(chokhla.createdAt).toLocaleDateString("hi-IN")}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="list">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                चोखला सूची ({filteredChoklas.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>चोखला जानकारी</TableHead>
-                      <TableHead>संपर्क</TableHead>
-                      <TableHead>स्थान</TableHead>
-                      <TableHead>आंकड़े</TableHead>
-                      <TableHead>अंतिम लॉगिन</TableHead>
-                      <TableHead>स्थिति</TableHead>
-                      <TableHead>कार्य</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        चोखला
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        संपर्क
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        स्थान
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        आंकड़े
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        स्थिति
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        कार्य
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {filteredChoklas.map((chokhla) => (
-                      <TableRow key={chokhla.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
+                      <tr key={chokhla.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-semibold text-blue-700">
+                              <span className="text-sm font-medium text-blue-700">
                                 {chokhla.firstName.charAt(0)}
                                 {chokhla.lastName.charAt(0)}
                               </span>
                             </div>
-                            <div>
-                              <p className="font-medium text-gray-900">
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
                                 {chokhla.firstName} {chokhla.lastName}
-                              </p>
-                              <p className="text-sm text-gray-500">पंजीकरण: {formatDate(chokhla.createdAt)}</p>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                पंजीकृत: {new Date(chokhla.createdAt).toLocaleDateString("hi-IN")}
+                              </div>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Mail className="w-3 h-3 text-gray-400" />
-                              <span className="text-gray-900">{chokhla.email}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="w-3 h-3 text-gray-400" />
-                              <span className="text-gray-900">{chokhla.mobileNumber}</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{chokhla.email}</div>
+                          <div className="text-sm text-gray-500">{chokhla.mobileNumber}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{chokhla.district}</div>
+                          <div className="text-sm text-gray-500">{chokhla.state}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{chokhla.villageCount} गांव</div>
+                          <div className="text-sm text-gray-500">{chokhla.familyCount} परिवार</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-gray-400" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{chokhla.district}</p>
-                              <p className="text-xs text-gray-500">{chokhla.state}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="text-sm">
-                              <span className="font-medium">{chokhla.villageCount}</span>
-                              <span className="text-gray-500 ml-1">गांव</span>
-                            </div>
-                            <div className="text-sm">
-                              <span className="font-medium">{chokhla.familyCount}</span>
-                              <span className="text-gray-500 ml-1">परिवार</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="w-3 h-3 text-gray-400" />
-                            <span className="text-gray-900">{formatLastLogin(chokhla.lastLogin)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={chokhla.isActive}
-                              onCheckedChange={(checked) => onToggleStatus(chokhla.id, checked)}
-                            />
                             <Badge variant={chokhla.isActive ? "default" : "secondary"}>
                               {chokhla.isActive ? "सक्रिय" : "निष्क्रिय"}
                             </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onToggleStatus(chokhla.id, !chokhla.isActive)}
+                            >
+                              {chokhla.isActive ? (
+                                <ToggleRight className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <ToggleLeft className="w-4 h-4 text-gray-400" />
+                              )}
+                            </Button>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-2" />
-                            विवरण
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
-
-              {/* Empty State */}
-              {filteredChoklas.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <Users className="w-12 h-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">कोई चोखला नहीं मिला</h3>
-                  <p className="text-gray-500 text-center">
-                    {searchTerm || stateFilter !== "all" || statusFilter !== "all"
-                      ? "फिल्टर बदलकर दोबारा कोशिश करें"
-                      : "अभी तक कोई चोखला पंजीकृत नहीं है"}
-                  </p>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="add">
-          <ChokhlaForm onSubmit={handleCreateChokhla} isSubmitting={isSubmitting} />
-        </TabsContent>
       </Tabs>
+
+      {/* Chokhla Form Modal */}
+      <ChokhlaForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleCreateChokhla}
+        isLoading={isSubmitting}
+      />
     </div>
   )
 }

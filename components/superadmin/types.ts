@@ -54,9 +54,9 @@ export interface User {
   lastName: string
   email: string
   mobileNumber: string
-  role: "ADMIN" | "USER"
-  state: string
-  district: string
+  role: "ADMIN" | "CHOKHLA" | "USER"
+  state?: string
+  district?: string
   village?: string
   isActive: boolean
   lastLogin: string | null
@@ -100,10 +100,10 @@ export interface ChokhlaFormData {
   lastName: string
   email: string
   mobileNumber: string
-  state: string
-  district: string
   password: string
   confirmPassword: string
+  state: string
+  district: string
 }
 
 export interface ProfileFormData {
