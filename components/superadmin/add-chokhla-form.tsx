@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { SelectInput } from "@/components/group-component/family-form/employment-info-section"
+import { statesAndDistricts } from "@/components/group-component/family-form/constants"
 
 interface AddChokhlaFormProps {
   isOpen: boolean
@@ -36,6 +38,21 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
     setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
       setErrors((prev: any) => ({ ...prev, [name]: "" }))
+    }
+  }
+
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors((prev: any) => ({ ...prev, [field]: "" }))
+    }
+
+    // Clear district when state changes
+    if (field === "state") {
+      setFormData((prev) => ({ ...prev, district: "" }))
+      if (errors.district) {
+        setErrors((prev: any) => ({ ...prev, district: "" }))
+      }
     }
   }
 
@@ -102,6 +119,21 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
     resetForm()
     onClose()
   }
+
+  // Get state options from constants
+  const stateOptions = Object.keys(statesAndDistricts).map((state) => ({
+    label: state,
+    value: state,
+  }))
+
+  // Get district options based on selected state
+  const districtOptions =
+    formData.state && statesAndDistricts[formData.state]
+      ? statesAndDistricts[formData.state].map((district) => ({
+          label: district,
+          value: district,
+        }))
+      : []
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -172,22 +204,25 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
               <h3 className="text-base sm:text-lg font-semibold text-green-800 mb-3 sm:mb-4">स्थान की जानकारी</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-green-700 mb-1">राज्य *</label>
-                  <Input
-                    name="state"
+                  <SelectInput
+                    label="राज्य"
                     value={formData.state}
-                    onChange={handleChange}
-                    className="border-green-300 focus:border-green-500 text-sm"
+                    options={stateOptions}
+                    onChange={(val) => handleSelectChange("state", val)}
+                    placeholder="राज्य चुनें"
+                    required
                   />
                   {errors.state && <p className="text-red-600 text-xs mt-1">{errors.state}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-green-700 mb-1">जिला *</label>
-                  <Input
-                    name="district"
+                  <SelectInput
+                    label="जिला"
                     value={formData.district}
-                    onChange={handleChange}
-                    className="border-green-300 focus:border-green-500 text-sm"
+                    options={districtOptions}
+                    onChange={(val) => handleSelectChange("district", val)}
+                    placeholder="जिला चुनें"
+                    required
+                    disabled={!formData.state}
                   />
                   {errors.district && <p className="text-red-600 text-xs mt-1">{errors.district}</p>}
                 </div>
