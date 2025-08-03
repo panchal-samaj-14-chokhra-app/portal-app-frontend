@@ -1,90 +1,3 @@
-export const USER_ROLES = {
-  SUPERADMIN: "superadmin",
-  CHOKHLA: "chokhla",
-  VILLAGE_ADMIN: "village_admin",
-} as const
-
-export const USER_STATUS = {
-  ACTIVE: "active",
-  INACTIVE: "inactive",
-  PENDING: "pending",
-} as const
-
-export const VILLAGE_STATUS = {
-  ACTIVE: "active",
-  INACTIVE: "inactive",
-} as const
-
-export const CHOKHLA_STATUS = {
-  ACTIVE: "active",
-  INACTIVE: "inactive",
-  PENDING: "pending",
-} as const
-
-export const SIDEBAR_ITEMS = [
-  {
-    id: "dashboard",
-    label: "डैशबोर्ड",
-    icon: "LayoutDashboard",
-  },
-  {
-    id: "users",
-    label: "उपयोगकर्ता प्रबंधन",
-    icon: "Users",
-  },
-  {
-    id: "villages",
-    label: "गांव प्रबंधन",
-    icon: "MapPin",
-  },
-  {
-    id: "chokhlas",
-    label: "चोखला प्रबंधन",
-    icon: "Building2",
-  },
-  {
-    id: "statistics",
-    label: "आंकड़े और रिपोर्ट",
-    icon: "BarChart3",
-  },
-  {
-    id: "profile",
-    label: "प्रोफाइल सेटिंग्स",
-    icon: "Settings",
-  },
-] as const
-
-export const INDIAN_STATES = [
-  "आंध्र प्रदेश",
-  "अरुणाचल प्रदेश",
-  "असम",
-  "बिहार",
-  "छत्तीसगढ़",
-  "गोवा",
-  "गुजरात",
-  "हरियाणा",
-  "हिमाचल प्रदेश",
-  "झारखंड",
-  "कर्नाटक",
-  "केरल",
-  "मध्य प्रदेश",
-  "महाराष्ट्र",
-  "मणिपुर",
-  "मेघालय",
-  "मिजोरम",
-  "नागालैंड",
-  "ओडिशा",
-  "पंजाब",
-  "राजस्थान",
-  "सिक्किम",
-  "तमिलनाडु",
-  "तेलंगाना",
-  "त्रिपुरा",
-  "उत्तर प्रदेश",
-  "उत्तराखंड",
-  "पश्चिम बंगाल",
-] as const
-
 export const STATES_DISTRICTS: Record<string, string[]> = {
   गुजरात: [
     "अहमदाबाद",
@@ -152,19 +65,22 @@ export const STATES_DISTRICTS: Record<string, string[]> = {
     "सवाई माधोपुर",
     "सीकर",
     "सिरोही",
-    "श्रीगंगानगर",
+    "श्री गंगानगर",
     "टोंक",
     "उदयपुर",
   ],
 }
 
-export const MOCK_STATISTICS = {
-  totalUsers: 1247,
-  totalVillages: 156,
-  totalChokhlas: 23,
-  totalPopulation: 89432,
-  activeUsers: 1198,
-  pendingUsers: 49,
-  recentRegistrations: 34,
-  monthlyGrowth: 12.5,
+export const USER_ROLES = [
+  { value: "SUPER_ADMIN", label: "सुपर एडमिन" },
+  { value: "CHOKHLA", label: "चोखला" },
+  { value: "VILLAGE_ADMIN", label: "गांव एडमिन" },
+]
+
+export const FACILITY_ICONS = {
+  hasElectricity: { icon: "Zap", color: "text-yellow-600", label: "बिजली" },
+  hasWaterSupply: { icon: "Droplets", color: "text-blue-600", label: "पानी" },
+  hasSchool: { icon: "GraduationCap", color: "text-green-600", label: "स्कूल" },
+  hasHealthCenter: { icon: "Heart", color: "text-red-600", label: "स्वास्थ्य केंद्र" },
+  hasRoadAccess: { icon: "Road", color: "text-gray-600", label: "सड़क" },
 }

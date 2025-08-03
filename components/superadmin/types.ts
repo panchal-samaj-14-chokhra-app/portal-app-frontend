@@ -1,13 +1,15 @@
-export interface User {
+export interface SuperAdminProfile {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  role: "superadmin" | "chokhla" | "village_admin"
-  status: "active" | "inactive" | "pending"
+  mobileNumber: string
+  role: "SUPER_ADMIN"
+  isActive: boolean
   createdAt: string
+  updatedAt: string
   lastLogin?: string
-  village?: string
-  chokhla?: string
+  loginCount: number
 }
 
 export interface Village {
@@ -16,124 +18,80 @@ export interface Village {
   state: string
   district: string
   pincode: string
-  population: number
-  families: number
-  chokhlaId: string
-  chokhlaName: string
-  adminId?: string
-  adminName?: string
-  status: "active" | "inactive"
+  hasElectricity: boolean
+  hasWaterSupply: boolean
+  hasSchool: boolean
+  hasHealthCenter: boolean
+  hasRoadAccess: boolean
+  latitude?: number
+  longitude?: number
+  familyCount: number
+  populationCount: number
+  isActive: boolean
   createdAt: string
   updatedAt: string
 }
 
 export interface Chokhla {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  phone: string
+  mobileNumber: string
   state: string
   district: string
-  villages: number
-  totalPopulation: number
-  status: "active" | "inactive" | "pending"
+  villageCount: number
+  familyCount: number
+  isActive: boolean
   createdAt: string
   updatedAt: string
+  lastLogin?: string
+}
+
+export interface User {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber: string
+  role: "SUPER_ADMIN" | "CHOKHLA" | "VILLAGE_ADMIN"
+  state?: string
+  district?: string
+  village?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  lastLogin?: string
 }
 
 export interface Statistics {
-  totalUsers: number
   totalVillages: number
-  totalChokhlas: number
+  totalChoklas: number
+  totalFamilies: number
   totalPopulation: number
   activeUsers: number
-  pendingUsers: number
   recentRegistrations: number
-  monthlyGrowth: number
-}
-
-export interface SuperAdminProfile {
-  id: string
-  name: string
-  email: string
-  phone: string
-  role: "superadmin"
-  createdAt: string
-  lastLogin: string
-}
-
-export interface DialogState {
-  isOpen: boolean
-  title: string
-  message: string
-  details?: Record<string, any>
-  onRetry?: () => void
-}
-
-export interface SuperAdminContextType {
-  // Data
-  users: User[]
-  villages: Village[]
-  chokhlas: Chokhla[]
-  statistics: Statistics
-  profile: SuperAdminProfile | null
-
-  // Loading states
-  isLoadingUsers: boolean
-  isLoadingVillages: boolean
-  isLoadingChokhlas: boolean
-  isLoadingStatistics: boolean
-  isLoadingProfile: boolean
-
-  // CRUD operations
-  createUser: (userData: Partial<User>) => Promise<void>
-  updateUser: (id: string, userData: Partial<User>) => Promise<void>
-  deleteUser: (id: string) => Promise<void>
-
-  createVillage: (villageData: Partial<Village>) => Promise<void>
-  updateVillage: (id: string, villageData: Partial<Village>) => Promise<void>
-  deleteVillage: (id: string) => Promise<void>
-
-  createChokhla: (chokhlaData: Partial<Chokhla>) => Promise<void>
-  updateChokhla: (id: string, chokhlaData: Partial<Chokhla>) => Promise<void>
-  deleteChokhla: (id: string) => Promise<void>
-
-  updateProfile: (profileData: Partial<SuperAdminProfile>) => Promise<void>
-
-  // Refresh functions
-  refreshUsers: () => Promise<void>
-  refreshVillages: () => Promise<void>
-  refreshChokhlas: () => Promise<void>
-  refreshStatistics: () => Promise<void>
-  refreshProfile: () => Promise<void>
-}
-
-export interface UserFormData {
-  name: string
-  email: string
-  role: "chokhla" | "village_admin"
-  village?: string
-  chokhla?: string
-}
-
-export interface VillageFormData {
-  name: string
-  state: string
-  district: string
-  pincode: string
-  chokhlaId: string
+  completionRate: number
+  growthRate: number
 }
 
 export interface ChokhlaFormData {
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  phone: string
+  mobileNumber: string
+  password: string
+  confirmPassword: string
   state: string
   district: string
 }
 
 export interface ProfileFormData {
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  phone: string
+  mobileNumber: string
+  currentPassword?: string
+  newPassword?: string
+  confirmPassword?: string
 }
