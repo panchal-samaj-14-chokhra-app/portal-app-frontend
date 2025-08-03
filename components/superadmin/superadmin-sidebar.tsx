@@ -1,71 +1,108 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { LayoutDashboard, MapPin, Users, User, BarChart3, Settings } from "lucide-react"
-import { useSuperAdmin } from "./providers/superadmin-provider"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { BarChart3, MapPin, Users, UserCheck, User, Activity } from "lucide-react"
 
-const sidebarItems = [
+interface SuperAdminSidebarProps {
+  activeTab: string
+  onTabChange: (tab: string) => void
+}
+
+const menuItems = [
   {
-    id: "dashboard",
+    id: "statistics",
     label: "डैशबोर्ड",
-    icon: LayoutDashboard,
+    icon: BarChart3,
+    description: "आंकड़े और रिपोर्ट",
   },
   {
     id: "villages",
     label: "गांव प्रबंधन",
     icon: MapPin,
+    description: "गांवों की सूची",
   },
   {
-    id: "chokhlas",
+    id: "choklas",
     label: "चोखला प्रबंधन",
-    icon: Users,
+    icon: UserCheck,
+    description: "चोखला खाते",
   },
   {
     id: "users",
-    label: "उपयोगकर्ता प्रबंधन",
-    icon: User,
-  },
-  {
-    id: "statistics",
-    label: "आंकड़े",
-    icon: BarChart3,
+    label: "उपयोगकर्ता",
+    icon: Users,
+    description: "सभी उपयोगकर्ता",
   },
   {
     id: "profile",
     label: "प्रोफाइल",
-    icon: Settings,
+    icon: User,
+    description: "व्यक्तिगत जानकारी",
   },
 ]
 
-export function SuperAdminSidebar() {
-  const { activeView, setActiveView } = useSuperAdmin()
-
+export function SuperAdminSidebar({ activeTab, onTabChange }: SuperAdminSidebarProps) {
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-full">
-      <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">सुपर एडमिन</h2>
-        <nav className="space-y-2">
-          {sidebarItems.map((item) => {
+    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      {/* Navigation Menu */}
+      <div className="flex-1 p-4">
+        <div className="space-y-2">
+          {menuItems.map((item) => {
             const Icon = item.icon
+            const isActive = activeTab === item.id
+
             return (
               <Button
                 key={item.id}
-                variant={activeView === item.id ? "default" : "ghost"}
-                className={cn(
-                  "w-full justify-start text-left",
-                  activeView === item.id
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
-                )}
-                onClick={() => setActiveView(item.id as any)}
+                variant={isActive ? "default" : "ghost"}
+                className={`w-full justify-start h-auto p-3 ${
+                  isActive ? "bg-blue-600 text-white hover:bg-blue-700" : "text-gray-700 hover:bg-gray-100"
+                }`}
+                onClick={() => onTabChange(item.id)}
               >
-                <Icon className="mr-3 h-4 w-4" />
-                {item.label}
+                <Icon className="w-5 h-5 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">{item.label}</div>
+                  <div className={`text-xs ${isActive ? "text-blue-100" : "text-gray-500"}`}>{item.description}</div>
+                </div>
               </Button>
             )
           })}
-        </nav>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* System Status */}
+      <div className="p-4">
+        <div className="bg-green-50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-800">सिस्टम स्थिति</span>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-green-700">सर्वर</span>
+              <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                ऑनलाइन
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-green-700">डेटाबेस</span>
+              <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                कनेक्टेड
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-green-700">बैकअप</span>
+              <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-300">
+                अपडेटेड
+              </Badge>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

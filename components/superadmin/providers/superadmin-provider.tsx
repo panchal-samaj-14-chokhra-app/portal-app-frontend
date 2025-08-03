@@ -1,326 +1,438 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useCallback } from "react"
-import type { SuperAdminContextType, User, Village, Chokhla, Statistics, SuperAdminProfile } from "../types"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { toast } from "sonner"
+import type { SuperAdminProfile, Village, Chokhla, User, Statistics, ChokhlaFormData, ProfileFormData } from "../types"
 
-const SuperAdminContext = createContext<SuperAdminContextType | null>(null)
+interface SuperAdminContextType {
+  // State
+  activeTab: string
+  profile: SuperAdminProfile | null
+  villages: Village[]
+  choklas: Chokhla[]
+  users: User[]
+  statistics: Statistics | null
+
+  // Loading states
+  isLoadingProfile: boolean
+  isLoadingVillages: boolean
+  isLoadingChoklas: boolean
+  isLoadingUsers: boolean
+  isLoadingStatistics: boolean
+
+  // Dialog states
+  successDialog: {
+    isOpen: boolean
+    title: string
+    message: string
+    details?: Record<string, any>
+  }
+  errorDialog: {
+    isOpen: boolean
+    title: string
+    message: string
+    onRetry?: () => void
+  }
+
+  // Actions
+  setActiveTab: (tab: string) => void
+  handleCreateChokhla: (data: ChokhlaFormData) => Promise<void>
+  handleUpdateProfile: (data: ProfileFormData) => Promise<void>
+  handleToggleUserStatus: (id: string, isActive: boolean) => Promise<void>
+  handleToggleChokhlaStatus: (id: string, isActive: boolean) => Promise<void>
+  handleLogout: () => Promise<void>
+  handleRefreshVillages: () => void
+  handleRefreshChoklas: () => void
+  handleRefreshUsers: () => void
+  setSuccessDialog: (dialog: any) => void
+  setErrorDialog: (dialog: any) => void
+}
+
+const SuperAdminContext = createContext<SuperAdminContextType | undefined>(undefined)
 
 export function useSuperAdmin() {
   const context = useContext(SuperAdminContext)
-  if (!context) {
-    throw new Error("useSuperAdmin must be used within SuperAdminProvider")
+  if (context === undefined) {
+    throw new Error("useSuperAdmin must be used within a SuperAdminProvider")
   }
   return context
 }
 
-// Mock data for development
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "राहुल शर्मा",
-    email: "rahul@example.com",
-    role: "chokhla",
-    status: "active",
-    createdAt: "2024-01-15",
-    lastLogin: "2024-01-20",
-    phone: "+91 9876543210",
-    chokhla: "मुंबई चोखला",
-  },
-  {
-    id: "2",
-    name: "प्रिया पटेल",
-    email: "priya@example.com",
-    role: "village",
-    status: "active",
-    createdAt: "2024-01-10",
-    lastLogin: "2024-01-19",
-    phone: "+91 9876543211",
-    village: "अहमदाबाद",
-  },
-]
-
-const mockVillages: Village[] = [
-  {
-    id: "1",
-    name: "अहमदाबाद",
-    state: "गुजरात",
-    district: "अहमदाबाद",
-    pincode: "380001",
-    chokhlaId: "1",
-    chokhlaName: "राहुल शर्मा",
-    totalFamilies: 150,
-    totalMembers: 600,
-    hasElectricity: true,
-    hasWaterSupply: true,
-    hasSchool: true,
-    hasHealthCenter: false,
-    hasRoadAccess: true,
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-20",
-  },
-]
-
-const mockChokhlas: Chokhla[] = [
-  {
-    id: "1",
-    firstName: "राहुल",
-    lastName: "शर्मा",
-    email: "rahul@example.com",
-    mobileNumber: "+91 9876543210",
-    state: "गुजरात",
-    district: "अहमदाबाद",
-    status: "active",
-    totalVillages: 5,
-    totalFamilies: 750,
-    totalMembers: 3000,
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-20",
-    lastLogin: "2024-01-20",
-  },
-]
-
-const mockStatistics: Statistics = {
-  totalUsers: 25,
-  totalChokhlas: 5,
-  totalVillages: 15,
-  totalFamilies: 1250,
-  totalMembers: 5000,
-  activeUsers: 20,
-  pendingUsers: 5,
-  recentRegistrations: 8,
-  villagesByState: {
-    गुजरात: 8,
-    राजस्थान: 4,
-    महाराष्ट्र: 3,
-  },
-  usersByRole: {
-    chokhla: 5,
-    village: 18,
-    superadmin: 2,
-  },
-  monthlyGrowth: [
-    { month: "जनवरी", users: 15, villages: 8, families: 800 },
-    { month: "फरवरी", users: 20, villages: 12, families: 1000 },
-    { month: "मार्च", users: 25, villages: 15, families: 1250 },
-  ],
-}
-
-const mockProfile: SuperAdminProfile = {
-  id: "admin-1",
-  name: "सुपर एडमिन",
-  email: "admin@panchalsociety.org",
-  role: "superadmin",
-  createdAt: "2024-01-01",
-  lastLogin: "2024-01-20",
-  permissions: ["all"],
-}
-
 interface SuperAdminProviderProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
-  // State
-  const [users, setUsers] = useState<User[]>(mockUsers)
-  const [villages, setVillages] = useState<Village[]>(mockVillages)
-  const [chokhlas, setChokhlas] = useState<Chokhla[]>(mockChokhlas)
-  const [statistics, setStatistics] = useState<Statistics>(mockStatistics)
-  const [profile, setProfile] = useState<SuperAdminProfile | null>(mockProfile)
+  // State management
+  const [activeTab, setActiveTab] = useState("statistics")
+  const [profile, setProfile] = useState<SuperAdminProfile | null>(null)
+  const [villages, setVillages] = useState<Village[]>([])
+  const [choklas, setChoklas] = useState<Chokhla[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [statistics, setStatistics] = useState<Statistics | null>(null)
 
   // Loading states
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
-  const [isLoadingVillages, setIsLoadingVillages] = useState(false)
-  const [isLoadingChokhlas, setIsLoadingChokhlas] = useState(false)
-  const [isLoadingStatistics, setIsLoadingStatistics] = useState(false)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [isLoadingVillages, setIsLoadingVillages] = useState(true)
+  const [isLoadingChoklas, setIsLoadingChoklas] = useState(true)
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true)
+  const [isLoadingStatistics, setIsLoadingStatistics] = useState(true)
 
-  // Refresh functions
-  const refreshUsers = useCallback(async () => {
-    setIsLoadingUsers(true)
-    try {
-      // In real app, fetch from API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setUsers(mockUsers)
-    } catch (error) {
-      console.error("Error refreshing users:", error)
-    } finally {
-      setIsLoadingUsers(false)
-    }
+  // Dialog states
+  const [successDialog, setSuccessDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    details?: Record<string, any>
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  })
+
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onRetry?: () => void
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  })
+
+  // Load mock data on mount
+  useEffect(() => {
+    loadMockData()
   }, [])
 
-  const refreshVillages = useCallback(async () => {
-    setIsLoadingVillages(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setVillages(mockVillages)
-    } catch (error) {
-      console.error("Error refreshing villages:", error)
-    } finally {
-      setIsLoadingVillages(false)
-    }
-  }, [])
+  const loadMockData = () => {
+    // Mock profile
+    setProfile({
+      id: "1",
+      firstName: "राम",
+      lastName: "पटेल",
+      email: "admin@panchalsamaj.org",
+      mobileNumber: "9876543210",
+      role: "SUPERADMIN",
+      isActive: true,
+      loginCount: 45,
+      lastLogin: new Date().toISOString(),
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: new Date().toISOString(),
+    })
+    setIsLoadingProfile(false)
 
-  const refreshChokhlas = useCallback(async () => {
-    setIsLoadingChokhlas(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setChokhlas(mockChokhlas)
-    } catch (error) {
-      console.error("Error refreshing chokhlas:", error)
-    } finally {
-      setIsLoadingChokhlas(false)
-    }
-  }, [])
+    // Mock villages
+    setVillages([
+      {
+        id: "1",
+        name: "रामपुर",
+        state: "गुजरात",
+        district: "अहमदाबाद",
+        pincode: "380001",
+        hasElectricity: true,
+        hasWaterSupply: true,
+        hasSchool: true,
+        hasHealthCenter: false,
+        hasRoadAccess: true,
+        latitude: 23.0225,
+        longitude: 72.5714,
+        familyCount: 150,
+        populationCount: 750,
+        isActive: true,
+        createdAt: "2024-01-15T00:00:00Z",
+        updatedAt: "2024-01-15T00:00:00Z",
+      },
+      {
+        id: "2",
+        name: "श्यामपुर",
+        state: "राजस्थान",
+        district: "जयपुर",
+        pincode: "302001",
+        hasElectricity: true,
+        hasWaterSupply: false,
+        hasSchool: true,
+        hasHealthCenter: true,
+        hasRoadAccess: true,
+        familyCount: 200,
+        populationCount: 1000,
+        isActive: true,
+        createdAt: "2024-01-20T00:00:00Z",
+        updatedAt: "2024-01-20T00:00:00Z",
+      },
+    ])
+    setIsLoadingVillages(false)
 
-  const refreshStatistics = useCallback(async () => {
-    setIsLoadingStatistics(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setStatistics(mockStatistics)
-    } catch (error) {
-      console.error("Error refreshing statistics:", error)
-    } finally {
-      setIsLoadingStatistics(false)
-    }
-  }, [])
+    // Mock choklas
+    setChoklas([
+      {
+        id: "1",
+        firstName: "विकास",
+        lastName: "शाह",
+        email: "vikas@example.com",
+        mobileNumber: "9876543211",
+        state: "गुजरात",
+        district: "अहमदाबाद",
+        villageCount: 5,
+        familyCount: 250,
+        isActive: true,
+        lastLogin: "2024-01-25T10:30:00Z",
+        createdAt: "2024-01-10T00:00:00Z",
+        updatedAt: "2024-01-25T10:30:00Z",
+      },
+      {
+        id: "2",
+        firstName: "प्रिया",
+        lastName: "पटेल",
+        email: "priya@example.com",
+        mobileNumber: "9876543212",
+        state: "राजस्थान",
+        district: "जयपुर",
+        villageCount: 3,
+        familyCount: 180,
+        isActive: false,
+        lastLogin: null,
+        createdAt: "2024-01-12T00:00:00Z",
+        updatedAt: "2024-01-12T00:00:00Z",
+      },
+    ])
+    setIsLoadingChoklas(false)
 
-  const refreshProfile = useCallback(async () => {
-    setIsLoadingProfile(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setProfile(mockProfile)
-    } catch (error) {
-      console.error("Error refreshing profile:", error)
-    } finally {
-      setIsLoadingProfile(false)
-    }
-  }, [])
+    // Mock users
+    setUsers([
+      {
+        id: "1",
+        firstName: "अमित",
+        lastName: "गुप्ता",
+        email: "amit@example.com",
+        mobileNumber: "9876543213",
+        role: "ADMIN",
+        state: "गुजरात",
+        district: "सूरत",
+        isActive: true,
+        lastLogin: "2024-01-24T15:45:00Z",
+        createdAt: "2024-01-05T00:00:00Z",
+        updatedAt: "2024-01-24T15:45:00Z",
+      },
+      {
+        id: "2",
+        firstName: "सुनीता",
+        lastName: "शर्मा",
+        email: "sunita@example.com",
+        mobileNumber: "9876543214",
+        role: "USER",
+        state: "राजस्थान",
+        district: "उदयपुर",
+        village: "नंदगांव",
+        isActive: true,
+        lastLogin: "2024-01-23T09:20:00Z",
+        createdAt: "2024-01-08T00:00:00Z",
+        updatedAt: "2024-01-23T09:20:00Z",
+      },
+    ])
+    setIsLoadingUsers(false)
 
-  // CRUD operations
-  const createUser = useCallback(async (userData: Partial<User>) => {
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: userData.name || "",
-      email: userData.email || "",
-      role: userData.role || "village",
-      status: userData.status || "pending",
-      createdAt: new Date().toISOString().split("T")[0],
-      phone: userData.phone,
-      village: userData.village,
-      chokhla: userData.chokhla,
-    }
-    setUsers((prev) => [...prev, newUser])
-  }, [])
-
-  const updateUser = useCallback(async (id: string, userData: Partial<User>) => {
-    setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, ...userData } : user)))
-  }, [])
-
-  const deleteUser = useCallback(async (id: string) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id))
-  }, [])
-
-  const createVillage = useCallback(async (villageData: Partial<Village>) => {
-    const newVillage: Village = {
-      id: Date.now().toString(),
-      name: villageData.name || "",
-      state: villageData.state || "",
-      district: villageData.district || "",
-      pincode: villageData.pincode || "",
-      chokhlaId: villageData.chokhlaId || "",
-      chokhlaName: villageData.chokhlaName || "",
-      totalFamilies: villageData.totalFamilies || 0,
-      totalMembers: villageData.totalMembers || 0,
-      hasElectricity: villageData.hasElectricity || false,
-      hasWaterSupply: villageData.hasWaterSupply || false,
-      hasSchool: villageData.hasSchool || false,
-      hasHealthCenter: villageData.hasHealthCenter || false,
-      hasRoadAccess: villageData.hasRoadAccess || false,
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-      latitude: villageData.latitude,
-      longitude: villageData.longitude,
-    }
-    setVillages((prev) => [...prev, newVillage])
-  }, [])
-
-  const updateVillage = useCallback(async (id: string, villageData: Partial<Village>) => {
-    setVillages((prev) =>
-      prev.map((village) =>
-        village.id === id ? { ...village, ...villageData, updatedAt: new Date().toISOString().split("T")[0] } : village,
-      ),
-    )
-  }, [])
-
-  const deleteVillage = useCallback(async (id: string) => {
-    setVillages((prev) => prev.filter((village) => village.id !== id))
-  }, [])
-
-  const createChokhla = useCallback(async (chokhlaData: Partial<Chokhla>) => {
-    const newChokhla: Chokhla = {
-      id: Date.now().toString(),
-      firstName: chokhlaData.firstName || "",
-      lastName: chokhlaData.lastName || "",
-      email: chokhlaData.email || "",
-      mobileNumber: chokhlaData.mobileNumber || "",
-      state: chokhlaData.state || "",
-      district: chokhlaData.district || "",
-      status: chokhlaData.status || "pending",
-      totalVillages: chokhlaData.totalVillages || 0,
-      totalFamilies: chokhlaData.totalFamilies || 0,
-      totalMembers: chokhlaData.totalMembers || 0,
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-    }
-    setChokhlas((prev) => [...prev, newChokhla])
-  }, [])
-
-  const updateChokhla = useCallback(async (id: string, chokhlaData: Partial<Chokhla>) => {
-    setChokhlas((prev) =>
-      prev.map((chokhla) =>
-        chokhla.id === id ? { ...chokhla, ...chokhlaData, updatedAt: new Date().toISOString().split("T")[0] } : chokhla,
-      ),
-    )
-  }, [])
-
-  const deleteChokhla = useCallback(async (id: string) => {
-    setChokhlas((prev) => prev.filter((chokhla) => chokhla.id !== id))
-  }, [])
-
-  const contextValue: SuperAdminContextType = {
-    // Data
-    users,
-    villages,
-    chokhlas,
-    statistics,
-    profile,
-
-    // Loading states
-    isLoadingUsers,
-    isLoadingVillages,
-    isLoadingChokhlas,
-    isLoadingStatistics,
-    isLoadingProfile,
-
-    // Refresh functions
-    refreshUsers,
-    refreshVillages,
-    refreshChokhlas,
-    refreshStatistics,
-    refreshProfile,
-
-    // CRUD operations
-    createUser,
-    updateUser,
-    deleteUser,
-    createVillage,
-    updateVillage,
-    deleteVillage,
-    createChokhla,
-    updateChokhla,
-    deleteChokhla,
+    // Mock statistics
+    setStatistics({
+      totalVillages: 125,
+      totalChoklas: 15,
+      totalUsers: 450,
+      totalFamilies: 2500,
+      totalPopulation: 12500,
+      activeVillages: 120,
+      activeChoklas: 12,
+      activeUsers: 425,
+      recentRegistrations: 25,
+      monthlyGrowth: {
+        villages: 8.5,
+        choklas: 12.3,
+        users: 15.7,
+        families: 6.2,
+      },
+      stateDistribution: [
+        { state: "गुजरात", villages: 75, families: 1500, population: 7500 },
+        { state: "राजस्थान", villages: 50, families: 1000, population: 5000 },
+      ],
+      facilityStats: {
+        electricity: 95,
+        waterSupply: 80,
+        school: 70,
+        healthCenter: 45,
+        roadAccess: 85,
+      },
+    })
+    setIsLoadingStatistics(false)
   }
 
-  return <SuperAdminContext.Provider value={contextValue}>{children}</SuperAdminContext.Provider>
+  // Handle chokhla creation
+  const handleCreateChokhla = async (data: ChokhlaFormData) => {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      const newChokhla: Chokhla = {
+        id: Date.now().toString(),
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        mobileNumber: data.mobileNumber,
+        state: data.state,
+        district: data.district,
+        villageCount: 0,
+        familyCount: 0,
+        isActive: true,
+        lastLogin: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      setChoklas((prev) => [...prev, newChokhla])
+
+      setSuccessDialog({
+        isOpen: true,
+        title: "चोखला सफलतापूर्वक पंजीकृत हुआ",
+        message: "नया चोखला खाता सफलतापूर्वक बनाया गया है।",
+        details: {
+          नाम: `${data.firstName} ${data.lastName}`,
+          ईमेल: data.email,
+          मोबाइल: data.mobileNumber,
+          स्थान: `${data.district}, ${data.state}`,
+        },
+      })
+
+      toast.success("चोखला सफलतापूर्वक पंजीकृत हुआ")
+    } catch (error) {
+      console.error("Error creating chokhla:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "चोखला पंजीकरण में त्रुटि",
+        message: "चोखला पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+      })
+    }
+  }
+
+  // Handle profile update
+  const handleUpdateProfile = async (data: ProfileFormData) => {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      if (profile) {
+        const updatedProfile: SuperAdminProfile = {
+          ...profile,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          mobileNumber: data.mobileNumber,
+          updatedAt: new Date().toISOString(),
+        }
+
+        setProfile(updatedProfile)
+
+        setSuccessDialog({
+          isOpen: true,
+          title: "प्रोफाइल सफलतापूर्वक अपडेट हुई",
+          message: "आपकी प्रोफाइल की जानकारी सफलतापूर्वक अपडेट हो गई है।",
+          details: {
+            नाम: `${data.firstName} ${data.lastName}`,
+            ईमेल: data.email,
+            मोबाइल: data.mobileNumber,
+          },
+        })
+
+        toast.success("प्रोफाइल सफलतापूर्वक अपडेट हुई")
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "प्रोफाइल अपडेट में त्रुटि",
+        message: "प्रोफाइल अपडेट करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+      })
+    }
+  }
+
+  // Handle user status toggle
+  const handleToggleUserStatus = async (id: string, isActive: boolean) => {
+    try {
+      setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, isActive } : user)))
+      toast.success(`उपयोगकर्ता ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
+    } catch (error) {
+      console.error("Error toggling user status:", error)
+      toast.error("उपयोगकर्ता स्थिति बदलने में त्रुटि")
+    }
+  }
+
+  // Handle chokhla status toggle
+  const handleToggleChokhlaStatus = async (id: string, isActive: boolean) => {
+    try {
+      setChoklas((prev) => prev.map((chokhla) => (chokhla.id === id ? { ...chokhla, isActive } : chokhla)))
+      toast.success(`चोखला ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
+    } catch (error) {
+      console.error("Error toggling chokhla status:", error)
+      toast.error("चोखला स्थिति बदलने में त्रुटि")
+    }
+  }
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      window.location.href = "/login"
+    } catch (error) {
+      console.error("Error logging out:", error)
+      toast.error("लॉग आउट करने में त्रुटि")
+    }
+  }
+
+  // Refresh functions
+  const handleRefreshVillages = () => {
+    setIsLoadingVillages(true)
+    setTimeout(() => setIsLoadingVillages(false), 1000)
+  }
+
+  const handleRefreshChoklas = () => {
+    setIsLoadingChoklas(true)
+    setTimeout(() => setIsLoadingChoklas(false), 1000)
+  }
+
+  const handleRefreshUsers = () => {
+    setIsLoadingUsers(true)
+    setTimeout(() => setIsLoadingUsers(false), 1000)
+  }
+
+  const value: SuperAdminContextType = {
+    // State
+    activeTab,
+    profile,
+    villages,
+    choklas,
+    users,
+    statistics,
+
+    // Loading states
+    isLoadingProfile,
+    isLoadingVillages,
+    isLoadingChoklas,
+    isLoadingUsers,
+    isLoadingStatistics,
+
+    // Dialog states
+    successDialog,
+    errorDialog,
+
+    // Actions
+    setActiveTab,
+    handleCreateChokhla,
+    handleUpdateProfile,
+    handleToggleUserStatus,
+    handleToggleChokhlaStatus,
+    handleLogout,
+    handleRefreshVillages,
+    handleRefreshChoklas,
+    handleRefreshUsers,
+    setSuccessDialog,
+    setErrorDialog,
+  }
+
+  return <SuperAdminContext.Provider value={value}>{children}</SuperAdminContext.Provider>
 }

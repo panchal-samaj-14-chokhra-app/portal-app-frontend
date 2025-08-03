@@ -1,0 +1,16 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "my-brach-with-handed-code": false
+    }
+  },
+  "github": {
+    "autoAlias": true
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

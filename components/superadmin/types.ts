@@ -1,14 +1,15 @@
-export interface User {
+export interface SuperAdminProfile {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  role: "superadmin" | "chokhla" | "village"
-  status: "active" | "inactive" | "pending"
+  mobileNumber: string
+  role: "SUPERADMIN"
+  isActive: boolean
+  loginCount: number
+  lastLogin: string | null
   createdAt: string
-  lastLogin?: string
-  village?: string
-  chokhla?: string
-  phone?: string
+  updatedAt: string
 }
 
 export interface Village {
@@ -17,19 +18,18 @@ export interface Village {
   state: string
   district: string
   pincode: string
-  chokhlaId: string
-  chokhlaName: string
-  totalFamilies: number
-  totalMembers: number
   hasElectricity: boolean
   hasWaterSupply: boolean
   hasSchool: boolean
   hasHealthCenter: boolean
   hasRoadAccess: boolean
-  createdAt: string
-  updatedAt: string
   latitude?: number
   longitude?: number
+  familyCount: number
+  populationCount: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Chokhla {
@@ -40,95 +40,78 @@ export interface Chokhla {
   mobileNumber: string
   state: string
   district: string
-  status: "active" | "inactive" | "pending"
-  totalVillages: number
-  totalFamilies: number
-  totalMembers: number
+  villageCount: number
+  familyCount: number
+  isActive: boolean
+  lastLogin: string | null
   createdAt: string
   updatedAt: string
-  lastLogin?: string
+}
+
+export interface User {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber: string
+  role: "ADMIN" | "CHOKHLA" | "USER"
+  state?: string
+  district?: string
+  village?: string
+  isActive: boolean
+  lastLogin: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Statistics {
-  totalUsers: number
-  totalChokhlas: number
   totalVillages: number
+  totalChoklas: number
+  totalUsers: number
   totalFamilies: number
-  totalMembers: number
+  totalPopulation: number
+  activeVillages: number
+  activeChoklas: number
   activeUsers: number
-  pendingUsers: number
   recentRegistrations: number
-  villagesByState: Record<string, number>
-  usersByRole: Record<string, number>
-  monthlyGrowth: Array<{
-    month: string
+  monthlyGrowth: {
+    villages: number
+    choklas: number
     users: number
+    families: number
+  }
+  stateDistribution: Array<{
+    state: string
     villages: number
     families: number
+    population: number
   }>
+  facilityStats: {
+    electricity: number
+    waterSupply: number
+    school: number
+    healthCenter: number
+    roadAccess: number
+  }
 }
 
-export interface SuperAdminProfile {
-  id: string
-  name: string
+export interface ChokhlaFormData {
+  firstName: string
+  lastName: string
   email: string
-  role: "superadmin"
-  createdAt: string
-  lastLogin: string
-  permissions: string[]
+  mobileNumber: string
+  password: string
+  confirmPassword: string
+  state: string
+  district: string
 }
 
-export interface DialogState {
-  isOpen: boolean
-  title: string
-  message: string
-  details?: Record<string, any>
-  onRetry?: () => void
-}
-
-export interface SuperAdminContextType {
-  // Data
-  users: User[]
-  villages: Village[]
-  chokhlas: Chokhla[]
-  statistics: Statistics
-  profile: SuperAdminProfile | null
-
-  // Loading states
-  isLoadingUsers: boolean
-  isLoadingVillages: boolean
-  isLoadingChokhlas: boolean
-  isLoadingStatistics: boolean
-  isLoadingProfile: boolean
-
-  // Actions
-  refreshUsers: () => Promise<void>
-  refreshVillages: () => Promise<void>
-  refreshChokhlas: () => Promise<void>
-  refreshStatistics: () => Promise<void>
-  refreshProfile: () => Promise<void>
-
-  // User management
-  createUser: (userData: Partial<User>) => Promise<void>
-  updateUser: (id: string, userData: Partial<User>) => Promise<void>
-  deleteUser: (id: string) => Promise<void>
-
-  // Village management
-  createVillage: (villageData: Partial<Village>) => Promise<void>
-  updateVillage: (id: string, villageData: Partial<Village>) => Promise<void>
-  deleteVillage: (id: string) => Promise<void>
-
-  // Chokhla management
-  createChokhla: (chokhlaData: Partial<Chokhla>) => Promise<void>
-  updateChokhla: (id: string, chokhlaData: Partial<Chokhla>) => Promise<void>
-  deleteChokhla: (id: string) => Promise<void>
-}
-
-export type TabType = "dashboard" | "users" | "villages" | "chokhlas" | "statistics" | "profile"
-
-export interface SidebarItem {
-  id: TabType
-  label: string
-  icon: string
-  description?: string
+export interface ProfileFormData {
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber: string
+  currentPassword?: string
+  newPassword?: string
+  confirmPassword?: string
 }
