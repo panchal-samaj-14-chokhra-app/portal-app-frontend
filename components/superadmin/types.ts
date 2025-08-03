@@ -12,6 +12,23 @@ export interface SuperAdminProfile {
   updatedAt: string
 }
 
+export interface SuperAdminUser {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber?: string
+  role: "SUPERADMIN" | "ADMIN" | "USER" | "CHOKHLA"
+  isActive: boolean
+  lastLogin: string | null
+  createdAt: string
+  updatedAt: string
+  state?: string
+  district?: string
+  village?: string
+  avatar?: string
+}
+
 export interface Village {
   id: string
   name: string
@@ -54,9 +71,9 @@ export interface User {
   lastName: string
   email: string
   mobileNumber: string
-  role: "ADMIN" | "CHOKHLA" | "USER"
-  state?: string
-  district?: string
+  role: "ADMIN" | "USER"
+  state: string
+  district: string
   village?: string
   isActive: boolean
   lastLogin: string | null
@@ -95,13 +112,42 @@ export interface Statistics {
   }
 }
 
+export interface SuperAdminStats {
+  totalVillages: number
+  totalChokhlas: number
+  totalUsers: number
+  totalFamilies: number
+  totalPopulation: number
+  activeVillages: number
+  activeChokhlas: number
+  activeUsers: number
+  recentRegistrations: number
+  monthlyGrowth: {
+    villages: number
+    chokhlas: number
+    users: number
+    families: number
+  }
+  stateDistribution: Array<{
+    state: string
+    villages: number
+    families: number
+    population: number
+  }>
+  facilityStats: {
+    electricity: number
+    waterSupply: number
+    school: number
+    healthCenter: number
+    roadAccess: number
+  }
+}
+
 export interface ChokhlaFormData {
   firstName: string
   lastName: string
   email: string
   mobileNumber: string
-  password: string
-  confirmPassword: string
   state: string
   district: string
 }
@@ -111,7 +157,29 @@ export interface ProfileFormData {
   lastName: string
   email: string
   mobileNumber: string
-  currentPassword?: string
-  newPassword?: string
-  confirmPassword?: string
+}
+
+export interface VillageFormData {
+  name: string
+  state: string
+  district: string
+  pincode: string
+  hasElectricity: boolean
+  hasWaterSupply: boolean
+  hasSchool: boolean
+  hasHealthCenter: boolean
+  hasRoadAccess: boolean
+  latitude?: number
+  longitude?: number
+}
+
+export interface UserFormData {
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber: string
+  role: "ADMIN" | "USER" | "CHOKHLA"
+  state: string
+  district: string
+  village?: string
 }
