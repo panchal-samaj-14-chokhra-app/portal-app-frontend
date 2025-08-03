@@ -1,16 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Loader2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react"
-import { STATES_DISTRICTS } from "./constants"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Eye, EyeOff, Loader2, UserPlus, Check, X } from "lucide-react"
+import { INDIAN_STATES, STATE_DISTRICTS } from "./constants"
 import type { ChokhlaFormData } from "./types"
 
 const chokhlaSchema = z
@@ -19,6 +21,8 @@ const chokhlaSchema = z
     lastName: z.string().min(2, "उपनाम कम से कम 2 अक्षर का होना चाहिए"),
     email: z.string().email("वैध ईमेल पता दर्ज करें"),
     mobileNumber: z.string().regex(/^[6-9]\d{9}$/, "वैध मोबाइल नंबर दर्ज करें"),
+    state: z.string().min(1, "राज्य चुनना आवश्यक है"),
+    district: z.string().min(1, "जिला चुनना आवश्यक है"),
     password: z
       .string()
       .min(8, "पासवर्ड कम से कम 8 अक्षर का होना चाहिए")
@@ -27,8 +31,6 @@ const chokhlaSchema = z
       .regex(/\d/, "पासवर्ड में कम से कम एक संख्या होनी चाहिए")
       .regex(/[!@#$%^&*(),.?":{}|<>]/, "पासवर्ड में कम से कम एक विशेष चिह्न होना चाहिए"),
     confirmPassword: z.string(),
-    state: z.string().min(1, "राज्य चुनना आवश्यक है"),
-    district: z.string().min(1, "जिला चुनना आवश्यक है"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "पासवर्ड मेल नहीं खाते",
@@ -36,16 +38,14 @@ const chokhlaSchema = z
   })
 
 interface ChokhlaFormProps {
-  isOpen: boolean
-  onClose: () => void
   onSubmit: (data: ChokhlaFormData) => Promise<void>
-  isLoading: boolean
+  isSubmitting: boolean
 }
 
-export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFormProps) {
-  const [districts, setDistricts] = useState<string[]>([])
+export function ChokhlaForm({ onSubmit, isSubmitting }: ChokhlaFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [selectedState, setSelectedState] = useState<string>("")
 
   const form = useForm<ChokhlaFormData>({
     resolver: zodResolver(chokhlaSchema),
@@ -54,59 +54,45 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
       lastName: "",
       email: "",
       mobileNumber: "",
-      password: "",
-      confirmPassword: "",
       state: "",
       district: "",
+      password: "",
+      confirmPassword: "",
     },
   })
 
-  const selectedState = form.watch("state")
   const password = form.watch("password")
 
-  useEffect(() => {
-    if (selectedState && STATES_DISTRICTS[selectedState]) {
-      setDistricts(STATES_DISTRICTS[selectedState])
-      form.setValue("district", "")
-    } else {
-      setDistricts([])
-    }
-  }, [selectedState, form])
-
-  const handleSubmit = async (data: ChokhlaFormData) => {
-    try {
-      await onSubmit(data)
-      form.reset()
-      onClose()
-    } catch (error) {
-      console.error("Form submission error:", error)
-    }
-  }
-
-  const handleClose = () => {
-    form.reset()
-    onClose()
-  }
-
-  // Password strength indicators
-  const passwordChecks = [
+  const passwordRequirements = [
     { label: "कम से कम 8 अक्षर", test: (pwd: string) => pwd.length >= 8 },
-    { label: "एक बड़ा अक्षर", test: (pwd: string) => /[A-Z]/.test(pwd) },
-    { label: "एक छोटा अक्षर", test: (pwd: string) => /[a-z]/.test(pwd) },
-    { label: "एक संख्या", test: (pwd: string) => /\d/.test(pwd) },
-    { label: "एक विशेष चिह्न", test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd) },
+    { label: "एक बड़ा अक्षर (A-Z)", test: (pwd: string) => /[A-Z]/.test(pwd) },
+    { label: "एक छोटा अक्षर (a-z)", test: (pwd: string) => /[a-z]/.test(pwd) },
+    { label: "एक संख्या (0-9)", test: (pwd: string) => /\d/.test(pwd) },
+    { label: "एक विशेष चिह्न (!@#$%^&*)", test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd) },
   ]
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-blue-800">
-            <UserPlus className="w-5 h-5" />
-            नया चोखला पंजीकृत करें
-          </DialogTitle>
-        </DialogHeader>
+  const handleStateChange = (state: string) => {
+    setSelectedState(state)
+    form.setValue("state", state)
+    form.setValue("district", "") // Reset district when state changes
+  }
 
+  const handleSubmit = async (data: ChokhlaFormData) => {
+    await onSubmit(data)
+    form.reset()
+    setSelectedState("")
+  }
+
+  return (
+    <Card className="max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <UserPlus className="w-5 h-5" />
+          नया चोखला पंजीकरण
+        </CardTitle>
+        <p className="text-sm text-gray-600">नए चोखला की जानकारी दर्ज करें</p>
+      </CardHeader>
+      <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {/* Personal Information */}
@@ -186,8 +172,8 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
             </div>
 
             {/* Location Information */}
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h3 className="font-medium text-purple-800 mb-4">स्थान की जानकारी</h3>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <h3 className="font-medium text-yellow-800 mb-4">स्थान की जानकारी</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   name="state"
@@ -197,14 +183,14 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
                       <FormLabel className="text-gray-700 font-medium">
                         राज्य <span className="text-red-500">*</span>
                       </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={handleStateChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="border-gray-300">
                             <SelectValue placeholder="राज्य चुनें" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {Object.keys(STATES_DISTRICTS).map((state) => (
+                          {INDIAN_STATES.map((state) => (
                             <SelectItem key={state} value={state}>
                               {state}
                             </SelectItem>
@@ -231,11 +217,12 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {districts.map((district) => (
-                            <SelectItem key={district} value={district}>
-                              {district}
-                            </SelectItem>
-                          ))}
+                          {selectedState &&
+                            STATE_DISTRICTS[selectedState]?.map((district) => (
+                              <SelectItem key={district} value={district}>
+                                {district}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -247,7 +234,7 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
 
             {/* Password Information */}
             <div className="bg-red-50 p-4 rounded-lg">
-              <h3 className="font-medium text-red-800 mb-4">पासवर्ड सेट करें</h3>
+              <h3 className="font-medium text-red-800 mb-4">पासवर्ड सेटअप</h3>
               <div className="space-y-4">
                 <FormField
                   name="password"
@@ -262,7 +249,7 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
                           <Input
                             {...field}
                             type={showPassword ? "text" : "password"}
-                            placeholder="मजबूत पासवर्ड दर्ज करें"
+                            placeholder="पासवर्ड दर्ज करें"
                             className="border-gray-300 pr-10"
                           />
                           <Button
@@ -285,23 +272,21 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
                   )}
                 />
 
-                {/* Password Strength Indicators */}
+                {/* Password Requirements */}
                 {password && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">पासवर्ड आवश्यकताएं:</p>
-                    <div className="grid grid-cols-1 gap-1">
-                      {passwordChecks.map((check, index) => {
-                        const isValid = check.test(password)
+                  <div className="bg-white p-3 rounded border">
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">पासवर्ड आवश्यकताएं:</Label>
+                    <div className="space-y-1">
+                      {passwordRequirements.map((req, index) => {
+                        const isValid = req.test(password)
                         return (
-                          <div key={index} className="flex items-center gap-2">
+                          <div key={index} className="flex items-center gap-2 text-sm">
                             {isValid ? (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <Check className="w-4 h-4 text-green-600" />
                             ) : (
-                              <XCircle className="w-4 h-4 text-red-400" />
+                              <X className="w-4 h-4 text-red-500" />
                             )}
-                            <span className={`text-sm ${isValid ? "text-green-700" : "text-red-600"}`}>
-                              {check.label}
-                            </span>
+                            <span className={isValid ? "text-green-700" : "text-red-600"}>{req.label}</span>
                           </div>
                         )
                       })}
@@ -347,25 +332,24 @@ export function ChokhlaForm({ isOpen, onClose, onSubmit, isLoading }: ChokhlaFor
               </div>
             </div>
 
-            {/* Form Actions */}
-            <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={handleClose} className="flex-1 bg-transparent">
-                रद्द करें
-              </Button>
-              <Button type="submit" disabled={isLoading} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    पंजीकृत कर रहे हैं...
-                  </>
-                ) : (
-                  "चोखला पंजीकृत करें"
-                )}
-              </Button>
-            </div>
+            <Separator />
+
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  पंजीकरण कर रहे हैं...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  चोखला पंजीकृत करें
+                </>
+              )}
+            </Button>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   )
 }
