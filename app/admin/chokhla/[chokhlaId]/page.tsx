@@ -47,7 +47,7 @@ function Chokhla() {
   const { mutate: updateChokhla, isLoading: isUpdatingChokhla } = useUpdateChokhla(chokhlaId)
   const { mutate: createVillage, isLoading: isCreating } = useCreateVillage()
 
-  // Form setup
+  // Form setup with validation
   const form = useForm({
     mode: "onChange",
     criteriaMode: "all",

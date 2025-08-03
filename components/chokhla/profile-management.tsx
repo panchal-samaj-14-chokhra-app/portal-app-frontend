@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Edit3, Save, User, Calendar } from "lucide-react"
+import { Edit3, Save, User, Calendar, Loader2 } from "lucide-react"
 
 interface ProfileManagementProps {
   chokhla: any
@@ -32,10 +31,10 @@ export function ProfileManagement({
 }: ProfileManagementProps) {
   if (isChokhlaLoading) {
     return (
-      <Card className="shadow-lg border-orange-100">
+      <Card className="shadow-xl border-orange-100 bg-white/80 backdrop-blur-sm">
         <CardContent className="p-12">
           <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
             <span className="text-orange-600 font-medium">लोड हो रहा है...</span>
           </div>
         </CardContent>
@@ -45,7 +44,7 @@ export function ProfileManagement({
 
   if (chokhlaError) {
     return (
-      <Card className="shadow-lg border-red-100">
+      <Card className="shadow-xl border-red-100 bg-white/80 backdrop-blur-sm">
         <CardContent className="p-12">
           <div className="text-center text-red-600">त्रुटि: {chokhlaError.message}</div>
         </CardContent>
@@ -55,7 +54,7 @@ export function ProfileManagement({
 
   if (!chokhla || !profileForm) {
     return (
-      <Card className="shadow-lg border-gray-100">
+      <Card className="shadow-xl border-gray-100 bg-white/80 backdrop-blur-sm">
         <CardContent className="p-12">
           <div className="text-center text-gray-600">कोई डेटा उपलब्ध नहीं है</div>
         </CardContent>
@@ -64,9 +63,9 @@ export function ProfileManagement({
   }
 
   return (
-    <Card className="shadow-lg border-orange-100">
+    <Card className="shadow-xl border-orange-100 bg-white/80 backdrop-blur-sm">
       <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle className="text-2xl font-bold text-orange-800 flex items-center gap-2">
             <User className="w-6 h-6" />
             चौकला प्रोफ़ाइल
@@ -86,8 +85,17 @@ export function ProfileManagement({
               disabled={isUpdatingChokhla}
               className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
             >
-              <Save className="w-4 h-4 mr-2" />
-              {isUpdatingChokhla ? "सहेजा जा रहा है..." : "सहेजें"}
+              {isUpdatingChokhla ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  सहेजा जा रहा है...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  सहेजें
+                </>
+              )}
             </Button>
           )}
         </div>

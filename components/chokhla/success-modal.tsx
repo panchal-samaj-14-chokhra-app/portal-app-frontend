@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, Copy } from "lucide-react"
+import { useState } from "react"
 
 interface SuccessModalProps {
   open: boolean
@@ -11,6 +12,14 @@ interface SuccessModalProps {
 }
 
 export function SuccessModal({ open, onOpenChange, successData }: SuccessModalProps) {
+  const [copied, setCopied] = useState(false)
+
+  const copyPassword = () => {
+    navigator.clipboard.writeText(successData.password)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   if (!successData) return null
 
   return (
@@ -34,10 +43,16 @@ export function SuccessModal({ open, onOpenChange, successData }: SuccessModalPr
               <span className="font-medium text-green-700">ईमेल:</span>
               <span className="text-green-800">{successData.user.email}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="font-medium text-green-700">पासवर्ड:</span>
-              <span className="text-green-800 font-mono bg-green-100 px-2 py-1 rounded">{successData.password}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-green-800 font-mono bg-green-100 px-2 py-1 rounded">{successData.password}</span>
+                <Button size="sm" variant="ghost" onClick={copyPassword} className="h-8 w-8 p-0 hover:bg-green-200">
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
+            {copied && <p className="text-xs text-green-600 text-center">पासवर्ड कॉपी हो गया!</p>}
             <div className="flex justify-between">
               <span className="font-medium text-green-700">गांव सदस्य:</span>
               <span className="text-green-800">{successData.village.villageMemberName}</span>
