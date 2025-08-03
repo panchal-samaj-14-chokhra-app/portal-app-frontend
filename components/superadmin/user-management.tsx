@@ -2,105 +2,125 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { UserCog, Shield, Users, UserIcon, CheckCircle, XCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  Users,
+  Search,
+  Filter,
+  MoreVertical,
+  Eye,
+  Edit,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Shield,
+  UserCheck,
+  MapPin,
+} from "lucide-react"
 import { USER_ROLES } from "./constants"
-import type { User as UserType } from "./types"
+import type { User } from "./types"
 
 interface UserManagementProps {
-  isLoading?: boolean
+  users: User[]
+  isLoading: boolean
+  onRefresh: () => void
+  onToggleStatus: (id: string, isActive: boolean) => Promise<void>
 }
 
-export function UserManagement({ isLoading = false }: UserManagementProps) {
-  const [users, setUsers] = useState<UserType[]>([])
-  const [loading, setLoading] = useState(true)
+export function UserManagement({ users, isLoading, onRefresh, onToggleStatus }: UserManagementProps) {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [roleFilter, setRoleFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
 
+  // Filter users based on search and filters
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true)
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+    let filtered = users
 
-        // Mock data
-        const mockUsers: UserType[] = [
-          {
-            id: "1",
-            name: "राम पटेल",
-            email: "ram.patel@example.com",
-            role: "CHOKHLA",
-            isActive: true,
-            lastLogin: "2024-01-15T10:30:00Z",
-            createdAt: "2024-01-10T08:00:00Z",
-            updatedAt: "2024-01-15T10:30:00Z",
-          },
-          {
-            id: "2",
-            name: "श्याम शर्मा",
-            email: "shyam.sharma@example.com",
-            role: "CHOKHLA",
-            isActive: false,
-            lastLogin: "2024-01-12T14:20:00Z",
-            createdAt: "2024-01-08T09:15:00Z",
-            updatedAt: "2024-01-12T14:20:00Z",
-          },
-          {
-            id: "3",
-            name: "गीता देवी",
-            email: "geeta.devi@example.com",
-            role: "ADMIN",
-            isActive: true,
-            lastLogin: "2024-01-16T16:45:00Z",
-            createdAt: "2024-01-05T11:30:00Z",
-            updatedAt: "2024-01-16T16:45:00Z",
-          },
-        ]
-
-        setUsers(mockUsers)
-      } catch (error) {
-        console.error("Error fetching users:", error)
-      } finally {
-        setLoading(false)
-      }
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (user) =>
+          `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.mobileNumber.includes(searchTerm),
+      )
     }
 
-    fetchUsers()
-  }, [])
+    // Role filter
+    if (roleFilter !== "all") {
+      filtered = filtered.filter((user) => user.role === roleFilter)
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((user) => (statusFilter === "active" ? user.isActive : !user.isActive))
+    }
+
+    setFilteredUsers(filtered)
+  }, [users, searchTerm, roleFilter, statusFilter])
 
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "SUPER_ADMIN":
         return <Shield className="w-4 h-4" />
-      case "ADMIN":
-        return <UserCog className="w-4 h-4" />
       case "CHOKHLA":
-        return <Users className="w-4 h-4" />
+        return <UserCheck className="w-4 h-4" />
+      case "VILLAGE_ADMIN":
+        return <MapPin className="w-4 h-4" />
       default:
-        return <UserIcon className="w-4 h-4" />
+        return <Users className="w-4 h-4" />
     }
   }
 
-  const getRoleBadgeColor = (role: string) => {
+  const getRoleLabel = (role: string) => {
+    const roleObj = USER_ROLES.find((r) => r.value === role)
+    return roleObj ? roleObj.label : role
+  }
+
+  const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case "SUPER_ADMIN":
-        return "bg-purple-100 text-purple-800"
-      case "ADMIN":
-        return "bg-blue-100 text-blue-800"
+        return "destructive"
       case "CHOKHLA":
-        return "bg-green-100 text-green-800"
+        return "default"
+      case "VILLAGE_ADMIN":
+        return "secondary"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "outline"
     }
   }
 
-  if (loading || isLoading) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("hi-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+  }
+
+  const formatLastLogin = (lastLogin?: string) => {
+    if (!lastLogin) return "कभी नहीं"
+    return new Date(lastLogin).toLocaleDateString("hi-IN", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-10 w-24" />
         </div>
         <Card>
           <CardHeader>
@@ -108,19 +128,15 @@ export function UserManagement({ isLoading = false }: UserManagementProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded">
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div>
-                      <Skeleton className="h-4 w-32 mb-2" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-6 w-16" />
-                    <Skeleton className="h-6 w-16" />
-                  </div>
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-8 w-8" />
                 </div>
               ))}
             </div>
@@ -132,29 +148,72 @@ export function UserManagement({ isLoading = false }: UserManagementProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">उपयोगकर्ता प्रबंधन</h2>
-          <p className="text-gray-600">सभी पंजीकृत उपयोगकर्ताओं की जानकारी</p>
+          <p className="text-gray-600">कुल {users.length} उपयोगकर्ता पंजीकृत हैं</p>
         </div>
-        <Badge variant="secondary" className="text-lg px-3 py-1">
-          कुल उपयोगकर्ता: {users.length}
-        </Badge>
+        <Button onClick={onRefresh} className="bg-blue-600 hover:bg-blue-700">
+          रीफ्रेश करें
+        </Button>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="नाम, ईमेल या मोबाइल खोजें..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="भूमिका चुनें" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">सभी भूमिकाएं</SelectItem>
+            {USER_ROLES.map((role) => (
+              <SelectItem key={role.value} value={role.value}>
+                {role.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-48">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="स्थिति फिल्टर" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">सभी स्थितियां</SelectItem>
+            <SelectItem value="active">सक्रिय</SelectItem>
+            <SelectItem value="inactive">निष्क्रिय</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Users Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <UserCog className="w-5 h-5" />
-            उपयोगकर्ता सूची
+            <Users className="w-5 h-5" />
+            उपयोगकर्ता सूची ({filteredUsers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <UserCog className="w-12 h-12 text-gray-400 mb-4" />
+              <Users className="w-12 h-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">कोई उपयोगकर्ता नहीं मिला</h3>
-              <p className="text-gray-500 text-center">अभी तक कोई उपयोगकर्ता पंजीकृत नहीं है।</p>
+              <p className="text-gray-500 text-center">
+                {searchTerm || roleFilter !== "all" || statusFilter !== "all"
+                  ? "फिल्टर बदलकर दोबारा कोशिश करें"
+                  : "अभी तक कोई उपयोगकर्ता पंजीकृत नहीं है"}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -162,57 +221,96 @@ export function UserManagement({ isLoading = false }: UserManagementProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>उपयोगकर्ता</TableHead>
+                    <TableHead>संपर्क</TableHead>
                     <TableHead>भूमिका</TableHead>
+                    <TableHead>स्थान</TableHead>
                     <TableHead>स्थिति</TableHead>
+                    <TableHead>पंजीकरण</TableHead>
                     <TableHead>अंतिम लॉगिन</TableHead>
-                    <TableHead>पंजीकरण दिनांक</TableHead>
+                    <TableHead className="text-right">कार्य</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            {getRoleIcon(user.role)}
+                            <span className="text-sm font-medium text-blue-700">
+                              {user.firstName.charAt(0)}
+                              {user.lastName.charAt(0)}
+                            </span>
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                            <div className="font-medium text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getRoleBadgeColor(user.role)}>
-                          {USER_ROLES[user.role as keyof typeof USER_ROLES]}
+                        <div className="text-sm text-gray-900">{user.mobileNumber}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center gap-1 w-fit">
+                          {getRoleIcon(user.role)}
+                          {getRoleLabel(user.role)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {user.isActive ? (
-                          <Badge className="bg-green-100 text-green-800">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            सक्रिय
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-red-100 text-red-800">
-                            <XCircle className="w-3 h-3 mr-1" />
-                            निष्क्रिय
-                          </Badge>
-                        )}
+                        <div className="text-sm text-gray-900">
+                          {user.village && <div>{user.village}</div>}
+                          {user.district && <div className="text-gray-500">{user.district}</div>}
+                          {user.state && <div className="text-gray-500">{user.state}</div>}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        {user.lastLogin ? (
-                          <span className="text-sm text-gray-600">
-                            {new Date(user.lastLogin).toLocaleDateString("hi-IN")}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400">कभी नहीं</span>
-                        )}
+                        <Badge variant={user.isActive ? "default" : "secondary"}>
+                          {user.isActive ? "सक्रिय" : "निष्क्रिय"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-gray-600">
-                          {new Date(user.createdAt).toLocaleDateString("hi-IN")}
-                        </span>
+                        <div className="text-sm text-gray-900">{formatDate(user.createdAt)}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-900">{formatLastLogin(user.lastLogin)}</div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="w-4 h-4 mr-2" />
+                              विवरण देखें
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="w-4 h-4 mr-2" />
+                              संपादित करें
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onToggleStatus(user.id, !user.isActive)}>
+                              {user.isActive ? (
+                                <>
+                                  <ToggleLeft className="w-4 h-4 mr-2" />
+                                  निष्क्रिय करें
+                                </>
+                              ) : (
+                                <>
+                                  <ToggleRight className="w-4 h-4 mr-2" />
+                                  सक्रिय करें
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              हटाएं
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}

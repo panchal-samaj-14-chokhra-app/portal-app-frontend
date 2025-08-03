@@ -1,16 +1,33 @@
+export interface SuperAdminProfile {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber: string
+  role: "SUPER_ADMIN"
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  lastLogin?: string
+  loginCount: number
+}
+
 export interface Village {
   id: string
   name: string
   state: string
   district: string
   pincode: string
-  totalFamilies: number
-  totalMembers: number
   hasElectricity: boolean
   hasWaterSupply: boolean
   hasSchool: boolean
   hasHealthCenter: boolean
   hasRoadAccess: boolean
+  latitude?: number
+  longitude?: number
+  familyCount: number
+  populationCount: number
+  isActive: boolean
   createdAt: string
   updatedAt: string
 }
@@ -19,61 +36,62 @@ export interface Chokhla {
   id: string
   firstName: string
   lastName: string
-  mobileNumber: string
   email: string
+  mobileNumber: string
   state: string
   district: string
-  villages: Village[]
-  totalVillages: number
-  totalFamilies: number
-  totalMembers: number
+  villageCount: number
+  familyCount: number
   isActive: boolean
   createdAt: string
   updatedAt: string
+  lastLogin?: string
 }
 
 export interface User {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  role: "SUPER_ADMIN" | "ADMIN" | "CHOKHLA" | "USER"
+  mobileNumber: string
+  role: "SUPER_ADMIN" | "CHOKHLA" | "VILLAGE_ADMIN"
+  state?: string
+  district?: string
+  village?: string
   isActive: boolean
-  lastLogin: string | null
   createdAt: string
   updatedAt: string
+  lastLogin?: string
 }
 
 export interface Statistics {
   totalVillages: number
-  totalChokhlas: number
+  totalChoklas: number
   totalFamilies: number
-  totalMembers: number
+  totalPopulation: number
   activeUsers: number
   recentRegistrations: number
+  completionRate: number
+  growthRate: number
 }
 
 export interface ChokhlaFormData {
   firstName: string
   lastName: string
-  mobileNumber: string
   email: string
-  state: string
-  district: string
+  mobileNumber: string
   password: string
   confirmPassword: string
+  state: string
+  district: string
 }
 
-export interface ProfileData {
-  id: string
-  name: string
+export interface ProfileFormData {
+  firstName: string
+  lastName: string
   email: string
-  role: string
-  createdAt: string
-  lastLogin: string | null
-  permissions: string[]
-  sessionInfo: {
-    ipAddress: string
-    userAgent: string
-    loginTime: string
-  }
+  mobileNumber: string
+  currentPassword?: string
+  newPassword?: string
+  confirmPassword?: string
 }

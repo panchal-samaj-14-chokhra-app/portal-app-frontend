@@ -1,10 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Copy, Check } from "lucide-react"
+import { CheckCircle, X } from "lucide-react"
 
 interface SuccessDialogProps {
   isOpen: boolean
@@ -15,67 +13,41 @@ interface SuccessDialogProps {
 }
 
 export function SuccessDialog({ isOpen, onClose, title, message, details }: SuccessDialogProps) {
-  const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set())
-
-  const copyToClipboard = async (text: string, key: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedItems((prev) => new Set(prev).add(key))
-      setTimeout(() => {
-        setCopiedItems((prev) => {
-          const newSet = new Set(prev)
-          newSet.delete(key)
-          return newSet
-        })
-      }, 2000)
-    } catch (error) {
-      console.error("Failed to copy:", error)
-    }
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-green-700">
-            <CheckCircle className="w-5 h-5" />
-            {title}
-          </DialogTitle>
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <DialogTitle className="text-green-800">{title}</DialogTitle>
+              <DialogDescription className="text-green-600 mt-1">{message}</DialogDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0 h-8 w-8 p-0">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <p className="text-gray-600">{message}</p>
-
-          {details && (
-            <div className="bg-green-50 p-4 rounded-lg space-y-3">
-              <h4 className="font-medium text-green-800">विवरण:</h4>
+        {details && (
+          <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+            <h4 className="font-medium text-green-800 mb-3">विवरण:</h4>
+            <div className="space-y-2">
               {Object.entries(details).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">{key}:</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="font-mono">
-                      {String(value)}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyToClipboard(String(value), key)}
-                      className="h-6 w-6 p-0"
-                    >
-                      {copiedItems.has(key) ? (
-                        <Check className="w-3 h-3 text-green-600" />
-                      ) : (
-                        <Copy className="w-3 h-3" />
-                      )}
-                    </Button>
-                  </div>
+                <div key={key} className="flex justify-between items-center">
+                  <span className="text-sm text-green-700 font-medium">{key}:</span>
+                  <span className="text-sm text-green-600">{String(value)}</span>
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          <Button onClick={onClose} className="w-full bg-green-600 hover:bg-green-700">
-            समझ गया
+        <div className="flex justify-end mt-6">
+          <Button onClick={onClose} className="bg-green-600 hover:bg-green-700">
+            ठीक है
           </Button>
         </div>
       </DialogContent>
