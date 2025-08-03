@@ -1,16 +1,17 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "my-brach-with-handed-code": false
-    }
-  },
-  "github": {
-    "autoAlias": true
-  },
+  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm build",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "framework": "nextjs",
+  "regions": ["iad1"],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api|_next|_static|favicon.ico).*)",
+      "destination": "/"
+    }
+  ]
 }

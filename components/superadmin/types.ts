@@ -1,185 +1,106 @@
-export interface SuperAdminProfile {
+export interface User {
   id: string
-  firstName: string
-  lastName: string
+  name: string
   email: string
-  mobileNumber: string
-  role: "SUPERADMIN"
-  isActive: boolean
-  loginCount: number
-  lastLogin: string | null
+  role: "superadmin" | "chokhla" | "village"
+  status: "active" | "inactive" | "pending"
   createdAt: string
-  updatedAt: string
-}
-
-export interface SuperAdminUser {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  mobileNumber?: string
-  role: "SUPERADMIN" | "ADMIN" | "USER" | "CHOKHLA"
-  isActive: boolean
-  lastLogin: string | null
-  createdAt: string
-  updatedAt: string
-  state?: string
-  district?: string
+  lastLogin?: string
   village?: string
-  avatar?: string
+  chokhla?: string
 }
 
 export interface Village {
   id: string
   name: string
-  state: string
-  district: string
-  pincode: string
-  hasElectricity: boolean
-  hasWaterSupply: boolean
-  hasSchool: boolean
-  hasHealthCenter: boolean
-  hasRoadAccess: boolean
-  latitude?: number
-  longitude?: number
-  familyCount: number
-  populationCount: number
-  isActive: boolean
+  chokhlaId: string
+  chokhlaName: string
+  totalFamilies: number
+  totalMembers: number
+  status: "active" | "inactive"
   createdAt: string
   updatedAt: string
 }
 
 export interface Chokhla {
   id: string
-  firstName: string
-  lastName: string
+  name: string
   email: string
-  mobileNumber: string
-  state: string
-  district: string
-  villageCount: number
-  familyCount: number
-  isActive: boolean
-  lastLogin: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-export interface User {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  mobileNumber: string
-  role: "ADMIN" | "USER"
-  state: string
-  district: string
-  village?: string
-  isActive: boolean
-  lastLogin: string | null
+  phone: string
+  totalVillages: number
+  totalFamilies: number
+  totalMembers: number
+  status: "active" | "inactive"
   createdAt: string
   updatedAt: string
 }
 
 export interface Statistics {
-  totalVillages: number
-  totalChoklas: number
   totalUsers: number
-  totalFamilies: number
-  totalPopulation: number
-  activeVillages: number
-  activeChoklas: number
-  activeUsers: number
-  recentRegistrations: number
-  monthlyGrowth: {
-    villages: number
-    choklas: number
-    users: number
-    families: number
-  }
-  stateDistribution: Array<{
-    state: string
-    villages: number
-    families: number
-    population: number
-  }>
-  facilityStats: {
-    electricity: number
-    waterSupply: number
-    school: number
-    healthCenter: number
-    roadAccess: number
-  }
-}
-
-export interface SuperAdminStats {
-  totalVillages: number
   totalChokhlas: number
-  totalUsers: number
+  totalVillages: number
   totalFamilies: number
-  totalPopulation: number
-  activeVillages: number
-  activeChokhlas: number
+  totalMembers: number
   activeUsers: number
-  recentRegistrations: number
-  monthlyGrowth: {
-    villages: number
-    chokhlas: number
-    users: number
-    families: number
-  }
-  stateDistribution: Array<{
-    state: string
-    villages: number
-    families: number
-    population: number
-  }>
-  facilityStats: {
-    electricity: number
-    waterSupply: number
-    school: number
-    healthCenter: number
-    roadAccess: number
-  }
+  inactiveUsers: number
+  pendingUsers: number
+  recentActivity: ActivityItem[]
 }
 
-export interface ChokhlaFormData {
-  firstName: string
-  lastName: string
-  email: string
-  mobileNumber: string
-  state: string
-  district: string
+export interface ActivityItem {
+  id: string
+  type: "user_created" | "village_added" | "family_registered" | "chokhla_created"
+  description: string
+  timestamp: string
+  user: string
+}
+
+export interface SuperAdminContextType {
+  activeTab: string
+  setActiveTab: (tab: string) => void
+  users: User[]
+  villages: Village[]
+  chokhlas: Chokhla[]
+  statistics: Statistics
+  isLoading: boolean
+  error: string | null
+  refreshData: () => void
+
+  // Dialog states
+  showSuccessDialog: boolean
+  showErrorDialog: boolean
+  successMessage: string
+  errorMessage: string
+  setShowSuccessDialog: (show: boolean) => void
+  setShowErrorDialog: (show: boolean) => void
+  setSuccessMessage: (message: string) => void
+  setErrorMessage: (message: string) => void
 }
 
 export interface ProfileFormData {
-  firstName: string
-  lastName: string
+  name: string
   email: string
-  mobileNumber: string
+  phone: string
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
+export interface UserFormData {
+  name: string
+  email: string
+  role: "chokhla" | "village"
+  village?: string
+  chokhla?: string
+}
+
+export interface ChokhlasFormData {
+  name: string
+  email: string
+  phone: string
 }
 
 export interface VillageFormData {
   name: string
-  state: string
-  district: string
-  pincode: string
-  hasElectricity: boolean
-  hasWaterSupply: boolean
-  hasSchool: boolean
-  hasHealthCenter: boolean
-  hasRoadAccess: boolean
-  latitude?: number
-  longitude?: number
-}
-
-export interface UserFormData {
-  firstName: string
-  lastName: string
-  email: string
-  mobileNumber: string
-  role: "ADMIN" | "USER" | "CHOKHLA"
-  state: string
-  district: string
-  village?: string
+  chokhlaId: string
 }
