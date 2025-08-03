@@ -1,253 +1,179 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { User, Mail, Phone, Shield, Calendar, Activity } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { User, Mail, Phone, Save } from "lucide-react"
 import { useSuperAdmin } from "./providers/superadmin-provider"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-
-const profileSchema = z.object({
-  firstName: z.string().min(1, "पहला नाम आवश्यक है"),
-  lastName: z.string().min(1, "अंतिम नाम आवश्यक है"),
-  email: z.string().email("वैध ईमेल पता दर्ज करें"),
-  mobileNumber: z.string().min(10, "वैध मोबाइल नंबर दर्ज करें"),
-})
-
-type ProfileFormData = z.infer<typeof profileSchema>
 
 export function ProfileManagement() {
   const { profile, isLoadingProfile, handleProfileSubmit, isSubmitting } = useSuperAdmin()
-  const [isEditing, setIsEditing] = useState(false)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      firstName: profile?.firstName || "",
-      lastName: profile?.lastName || "",
-      email: profile?.email || "",
-      mobileNumber: profile?.mobileNumber || "",
-    },
+  const [formData, setFormData] = useState({
+    firstName: profile?.firstName || "",
+    lastName: profile?.lastName || "",
+    email: profile?.email || "",
+    mobileNumber: profile?.mobileNumber || "",
   })
 
-  const onSubmit = async (data: ProfileFormData) => {
-    await handleProfileSubmit(data)
-    setIsEditing(false)
-    reset(data)
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
   }
 
-  const handleCancel = () => {
-    setIsEditing(false)
-    reset({
-      firstName: profile?.firstName || "",
-      lastName: profile?.lastName || "",
-      email: profile?.email || "",
-      mobileNumber: profile?.mobileNumber || "",
-    })
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await handleProfileSubmit(formData)
   }
 
   if (isLoadingProfile) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="bg-white/70 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-          <div className="lg:col-span-2">
-            <Card className="bg-white/70 backdrop-blur-sm">
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">प्रोफाइल उपलब्ध नहीं</h3>
-          <p className="text-gray-500">प्रोफाइल की जानकारी लोड करने में समस्या हुई है।</p>
-        </div>
+        <h2 className="text-2xl font-bold">प्रोफाइल प्रबंधन</h2>
+        <Card className="animate-pulse">
+          <CardHeader>
+            <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">प्रोफाइल प्रबंधन</h1>
-        <p className="text-gray-600 mt-1">अपनी व्यक्तिगत जानकारी देखें और अपडेट करें</p>
-      </div>
+      <h2 className="text-2xl font-bold text-gray-900">प्रोफाइल प्रबंधन</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Summary */}
-        <Card className="bg-white/70 backdrop-blur-sm border-white/20">
+        {/* Profile Info Card */}
+        <Card>
           <CardHeader>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 ring-4 ring-blue-100">
-                <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.firstName} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-lg font-semibold">
-                  {profile.firstName.charAt(0)}
-                  {profile.lastName.charAt(0)}
+            <CardTitle>प्रोफाइल जानकारी</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col items-center space-y-4">
+              <Avatar className="h-20 w-20">
+                <AvatarFallback className="text-lg">
+                  {profile?.firstName?.[0]}
+                  {profile?.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {profile.firstName} {profile.lastName}
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">
+                  {profile?.firstName} {profile?.lastName}
                 </h3>
-                <Badge className="bg-gradient-to-r from-red-500 to-pink-600 text-white">
-                  <Shield className="w-3 h-3 mr-1" />
-                  {profile.role}
-                </Badge>
+                <p className="text-sm text-gray-600">सुपर एडमिन</p>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-600">{profile.email}</span>
+
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-gray-400" />
+                <span className="text-sm">{profile?.email}</span>
               </div>
-              {profile.mobileNumber && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-600">{profile.mobileNumber}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-600">
-                  सदस्य बने: {new Date(profile.createdAt).toLocaleDateString("hi-IN")}
-                </span>
+              <div className="flex items-center space-x-3">
+                <Phone className="h-4 w-4 text-gray-400" />
+                <span className="text-sm">{profile?.mobileNumber}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Activity className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-600">
-                  अंतिम लॉगिन: {profile.lastLogin ? new Date(profile.lastLogin).toLocaleDateString("hi-IN") : "कभी नहीं"}
-                </span>
+              <div className="flex items-center space-x-3">
+                <User className="h-4 w-4 text-gray-400" />
+                <span className="text-sm">सुपर एडमिन</span>
               </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <p className="text-xs text-gray-500">
+                <strong>अंतिम लॉगिन:</strong>{" "}
+                {profile?.lastLogin ? new Date(profile.lastLogin).toLocaleDateString("hi-IN") : "अज्ञात"}
+              </p>
+              <p className="text-xs text-gray-500">
+                <strong>खाता बनाया गया:</strong>{" "}
+                {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("hi-IN") : "अज्ञात"}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Profile Form */}
-        <div className="lg:col-span-2">
-          <Card className="bg-white/70 backdrop-blur-sm border-white/20">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>व्यक्तिगत जानकारी</CardTitle>
-                  <CardDescription>अपनी प्रोफाइल की जानकारी अपडेट करें</CardDescription>
+        {/* Edit Profile Form */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>प्रोफाइल संपादित करें</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">पहला नाम</Label>
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    placeholder="पहला नाम दर्ज करें"
+                    required
+                  />
                 </div>
-                {!isEditing && (
-                  <Button onClick={() => setIsEditing(true)} variant="outline">
-                    संपादित करें
-                  </Button>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">अंतिम नाम</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    placeholder="अंतिम नाम दर्ज करें"
+                    required
+                  />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">पहला नाम *</Label>
-                    <Input
-                      id="firstName"
-                      {...register("firstName")}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                    {errors.firstName && <p className="text-sm text-red-600">{errors.firstName.message}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">अंतिम नाम *</Label>
-                    <Input
-                      id="lastName"
-                      {...register("lastName")}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                    {errors.lastName && <p className="text-sm text-red-600">{errors.lastName.message}</p>}
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">ईमेल पता *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register("email")}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                  {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">ईमेल पता</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  placeholder="ईमेल पता दर्ज करें"
+                  required
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="mobileNumber">मोबाइल नंबर *</Label>
-                  <Input
-                    id="mobileNumber"
-                    {...register("mobileNumber")}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                  {errors.mobileNumber && <p className="text-sm text-red-600">{errors.mobileNumber.message}</p>}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="mobileNumber">मोबाइल नंबर</Label>
+                <Input
+                  id="mobileNumber"
+                  value={formData.mobileNumber}
+                  onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
+                  placeholder="मोबाइल नंबर दर्ज करें"
+                  required
+                />
+              </div>
 
-                {isEditing && (
-                  <div className="flex justify-end gap-3 pt-4">
-                    <Button type="button" variant="outline" onClick={handleCancel}>
-                      रद्द करें
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                    >
-                      {isSubmitting ? "सेव हो रहा है..." : "सेव करें"}
-                    </Button>
-                  </div>
-                )}
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    "सेव हो रहा है..."
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      प्रोफाइल सेव करें
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

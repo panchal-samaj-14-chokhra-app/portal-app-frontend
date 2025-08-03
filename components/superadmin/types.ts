@@ -1,36 +1,51 @@
 export interface User {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  role: "superadmin" | "chokhla" | "village"
-  status: "active" | "inactive" | "pending"
-  createdAt: string
-  lastLogin?: string
+  mobileNumber: string
+  role: "SUPERADMIN" | "ADMIN" | "USER"
+  state?: string
+  district?: string
   village?: string
-  chokhla?: string
+  isActive: boolean
+  lastLogin: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Village {
   id: string
   name: string
-  chokhlaId: string
-  chokhlaName: string
-  totalFamilies: number
-  totalMembers: number
-  status: "active" | "inactive"
+  state: string
+  district: string
+  pincode: string
+  hasElectricity: boolean
+  hasWaterSupply: boolean
+  hasSchool: boolean
+  hasHealthCenter: boolean
+  hasRoadAccess: boolean
+  latitude?: number
+  longitude?: number
+  familyCount: number
+  populationCount: number
+  isActive: boolean
   createdAt: string
   updatedAt: string
 }
 
 export interface Chokhla {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  phone: string
-  totalVillages: number
-  totalFamilies: number
-  totalMembers: number
-  status: "active" | "inactive"
+  mobileNumber: string
+  state: string
+  district: string
+  villageCount: number
+  familyCount: number
+  isActive: boolean
+  lastLogin: string | null
   createdAt: string
   updatedAt: string
 }
@@ -78,29 +93,42 @@ export interface SuperAdminContextType {
 }
 
 export interface ProfileFormData {
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  phone: string
-  currentPassword: string
-  newPassword: string
-  confirmPassword: string
+  mobileNumber: string
 }
 
 export interface UserFormData {
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  role: "chokhla" | "village"
+  mobileNumber: string
+  role: "ADMIN" | "USER"
+  state: string
+  district: string
   village?: string
-  chokhla?: string
 }
 
-export interface ChokhlasFormData {
-  name: string
+export interface ChokhlaFormData {
+  firstName: string
+  lastName: string
   email: string
-  phone: string
+  mobileNumber: string
+  state: string
+  district: string
 }
 
 export interface VillageFormData {
   name: string
-  chokhlaId: string
+  state: string
+  district: string
+  pincode: string
+  hasElectricity: boolean
+  hasWaterSupply: boolean
+  hasSchool: boolean
+  hasHealthCenter: boolean
+  hasRoadAccess: boolean
+  latitude?: number
+  longitude?: number
 }

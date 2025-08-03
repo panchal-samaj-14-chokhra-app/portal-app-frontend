@@ -1,140 +1,97 @@
 "use client"
 
-import { useSuperAdmin } from "@/components/superadmin/providers/superadmin-provider"
-import { VillageManagement } from "@/components/superadmin/village-management"
-import { ChokhlaManagement } from "@/components/superadmin/chokhla-management"
-import { UserManagement } from "@/components/superadmin/user-management"
-import { StatisticsManagement } from "@/components/superadmin/statistics-management"
-import { ProfileManagement } from "@/components/superadmin/profile-management"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart3, Users, MapPin, Building2, TrendingUp, Activity } from "lucide-react"
+import { SuperAdminHeader } from "../superadmin-header"
+import { SuperAdminSidebar } from "../superadmin-sidebar"
+import { VillageManagement } from "../village-management"
+import { ChokhlaManagement } from "../chokhla-management"
+import { UserManagement } from "../user-management"
+import { StatisticsManagement } from "../statistics-management"
+import { ProfileManagement } from "../profile-management"
+import { useSuperAdmin } from "../providers/superadmin-provider"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BarChart3, Users, MapPin, Home } from "lucide-react"
 
-function DashboardView() {
+function DashboardOverview() {
+  const { stats, isLoadingStats } = useSuperAdmin()
+
+  if (isLoadingStats) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">डैशबोर्ड</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900">डैशबोर्ड</h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Villages</CardTitle>
-            <MapPin className="h-4 w-4" />
+            <CardTitle className="text-sm font-medium">कुल गांव</CardTitle>
+            <MapPin className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-blue-100">+2 from last month</p>
+            <div className="text-2xl font-bold text-blue-600">{stats?.totalVillages || 0}</div>
+            <p className="text-xs text-gray-600">सक्रिय: {stats?.activeVillages || 0}</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Chokhlas</CardTitle>
-            <Building2 className="h-4 w-4" />
+            <CardTitle className="text-sm font-medium">कुल चोखला</CardTitle>
+            <Users className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-green-100">+1 from last month</p>
+            <div className="text-2xl font-bold text-green-600">{stats?.totalChokhlas || 0}</div>
+            <p className="text-xs text-gray-600">सक्रिय: {stats?.activeChokhlas || 0}</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4" />
+            <CardTitle className="text-sm font-medium">कुल परिवार</CardTitle>
+            <Home className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-purple-100">+12 from last month</p>
+            <div className="text-2xl font-bold text-purple-600">{stats?.totalFamilies || 0}</div>
+            <p className="text-xs text-gray-600">पंजीकृत परिवार</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-            <Activity className="h-4 w-4" />
+            <CardTitle className="text-sm font-medium">कुल उपयोगकर्ता</CardTitle>
+            <BarChart3 className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-orange-100">+5 from last hour</p>
+            <div className="text-2xl font-bold text-orange-600">{stats?.totalUsers || 0}</div>
+            <p className="text-xs text-gray-600">सक्रिय: {stats?.activeUsers || 0}</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white/70 backdrop-blur-sm border-white/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>Latest system activities and updates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">New village added</p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">User registration completed</p>
-                  <p className="text-xs text-gray-500">4 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">System backup completed</p>
-                  <p className="text-xs text-gray-500">6 hours ago</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/70 backdrop-blur-sm border-white/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              System Health
-            </CardTitle>
-            <CardDescription>Current system performance metrics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>CPU Usage</span>
-                  <span>45%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: "45%" }}></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Memory Usage</span>
-                  <span>62%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: "62%" }}></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Storage Usage</span>
-                  <span>38%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-purple-500 h-2 rounded-full" style={{ width: "38%" }}></div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>स्वागत है सुपर एडमिन पैनल में</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">यहाँ आप पूरे सिस्टम का प्रबंधन कर सकते हैं। साइडबार से विभिन्न सेक्शन्स में जा सकते हैं।</p>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -142,20 +99,32 @@ function DashboardView() {
 export function SuperAdminContent() {
   const { activeView } = useSuperAdmin()
 
-  switch (activeView) {
-    case "dashboard":
-      return <DashboardView />
-    case "villages":
-      return <VillageManagement />
-    case "chokhlas":
-      return <ChokhlaManagement />
-    case "users":
-      return <UserManagement />
-    case "statistics":
-      return <StatisticsManagement />
-    case "profile":
-      return <ProfileManagement />
-    default:
-      return <DashboardView />
+  const renderContent = () => {
+    switch (activeView) {
+      case "dashboard":
+        return <DashboardOverview />
+      case "villages":
+        return <VillageManagement />
+      case "chokhlas":
+        return <ChokhlaManagement />
+      case "users":
+        return <UserManagement />
+      case "statistics":
+        return <StatisticsManagement />
+      case "profile":
+        return <ProfileManagement />
+      default:
+        return <DashboardOverview />
+    }
   }
+
+  return (
+    <div className="flex h-screen">
+      <SuperAdminSidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <SuperAdminHeader />
+        <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
+      </div>
+    </div>
+  )
 }
