@@ -1,32 +1,44 @@
 "use client"
+
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { TABS } from "./constants"
-import type { TabKey } from "./types"
+import { MapPin, Users, BarChart3, UserCog, User } from "lucide-react"
 
 interface SuperAdminSidebarProps {
-  activeTab: TabKey
-  onTabChange: (tab: TabKey) => void
+  activeTab: string
+  onTabChange: (tab: string) => void
 }
+
+const navigationItems = [
+  { id: "villages", label: "गांव प्रबंधन", icon: MapPin },
+  { id: "chokhlas", label: "चोखला प्रबंधन", icon: Users },
+  { id: "statistics", label: "आंकड़े", icon: BarChart3 },
+  { id: "users", label: "उपयोगकर्ता प्रबंधन", icon: UserCog },
+  { id: "profile", label: "प्रोफाइल", icon: User },
+]
 
 export function SuperAdminSidebar({ activeTab, onTabChange }: SuperAdminSidebarProps) {
   return (
-    <aside className="w-full md:w-64 mb-6 md:mb-0">
-      <nav className="bg-white rounded-lg shadow border border-orange-200 p-4 flex md:flex-col gap-2">
-        {TABS.map((tab) => (
-          <Button
-            key={tab.key}
-            variant={activeTab === tab.key ? "default" : "ghost"}
-            onClick={() => onTabChange(tab.key)}
-            className={`w-full justify-start text-base font-semibold transition-all duration-200 ${
-              activeTab === tab.key
-                ? "bg-orange-500 text-white shadow-md"
-                : "text-orange-700 hover:bg-orange-50 hover:text-orange-800"
-            }`}
-          >
-            {tab.label}
-          </Button>
-        ))}
+    <div className="w-64 bg-white border-r border-gray-200 h-full">
+      <nav className="p-4 space-y-2">
+        {navigationItems.map((item) => {
+          const Icon = item.icon
+          return (
+            <Button
+              key={item.id}
+              variant={activeTab === item.id ? "default" : "ghost"}
+              className={cn(
+                "w-full justify-start gap-3 h-11",
+                activeTab === item.id ? "bg-blue-600 text-white hover:bg-blue-700" : "text-gray-700 hover:bg-gray-100",
+              )}
+              onClick={() => onTabChange(item.id)}
+            >
+              <Icon className="w-5 h-5" />
+              {item.label}
+            </Button>
+          )
+        })}
       </nav>
-    </aside>
+    </div>
   )
 }

@@ -1,294 +1,328 @@
 "use client"
 
-import type React from "react"
-import { Button } from "@/components/ui/button"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { X, Save, AlertCircle } from "lucide-react"
-import type { ChokhlaFormData, FormErrors } from "./types"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { UserPlus, Loader2, Eye, EyeOff } from "lucide-react"
+import { STATES_DISTRICTS } from "./constants"
+import type { ChokhlaFormData } from "./types"
+
+const chokhlaSchema = z
+  .object({
+    firstName: z.string().min(2, "पहला नाम कम से कम 2 अक्षर का होना चाहिए"),
+    lastName: z.string().min(2, "अंतिम नाम कम से कम 2 अक्षर का होना चाहिए"),
+    mobileNumber: z.string().regex(/^[6-9]\d{9}$/, "मोबाइल नंबर 10 अंकों का होना चाहिए और 6-9 से शुरू होना चाहिए"),
+    email: z.string().email("वैध ईमेल पता दर्ज करें"),
+    state: z.string().min(1, "राज्य चुनना आवश्यक है"),
+    district: z.string().min(1, "जिला चुनना आवश्यक है"),
+    password: z
+      .string()
+      .min(8, "पासवर्ड कम से कम 8 अक्षर का होना चाहिए")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        "पासवर्ड में कम से कम एक छोटा अक्षर, एक बड़ा अक्षर, एक संख्या और एक विशेष चिह्न होना चाहिए",
+      ),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "पासवर्ड मेल नहीं खाते",
+    path: ["confirmPassword"],
+  })
 
 interface ChokhlaFormProps {
-  formData: ChokhlaFormData
-  errors: FormErrors
-  isSubmitting: boolean
-  onSubmit: (e: React.FormEvent) => void
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  onClose: () => void
+  onSubmit: (data: ChokhlaFormData) => Promise<void>
+  isLoading: boolean
+  onCancel: () => void
 }
 
-export function ChokhlaForm({ formData, errors, isSubmitting, onSubmit, onChange, onClose }: ChokhlaFormProps) {
+export function ChokhlaForm({ onSubmit, isLoading, onCancel }: ChokhlaFormProps) {
+  const [districts, setDistricts] = useState<string[]>([])
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const form = useForm<ChokhlaFormData>({
+    resolver: zodResolver(chokhlaSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      mobileNumber: "",
+      email: "",
+      state: "",
+      district: "",
+      password: "",
+      confirmPassword: "",
+    },
+  })
+
+  const selectedState = form.watch("state")
+
+  useEffect(() => {
+    if (selectedState && STATES_DISTRICTS[selectedState]) {
+      setDistricts(STATES_DISTRICTS[selectedState])
+      form.setValue("district", "")
+    } else {
+      setDistricts([])
+    }
+  }, [selectedState, form])
+
+  const handleSubmit = async (data: ChokhlaFormData) => {
+    try {
+      await onSubmit(data)
+      form.reset()
+    } catch (error) {
+      console.error("Form submission error:", error)
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col m-4">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100">
-          <h3 className="text-2xl font-bold text-orange-800 flex items-center gap-2">
-            <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm">+</span>
-            </div>
-            नया चौकला जोड़ें
-          </h3>
-          <Button variant="ghost" size="sm" onClick={onClose} className="text-orange-600 hover:bg-orange-100">
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Form Content */}
-        <div className="overflow-y-auto flex-1 p-6">
-          <form onSubmit={onSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-orange-800 border-b border-orange-200 pb-2">
-                  बुनियादी जानकारी
-                </h4>
-
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-orange-700 font-medium">
-                    चौकला का नाम *
-                  </Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.name ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="चौकला का नाम दर्ज करें"
-                  />
-                  {errors.name && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.name}
-                    </div>
+    <Card className="max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-blue-800">
+          <UserPlus className="w-5 h-5" />
+          नया चोखला पंजीकृत करें
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Personal Information */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-medium text-gray-800 mb-4">व्यक्तिगत जानकारी</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  name="firstName"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        पहला नाम <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="पहला नाम दर्ज करें" className="border-gray-300" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="adhyaksh" className="text-orange-700 font-medium">
-                    अध्यक्ष का नाम *
-                  </Label>
-                  <Input
-                    id="adhyaksh"
-                    name="adhyaksh"
-                    value={formData.adhyaksh}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.adhyaksh ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="अध्यक्ष का नाम दर्ज करें"
-                  />
-                  {errors.adhyaksh && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.adhyaksh}
-                    </div>
+                <FormField
+                  name="lastName"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        अंतिम नाम <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="अंतिम नाम दर्ज करें" className="border-gray-300" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="contactNumber" className="text-orange-700 font-medium">
-                    संपर्क नंबर *
-                  </Label>
-                  <Input
-                    id="contactNumber"
-                    name="contactNumber"
-                    value={formData.contactNumber}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.contactNumber ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="10 अंकों का फोन नंबर"
-                    maxLength={10}
-                  />
-                  {errors.contactNumber && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.contactNumber}
-                    </div>
+                <FormField
+                  name="mobileNumber"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        मोबाइल नंबर <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="9876543210" maxLength={10} className="border-gray-300" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-              </div>
+                />
 
-              {/* Location Information */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-orange-800 border-b border-orange-200 pb-2">
-                  स्थान की जानकारी
-                </h4>
-
-                <div className="space-y-2">
-                  <Label htmlFor="state" className="text-orange-700 font-medium">
-                    राज्य *
-                  </Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.state ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="राज्य का नाम दर्ज करें"
-                  />
-                  {errors.state && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.state}
-                    </div>
+                <FormField
+                  name="email"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        ईमेल <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" placeholder="example@email.com" className="border-gray-300" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="district" className="text-orange-700 font-medium">
-                    जिला *
-                  </Label>
-                  <Input
-                    id="district"
-                    name="district"
-                    value={formData.district}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.district ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="जिले का नाम दर्ज करें"
-                  />
-                  {errors.district && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.district}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="villageName" className="text-orange-700 font-medium">
-                    गांव का नाम *
-                  </Label>
-                  <Input
-                    id="villageName"
-                    name="villageName"
-                    value={formData.villageName}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.villageName ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="गांव का नाम दर्ज करें"
-                  />
-                  {errors.villageName && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.villageName}
-                    </div>
-                  )}
-                </div>
+                />
               </div>
             </div>
 
-            {/* Account Information */}
-            <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-orange-800 border-b border-orange-200 pb-2">खाता की जानकारी</h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-orange-700 font-medium">
-                    ईमेल पता *
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.email ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="example@email.com"
-                  />
-                  {errors.email && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.email}
-                    </div>
+            {/* Location Information */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-medium text-blue-800 mb-4">स्थान की जानकारी</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  name="state"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        राज्य <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="border-gray-300">
+                            <SelectValue placeholder="राज्य चुनें" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.keys(STATES_DISTRICTS).map((state) => (
+                            <SelectItem key={state} value={state}>
+                              {state}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-orange-700 font-medium">
-                    पासवर्ड *
-                  </Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.password ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="मजबूत पासवर्ड दर्ज करें"
-                  />
-                  {errors.password && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.password}
-                    </div>
+                <FormField
+                  name="district"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        जिला <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
+                        <FormControl>
+                          <SelectTrigger className="border-gray-300">
+                            <SelectValue placeholder="जिला चुनें" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {districts.map((district) => (
+                            <SelectItem key={district} value={district}>
+                              {district}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="repeatPassword" className="text-orange-700 font-medium">
-                    पासवर्ड दोबारा *
-                  </Label>
-                  <Input
-                    id="repeatPassword"
-                    name="repeatPassword"
-                    type="password"
-                    value={formData.repeatPassword}
-                    onChange={onChange}
-                    className={`border-orange-200 focus:border-orange-400 focus:ring-orange-400 ${
-                      errors.repeatPassword ? "border-red-400 focus:border-red-400" : ""
-                    }`}
-                    placeholder="पासवर्ड दोबारा दर्ज करें"
-                  />
-                  {errors.repeatPassword && (
-                    <div className="flex items-center gap-1 text-red-600 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.repeatPassword}
-                    </div>
-                  )}
-                </div>
+                />
               </div>
+            </div>
+
+            {/* Security Information */}
+            <div className="bg-red-50 p-4 rounded-lg">
+              <h3 className="font-medium text-red-800 mb-4">सुरक्षा जानकारी</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  name="password"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        पासवर्ड <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="मजबूत पासवर्ड दर्ज करें"
+                            className="border-gray-300 pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  name="confirmPassword"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        पासवर्ड पुष्टि <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="पासवर्ड दोबारा दर्ज करें"
+                            className="border-gray-300 pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                className="flex-1 bg-transparent"
+                disabled={isLoading}
+              >
+                रद्द करें
+              </Button>
+              <Button type="submit" disabled={isLoading} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    पंजीकृत कर रहे हैं...
+                  </>
+                ) : (
+                  "चोखला पंजीकृत करें"
+                )}
+              </Button>
             </div>
           </form>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t border-orange-200 bg-gray-50">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="border-orange-300 text-orange-700 hover:bg-orange-50 bg-transparent"
-          >
-            रद्द करें
-          </Button>
-          <Button onClick={onSubmit} disabled={isSubmitting} className="bg-orange-600 hover:bg-orange-700 text-white">
-            {isSubmitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                सहेज रहे हैं...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                सहेजें
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
+        </Form>
+      </CardContent>
+    </Card>
   )
 }

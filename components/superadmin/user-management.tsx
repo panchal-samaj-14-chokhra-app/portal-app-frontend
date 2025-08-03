@@ -1,142 +1,227 @@
 "use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Users, Mail, Calendar, Shield } from "lucide-react"
-import type { User } from "./types"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { UserCog, Shield, Users, UserIcon, CheckCircle, XCircle } from "lucide-react"
+import { USER_ROLES } from "./constants"
+import type { User as UserType } from "./types"
 
 interface UserManagementProps {
-  users: User[]
-  isLoading: boolean
-  error?: string
-  onToggleActive: (userId: string, current: boolean) => void
+  isLoading?: boolean
 }
 
-export function UserManagement({ users, isLoading, error, onToggleActive }: UserManagementProps) {
-  if (error) {
+export function UserManagement({ isLoading = false }: UserManagementProps) {
+  const [users, setUsers] = useState<UserType[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true)
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        // Mock data
+        const mockUsers: UserType[] = [
+          {
+            id: "1",
+            name: "राम पटेल",
+            email: "ram.patel@example.com",
+            role: "CHOKHLA",
+            isActive: true,
+            lastLogin: "2024-01-15T10:30:00Z",
+            createdAt: "2024-01-10T08:00:00Z",
+            updatedAt: "2024-01-15T10:30:00Z",
+          },
+          {
+            id: "2",
+            name: "श्याम शर्मा",
+            email: "shyam.sharma@example.com",
+            role: "CHOKHLA",
+            isActive: false,
+            lastLogin: "2024-01-12T14:20:00Z",
+            createdAt: "2024-01-08T09:15:00Z",
+            updatedAt: "2024-01-12T14:20:00Z",
+          },
+          {
+            id: "3",
+            name: "गीता देवी",
+            email: "geeta.devi@example.com",
+            role: "ADMIN",
+            isActive: true,
+            lastLogin: "2024-01-16T16:45:00Z",
+            createdAt: "2024-01-05T11:30:00Z",
+            updatedAt: "2024-01-16T16:45:00Z",
+          },
+        ]
+
+        setUsers(mockUsers)
+      } catch (error) {
+        console.error("Error fetching users:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [])
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case "SUPER_ADMIN":
+        return <Shield className="w-4 h-4" />
+      case "ADMIN":
+        return <UserCog className="w-4 h-4" />
+      case "CHOKHLA":
+        return <Users className="w-4 h-4" />
+      default:
+        return <UserIcon className="w-4 h-4" />
+    }
+  }
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "SUPER_ADMIN":
+        return "bg-purple-100 text-purple-800"
+      case "ADMIN":
+        return "bg-blue-100 text-blue-800"
+      case "CHOKHLA":
+        return "bg-green-100 text-green-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  if (loading || isLoading) {
     return (
-      <Card className="mb-8">
-        <CardContent className="p-8 text-center">
-          <div className="text-red-600 mb-4">❌ डेटा लोड करने में त्रुटि</div>
-          <p className="text-gray-600">{error}</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-2" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
-  const getRoleBadge = (role: string) => {
-    const roleConfig = {
-      SUPER_ADMIN: { label: "सुपर एडमिन", variant: "destructive" as const },
-      CHOKHLA_ADMIN: { label: "चौकला एडमिन", variant: "default" as const },
-      VILLAGE_ADMIN: { label: "गांव एडमिन", variant: "secondary" as const },
-    }
-
-    const config = roleConfig[role as keyof typeof roleConfig] || { label: role, variant: "outline" as const }
-    return <Badge variant={config.variant}>{config.label}</Badge>
-  }
-
   return (
-    <Card className="mb-8 shadow-lg border-orange-200">
-      <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
-        <CardTitle className="text-orange-800 flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          यूज़र प्रबंधन
-        </CardTitle>
-        <p className="text-sm text-orange-600">कुल यूज़र: {users?.length || 0}</p>
-      </CardHeader>
-      <CardContent className="p-6">
-        {isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-[200px]" />
-                  <Skeleton className="h-4 w-[150px]" />
-                </div>
-                <Skeleton className="h-6 w-12" />
-              </div>
-            ))}
-          </div>
-        ) : users?.length === 0 ? (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">कोई यूज़र नहीं मिला</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] bg-white border border-orange-200 rounded-lg shadow">
-              <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    यूज़र जानकारी
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">भूमिका</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">स्थिति</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    निर्माण तिथि
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">कार्रवाई</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-orange-100">
-                {users?.map((user, index) => (
-                  <tr
-                    key={user.id}
-                    className={`hover:bg-orange-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-orange-25"}`}
-                  >
-                    <td className="px-4 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                          <span className="text-orange-600 font-semibold text-sm">
-                            {user.fullName?.charAt(0)?.toUpperCase() || "U"}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-orange-900">{user.fullName}</div>
-                          <div className="flex items-center gap-1 text-xs text-orange-600">
-                            <Mail className="w-3 h-3" />
-                            {user.email}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">उपयोगकर्ता प्रबंधन</h2>
+          <p className="text-gray-600">सभी पंजीकृत उपयोगकर्ताओं की जानकारी</p>
+        </div>
+        <Badge variant="secondary" className="text-lg px-3 py-1">
+          कुल उपयोगकर्ता: {users.length}
+        </Badge>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCog className="w-5 h-5" />
+            उपयोगकर्ता सूची
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {users.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <UserCog className="w-12 h-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">कोई उपयोगकर्ता नहीं मिला</h3>
+              <p className="text-gray-500 text-center">अभी तक कोई उपयोगकर्ता पंजीकृत नहीं है।</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>उपयोगकर्ता</TableHead>
+                    <TableHead>भूमिका</TableHead>
+                    <TableHead>स्थिति</TableHead>
+                    <TableHead>अंतिम लॉगिन</TableHead>
+                    <TableHead>पंजीकरण दिनांक</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            {getRoleIcon(user.role)}
                           </div>
-                          <div className="text-xs text-gray-500 font-mono mt-1">ID: {user.id.slice(0, 8)}...</div>
+                          <div>
+                            <p className="font-medium text-gray-900">{user.name}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-orange-500" />
-                        {getRoleBadge(user.globalRole)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${user.isActive ? "bg-green-500" : "bg-red-500"}`} />
-                        <span className={`text-sm ${user.isActive ? "text-green-700" : "text-red-700"}`}>
-                          {user.isActive ? "सक्रिय" : "निष्क्रिय"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getRoleBadgeColor(user.role)}>
+                          {USER_ROLES[user.role as keyof typeof USER_ROLES]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.isActive ? (
+                          <Badge className="bg-green-100 text-green-800">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            सक्रिय
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-red-100 text-red-800">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            निष्क्रिय
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {user.lastLogin ? (
+                          <span className="text-sm text-gray-600">
+                            {new Date(user.lastLogin).toLocaleDateString("hi-IN")}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">कभी नहीं</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
+                          {new Date(user.createdAt).toLocaleDateString("hi-IN")}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1 text-sm text-orange-700">
-                        <Calendar className="w-4 h-4" />
-                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString("hi-IN") : "-"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <Switch
-                        checked={user.isActive}
-                        onCheckedChange={() => onToggleActive(user.id, user.isActive)}
-                        className="data-[state=checked]:bg-green-600"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

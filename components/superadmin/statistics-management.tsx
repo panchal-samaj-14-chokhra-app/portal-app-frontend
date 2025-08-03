@@ -1,112 +1,178 @@
 "use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart3, Users, Building2, MapPin, TrendingUp } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { BarChart3, MapPin, Users, Home, UserCheck, TrendingUp } from "lucide-react"
+import type { Statistics } from "./types"
 
 interface StatisticsManagementProps {
-  villageCount?: number
-  chokhlaCount?: number
-  userCount?: number
+  isLoading?: boolean
 }
 
-export function StatisticsManagement({ villageCount = 0, chokhlaCount = 0, userCount = 0 }: StatisticsManagementProps) {
-  const stats = [
+export function StatisticsManagement({ isLoading = false }: StatisticsManagementProps) {
+  const [statistics, setStatistics] = useState<Statistics | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        setLoading(true)
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        // Mock data
+        const mockStatistics: Statistics = {
+          totalVillages: 25,
+          totalChokhlas: 8,
+          totalFamilies: 1250,
+          totalMembers: 5000,
+          activeUsers: 15,
+          recentRegistrations: 12,
+        }
+
+        setStatistics(mockStatistics)
+      } catch (error) {
+        console.error("Error fetching statistics:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStatistics()
+  }, [])
+
+  const statsCards = [
     {
       title: "कुल गांव",
-      value: villageCount,
+      value: statistics?.totalVillages || 0,
       icon: MapPin,
       color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
+      bgColor: "bg-blue-100",
     },
     {
-      title: "कुल चौकला",
-      value: chokhlaCount,
-      icon: Building2,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-200",
-    },
-    {
-      title: "कुल यूज़र",
-      value: userCount,
+      title: "कुल चोखला",
+      value: statistics?.totalChokhlas || 0,
       icon: Users,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200",
+      color: "text-green-600",
+      bgColor: "bg-green-100",
     },
     {
-      title: "वृद्धि दर",
-      value: "+12%",
-      icon: TrendingUp,
+      title: "कुल परिवार",
+      value: statistics?.totalFamilies || 0,
+      icon: Home,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
+    },
+    {
+      title: "कुल सदस्य",
+      value: statistics?.totalMembers || 0,
+      icon: UserCheck,
       color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      borderColor: "border-orange-200",
+      bgColor: "bg-orange-100",
+    },
+    {
+      title: "सक्रिय उपयोगकर्ता",
+      value: statistics?.activeUsers || 0,
+      icon: UserCheck,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-100",
+    },
+    {
+      title: "हाल के पंजीकरण",
+      value: statistics?.recentRegistrations || 0,
+      icon: TrendingUp,
+      color: "text-red-600",
+      bgColor: "bg-red-100",
     },
   ]
 
+  if (loading || isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-8 rounded" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <Card className="mb-8 shadow-lg border-orange-200">
-      <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
-        <CardTitle className="text-orange-800 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          आँकड़े और रिपोर्ट
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <Card key={index} className={`${stat.borderColor} border-2 hover:shadow-md transition-shadow`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                      <p className={`text-2xl font-bold ${stat.color}`}>
-                        {typeof stat.value === "number" ? stat.value.toLocaleString("hi-IN") : stat.value}
-                      </p>
-                    </div>
-                    <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">आंकड़े और रिपोर्ट</h2>
+        <p className="text-gray-600">सिस्टम के सभी आंकड़ों का विस्तृत विवरण</p>
+      </div>
 
-        {/* Placeholder for future charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-gray-700 text-lg">मासिक वृद्धि</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="h-48 flex items-center justify-center bg-gray-50 rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">चार्ट जल्द ही उपलब्ध होगा</p>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {statsCards.map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <Card key={index} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600">{stat.title}</CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <Icon className={`w-4 h-4 ${stat.color}`} />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString("hi-IN")}</div>
+                <p className="text-xs text-gray-500 mt-1">कुल पंजीकृत संख्या</p>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
 
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-gray-700 text-lg">क्षेत्रीय वितरण</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="h-48 flex items-center justify-center bg-gray-50 rounded-lg">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">मैप व्यू जल्द ही उपलब्ध होगा</p>
-                </div>
+      {/* Charts Placeholder */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              मासिक पंजीकरण ट्रेंड
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">चार्ट जल्द ही उपलब्ध होगा</p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              राज्यवार वितरण
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">मैप व्यू जल्द ही उपलब्ध होगा</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }

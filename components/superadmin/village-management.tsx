@@ -1,111 +1,197 @@
 "use client"
-import { useRouter } from "next/navigation"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MapPin, Users, Eye } from "lucide-react"
+import { MapPin, Users, Home, Zap, Droplets, GraduationCap, Heart, RouteIcon as Road } from "lucide-react"
 import type { Village } from "./types"
 
 interface VillageManagementProps {
-  villages: Village[]
-  isLoading: boolean
-  error?: string
+  isLoading?: boolean
 }
 
-export function VillageManagement({ villages, isLoading, error }: VillageManagementProps) {
-  const router = useRouter()
+export function VillageManagement({ isLoading = false }: VillageManagementProps) {
+  const [villages, setVillages] = useState<Village[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (error) {
+  useEffect(() => {
+    const fetchVillages = async () => {
+      try {
+        setLoading(true)
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        // Mock data
+        const mockVillages: Village[] = [
+          {
+            id: "1",
+            name: "रामपुर",
+            state: "गुजरात",
+            district: "अहमदाबाद",
+            pincode: "380001",
+            totalFamilies: 45,
+            totalMembers: 180,
+            hasElectricity: true,
+            hasWaterSupply: true,
+            hasSchool: true,
+            hasHealthCenter: false,
+            hasRoadAccess: true,
+            createdAt: "2024-01-15",
+            updatedAt: "2024-01-15",
+          },
+          {
+            id: "2",
+            name: "श्यामपुर",
+            state: "राजस्थान",
+            district: "जयपुर",
+            pincode: "302001",
+            totalFamilies: 32,
+            totalMembers: 128,
+            hasElectricity: true,
+            hasWaterSupply: false,
+            hasSchool: false,
+            hasHealthCenter: true,
+            hasRoadAccess: true,
+            createdAt: "2024-01-20",
+            updatedAt: "2024-01-20",
+          },
+        ]
+
+        setVillages(mockVillages)
+      } catch (error) {
+        console.error("Error fetching villages:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchVillages()
+  }, [])
+
+  const getFacilityIcon = (facility: string, hasIt: boolean) => {
+    const iconClass = `w-4 h-4 ${hasIt ? "text-green-600" : "text-gray-400"}`
+
+    switch (facility) {
+      case "electricity":
+        return <Zap className={iconClass} />
+      case "water":
+        return <Droplets className={iconClass} />
+      case "school":
+        return <GraduationCap className={iconClass} />
+      case "health":
+        return <Heart className={iconClass} />
+      case "road":
+        return <Road className={iconClass} />
+      default:
+        return null
+    }
+  }
+
+  if (loading || isLoading) {
     return (
-      <Card className="mb-8">
-        <CardContent className="p-8 text-center">
-          <div className="text-red-600 mb-4">❌ डेटा लोड करने में त्रुटि</div>
-          <p className="text-gray-600">{error}</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((j) => (
+                      <Skeleton key={j} className="h-6 w-6 rounded" />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="mb-8 shadow-lg border-orange-200">
-      <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
-        <CardTitle className="text-orange-800 flex items-center gap-2">
-          <MapPin className="w-5 h-5" />
-          गांव प्रबंधन
-        </CardTitle>
-        <p className="text-sm text-orange-600">कुल गांव: {villages?.length || 0}</p>
-      </CardHeader>
-      <CardContent className="p-6">
-        {isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-[200px]" />
-                  <Skeleton className="h-4 w-[150px]" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">गांव प्रबंधन</h2>
+          <p className="text-gray-600">सभी पंजीकृत गांवों की जानकारी</p>
+        </div>
+        <Badge variant="secondary" className="text-lg px-3 py-1">
+          कुल गांव: {villages.length}
+        </Badge>
+      </div>
+
+      {villages.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <MapPin className="w-12 h-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">कोई गांव पंजीकृत नहीं</h3>
+            <p className="text-gray-500 text-center">अभी तक कोई गांव पंजीकृत नहीं किया गया है।</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {villages.map((village) => (
+            <Card key={village.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-800">
+                  <MapPin className="w-5 h-5" />
+                  {village.name}
+                </CardTitle>
+                <p className="text-sm text-gray-600">
+                  {village.district}, {village.state} - {village.pincode}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium">{village.totalFamilies}</p>
+                      <p className="text-xs text-gray-500">परिवार</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium">{village.totalMembers}</p>
+                      <p className="text-xs text-gray-500">सदस्य</p>
+                    </div>
+                  </div>
                 </div>
-                <Skeleton className="h-8 w-16" />
-              </div>
-            ))}
-          </div>
-        ) : villages?.length === 0 ? (
-          <div className="text-center py-12">
-            <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">कोई गांव नहीं मिला</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] bg-white border border-orange-200 rounded-lg shadow">
-              <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    गांव का नाम
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">सदस्य</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">जिला</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">राज्य</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">कार्रवाई</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-orange-100">
-                {villages?.map((village, index) => (
-                  <tr
-                    key={village.id}
-                    className={`hover:bg-orange-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-orange-25"}`}
-                  >
-                    <td className="px-4 py-3 text-orange-900 font-medium">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-orange-500" />
-                        {village.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-orange-800">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-orange-500" />
-                        {village.villageMemberName}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-orange-800">{village.district}</td>
-                    <td className="px-4 py-3 text-orange-800">{village.state}</td>
-                    <td className="px-4 py-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/admin/village/${village.id}`)}
-                        className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        देखें
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">उपलब्ध सुविधाएं:</p>
+                  <div className="flex gap-3">
+                    {getFacilityIcon("electricity", village.hasElectricity)}
+                    {getFacilityIcon("water", village.hasWaterSupply)}
+                    {getFacilityIcon("school", village.hasSchool)}
+                    {getFacilityIcon("health", village.hasHealthCenter)}
+                    {getFacilityIcon("road", village.hasRoadAccess)}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-gray-500">
+                    पंजीकृत: {new Date(village.createdAt).toLocaleDateString("hi-IN")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

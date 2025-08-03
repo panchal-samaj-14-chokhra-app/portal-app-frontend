@@ -1,307 +1,305 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Building2, User, Phone, MapPin, Eye } from "lucide-react"
-import { useCreateChokhla } from "@/data-hooks/mutation-query/useQueryAndMutation"
-import { useToast } from "@/hooks/use-toast"
+import { Users, Plus, MapPin, Home, UserCheck, UserX } from "lucide-react"
 import { ChokhlaForm } from "./chokhla-form"
 import { SuccessDialog } from "./success-dialog"
 import { ErrorDialog } from "./error-dialog"
-import type { Chokhla, ChokhlaFormData, FormErrors, CreatedChokhlaData } from "./types"
-import { INITIAL_CHOKHLA_FORM, VALIDATION_MESSAGES } from "./constants"
+import type { Chokhla, ChokhlaFormData } from "./types"
 
 interface ChokhlaManagementProps {
-  chokhlas: Chokhla[]
-  isLoading: boolean
-  error?: string
+  isLoading?: boolean
 }
 
-export function ChokhlaManagement({ chokhlas, isLoading, error }: ChokhlaManagementProps) {
+export function ChokhlaManagement({ isLoading = false }: ChokhlaManagementProps) {
+  const [chokhlas, setChokhlas] = useState<Chokhla[]>([])
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [showError, setShowError] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-  const [formData, setFormData] = useState<ChokhlaFormData>(INITIAL_CHOKHLA_FORM)
-  const [formErrors, setFormErrors] = useState<FormErrors>({})
-  const [createdData, setCreatedData] = useState<CreatedChokhlaData | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const router = useRouter()
-  const { toast } = useToast()
-  const { mutate: createChokhla, isPending } = useCreateChokhla()
+  // Dialog states
+  const [successDialog, setSuccessDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    details?: Record<string, any>
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  })
 
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {}
-    let isValid = true
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onRetry?: () => void
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  })
 
-    // Required field validation
-    const requiredFields: (keyof ChokhlaFormData)[] = [
-      "name",
-      "adhyaksh",
-      "contactNumber",
-      "state",
-      "district",
-      "villageName",
-      "email",
-      "password",
-      "repeatPassword",
-    ]
+  useEffect(() => {
+    const fetchChokhlas = async () => {
+      try {
+        setLoading(true)
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    requiredFields.forEach((field) => {
-      if (!formData[field].trim()) {
-        errors[field] = VALIDATION_MESSAGES.REQUIRED
-        isValid = false
+        // Mock data
+        const mockChokhlas: Chokhla[] = [
+          {
+            id: "1",
+            firstName: "राम",
+            lastName: "पटेल",
+            mobileNumber: "9876543210",
+            email: "ram.patel@example.com",
+            state: "गुजरात",
+            district: "अहमदाबाद",
+            villages: [],
+            totalVillages: 3,
+            totalFamilies: 120,
+            totalMembers: 480,
+            isActive: true,
+            createdAt: "2024-01-15",
+            updatedAt: "2024-01-15",
+          },
+          {
+            id: "2",
+            firstName: "श्याम",
+            lastName: "शर्मा",
+            mobileNumber: "9876543211",
+            email: "shyam.sharma@example.com",
+            state: "राजस्थान",
+            district: "जयपुर",
+            villages: [],
+            totalVillages: 2,
+            totalFamilies: 85,
+            totalMembers: 340,
+            isActive: false,
+            createdAt: "2024-01-20",
+            updatedAt: "2024-01-20",
+          },
+        ]
+
+        setChokhlas(mockChokhlas)
+      } catch (error) {
+        console.error("Error fetching chokhlas:", error)
+        setErrorDialog({
+          isOpen: true,
+          title: "डेटा लोड करने में त्रुटि",
+          message: "चोखला की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        })
+      } finally {
+        setLoading(false)
       }
-    })
-
-    // Email validation
-    if (formData.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
-      errors.email = VALIDATION_MESSAGES.INVALID_EMAIL
-      isValid = false
     }
 
-    // Phone validation
-    if (formData.contactNumber && !/^\d{10}$/.test(formData.contactNumber)) {
-      errors.contactNumber = VALIDATION_MESSAGES.INVALID_PHONE
-      isValid = false
-    }
+    fetchChokhlas()
+  }, [])
 
-    // Password validation
-    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/
-    if (formData.password && !strongPassword.test(formData.password)) {
-      errors.password = VALIDATION_MESSAGES.WEAK_PASSWORD
-      isValid = false
-    }
+  const handleFormSubmit = async (data: ChokhlaFormData) => {
+    try {
+      setIsSubmitting(true)
 
-    // Password match validation
-    if (formData.password !== formData.repeatPassword) {
-      errors.repeatPassword = VALIDATION_MESSAGES.PASSWORD_MISMATCH
-      isValid = false
-    }
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    setFormErrors(errors)
-    return isValid
-  }
+      // Generate temporary password for demo
+      const tempPassword = Math.random().toString(36).slice(-8)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+      const newChokhla: Chokhla = {
+        id: Date.now().toString(),
+        firstName: data.firstName,
+        lastName: data.lastName,
+        mobileNumber: data.mobileNumber,
+        email: data.email,
+        state: data.state,
+        district: data.district,
+        villages: [],
+        totalVillages: 0,
+        totalFamilies: 0,
+        totalMembers: 0,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
 
-    // Clear error for this field
-    if (formErrors[name as keyof FormErrors]) {
-      setFormErrors((prev) => ({ ...prev, [name]: "" }))
-    }
-  }
+      setChokhlas((prev) => [...prev, newChokhla])
+      setShowForm(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      toast({
-        title: "फॉर्म में त्रुटि",
-        description: "कृपया सभी आवश्यक फील्ड भरें और त्रुटियों को ठीक करें।",
-        variant: "destructive",
+      setSuccessDialog({
+        isOpen: true,
+        title: "चोखला सफलतापूर्वक पंजीकृत हुआ",
+        message: "नया चोखला सफलतापूर्वक जोड़ा गया है। लॉगिन विवरण नीचे दिए गए हैं:",
+        details: {
+          नाम: `${data.firstName} ${data.lastName}`,
+          ईमेल: data.email,
+          मोबाइल: data.mobileNumber,
+          "अस्थायी पासवर्ड": tempPassword,
+        },
       })
-      return
+    } catch (error) {
+      console.error("Error creating chokhla:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "चोखला पंजीकरण में त्रुटि",
+        message: "चोखला पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: () => handleFormSubmit(data),
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    createChokhla(formData, {
-      onSuccess: (data) => {
-        const { chokhla, user } = data
-        setCreatedData({
-          chokhlaId: chokhla.id,
-          userId: user.id,
-          password: user.passwordHash,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.globalRole,
-        })
-        setShowForm(false)
-        setFormData(INITIAL_CHOKHLA_FORM)
-        setFormErrors({})
-        setShowSuccess(true)
-        toast({
-          title: "सफलता!",
-          description: "चौकला सफलतापूर्वक जोड़ा गया।",
-        })
-      },
-      onError: (error: any) => {
-        const message = error?.response?.data?.message || error?.message || "चौकला जोड़ने में त्रुटि हुई"
-        setErrorMessage(message)
-        setShowError(true)
-      },
-    })
   }
 
-  const handleCloseForm = () => {
-    setShowForm(false)
-    setFormData(INITIAL_CHOKHLA_FORM)
-    setFormErrors({})
-  }
-
-  if (error) {
+  if (showForm) {
     return (
-      <Card className="mb-8">
-        <CardContent className="p-8 text-center">
-          <div className="text-red-600 mb-4">❌ डेटा लोड करने में त्रुटि</div>
-          <p className="text-gray-600">{error}</p>
-        </CardContent>
-      </Card>
+      <>
+        <ChokhlaForm onSubmit={handleFormSubmit} isLoading={isSubmitting} onCancel={() => setShowForm(false)} />
+
+        <SuccessDialog
+          isOpen={successDialog.isOpen}
+          onClose={() => setSuccessDialog({ ...successDialog, isOpen: false })}
+          title={successDialog.title}
+          message={successDialog.message}
+          details={successDialog.details}
+        />
+
+        <ErrorDialog
+          isOpen={errorDialog.isOpen}
+          onClose={() => setErrorDialog({ ...errorDialog, isOpen: false })}
+          title={errorDialog.title}
+          message={errorDialog.message}
+          onRetry={errorDialog.onRetry}
+        />
+      </>
+    )
+  }
+
+  if (loading || isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex gap-2">
+                    {[1, 2, 3].map((j) => (
+                      <Skeleton key={j} className="h-8 w-16" />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     )
   }
 
   return (
-    <>
-      <Card className="mb-8 shadow-lg border-orange-200">
-        <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="text-orange-800 flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                चौकला प्रबंधन
-              </CardTitle>
-              <p className="text-sm text-orange-600">कुल चौकला: {chokhlas?.length || 0}</p>
-            </div>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-orange-600 hover:bg-orange-700 text-white shadow-md"
-            >
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">चोखला प्रबंधन</h2>
+          <p className="text-gray-600">सभी पंजीकृत चोखलाओं की जानकारी</p>
+        </div>
+        <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="w-4 h-4 mr-2" />
+          नया चोखला जोड़ें
+        </Button>
+      </div>
+
+      {chokhlas.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Users className="w-12 h-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">कोई चोखला पंजीकृत नहीं</h3>
+            <p className="text-gray-500 text-center mb-4">अभी तक कोई चोखला पंजीकृत नहीं किया गया है।</p>
+            <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
-              नया चौकला जोड़ें
+              पहला चोखला जोड़ें
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-[200px]" />
-                    <Skeleton className="h-4 w-[150px]" />
-                  </div>
-                  <Skeleton className="h-8 w-16" />
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {chokhlas.map((chokhla) => (
+            <Card key={chokhla.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-blue-800">
+                    <Users className="w-5 h-5" />
+                    {chokhla.firstName} {chokhla.lastName}
+                  </CardTitle>
+                  {chokhla.isActive ? (
+                    <Badge className="bg-green-100 text-green-800">
+                      <UserCheck className="w-3 h-3 mr-1" />
+                      सक्रिय
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-red-100 text-red-800">
+                      <UserX className="w-3 h-3 mr-1" />
+                      निष्क्रिय
+                    </Badge>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : chokhlas?.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">कोई चौकला नहीं मिला</p>
-              <p className="text-gray-400 text-sm mt-2">नया चौकला जोड़ने के लिए ऊपर बटन दबाएं</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] bg-white border border-orange-200 rounded-lg shadow">
-                <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                      चौकला का नाम
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">अध्यक्ष</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">संपर्क</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">स्थान</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                      कार्रवाई
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-orange-100">
-                  {chokhlas?.map((chokhla, index) => (
-                    <tr
-                      key={chokhla.id}
-                      className={`hover:bg-orange-50 transition-colors ${
-                        index % 2 === 0 ? "bg-white" : "bg-orange-25"
-                      }`}
-                    >
-                      <td className="px-4 py-3 text-orange-900 font-medium">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-orange-500" />
-                          {chokhla.name}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-orange-800">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-orange-500" />
-                          {chokhla.adhyaksh}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-orange-800">
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-orange-500" />
-                          {chokhla.contactNumber}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-orange-800">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-orange-500" />
-                          <div className="text-sm">
-                            <div>{chokhla.villageName}</div>
-                            <div className="text-xs text-orange-600">
-                              {chokhla.district}, {chokhla.state}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => router.push(`/admin/chokhla/${chokhla.id}`)}
-                          className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          देखें
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <p className="text-sm text-gray-600">
+                  {chokhla.district}, {chokhla.state}
+                </p>
+                <p className="text-sm text-gray-500">{chokhla.email}</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium">{chokhla.totalVillages}</p>
+                      <p className="text-xs text-gray-500">गांव</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium">{chokhla.totalFamilies}</p>
+                      <p className="text-xs text-gray-500">परिवार</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-purple-600" />
+                    <div>
+                      <p className="text-sm font-medium">{chokhla.totalMembers}</p>
+                      <p className="text-xs text-gray-500">सदस्य</p>
+                    </div>
+                  </div>
+                </div>
 
-      {/* Form Modal */}
-      {showForm && (
-        <ChokhlaForm
-          formData={formData}
-          errors={formErrors}
-          isSubmitting={isPending}
-          onSubmit={handleSubmit}
-          onChange={handleInputChange}
-          onClose={handleCloseForm}
-        />
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-gray-500">
+                    पंजीकृत: {new Date(chokhla.createdAt).toLocaleDateString("hi-IN")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
-
-      {/* Success Dialog */}
-      {showSuccess && createdData && (
-        <SuccessDialog
-          data={createdData}
-          onClose={() => {
-            setShowSuccess(false)
-            setCreatedData(null)
-          }}
-        />
-      )}
-
-      {/* Error Dialog */}
-      {showError && (
-        <ErrorDialog
-          message={errorMessage}
-          onClose={() => setShowError(false)}
-          onRetry={() => {
-            setShowError(false)
-            handleSubmit(new Event("submit") as any)
-          }}
-        />
-      )}
-    </>
+    </div>
   )
 }
