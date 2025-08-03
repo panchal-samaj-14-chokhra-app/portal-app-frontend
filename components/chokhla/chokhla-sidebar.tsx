@@ -1,31 +1,63 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import type { TabItem } from "./types"
+import { cn } from "@/lib/utils"
+import { Users, Settings, Plus } from "lucide-react"
 
 interface CokhlaSidebarProps {
-  tabs: TabItem[]
   activeTab: string
   onTabChange: (tab: string) => void
 }
 
-export function CokhlaSidebar({ tabs, activeTab, onTabChange }: CokhlaSidebarProps) {
+const tabs = [
+  {
+    id: "villages",
+    label: "गांव प्रबंधन",
+    icon: Users,
+    description: "गांवों की सूची और जानकारी",
+  },
+  {
+    id: "add-village",
+    label: "नया गांव जोड़ें",
+    icon: Plus,
+    description: "नया गांव पंजीकृत करें",
+  },
+  {
+    id: "profile",
+    label: "प्रोफाइल सेटिंग्स",
+    icon: Settings,
+    description: "अपनी जानकारी अपडेट करें",
+  },
+]
+
+export function CokhlaSidebar({ activeTab, onTabChange }: CokhlaSidebarProps) {
   return (
-    <aside className="w-full md:w-64 mb-6 md:mb-0">
-      <nav className="bg-white rounded-lg shadow border border-orange-200 p-4 flex md:flex-col gap-2">
-        {tabs.map((tab) => (
-          <Button
-            key={tab.key}
-            variant={activeTab === tab.key ? "default" : "ghost"}
-            onClick={() => onTabChange(tab.key)}
-            className={`w-full justify-start text-base font-semibold ${
-              activeTab === tab.key ? "bg-orange-500 text-white" : "text-orange-700 hover:bg-orange-50"
-            }`}
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </nav>
-    </aside>
+    <div className="w-64 bg-white border-r border-gray-200 h-full">
+      <div className="p-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">मेनू</h2>
+        <nav className="space-y-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors",
+                  activeTab === tab.id
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : "text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <Icon className="w-5 h-5" />
+                <div>
+                  <div className="font-medium">{tab.label}</div>
+                  <div className="text-xs text-gray-500">{tab.description}</div>
+                </div>
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+    </div>
   )
 }

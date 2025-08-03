@@ -1,15 +1,8 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { signOut, useSession } from "next-auth/react"
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
-
-// Import custom components
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import { toast } from "sonner"
 import { ChokhlaHeader } from "@/components/chokhla/chokhla-header"
 import { CokhlaSidebar } from "@/components/chokhla/chokhla-sidebar"
 import { VillageForm } from "@/components/chokhla/village-form"
@@ -17,241 +10,260 @@ import { VillageTable } from "@/components/chokhla/village-table"
 import { ProfileForm } from "@/components/chokhla/profile-form"
 import { SuccessDialog } from "@/components/chokhla/success-dialog"
 import { ErrorDialog } from "@/components/chokhla/error-dialog"
+import type { Village, ChokhlaProfile, VillageFormData, ProfileFormData } from "@/components/chokhla/types"
 
-// Import hooks and types
-import {
-  useCreateVillage,
-  useChokhlaDetails,
-  useUpdateChokhla,
-  useGetAllVillageswithChokhlaID,
-} from "@/data-hooks/mutation-query/useQueryAndMutation"
-import { TABS, SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/components/chokhla/constants"
-import type { VillageFormData, SuccessData } from "@/components/chokhla/types"
-
-function Chokhla() {
-  const { data: session } = useSession()
-  const { toast } = useToast()
-  const router = useRouter()
-  const chokhlaId = useParams().chokhlaId as string
+export default function ChokhlaPage() {
+  const params = useParams()
+  const chokhlaId = params.chokhlaId as string
 
   // State management
-  const [activeTab, setActiveTab] = useState("village")
-  const [isVillageDialogOpen, setIsVillageDialogOpen] = useState(false)
-  const [successData, setSuccessData] = useState<SuccessData | null>(null)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [activeTab, setActiveTab] = useState("villages")
+  const [profile, setProfile] = useState<ChokhlaProfile | null>(null)
+  const [villages, setVillages] = useState<Village[]>([])
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [isLoadingVillages, setIsLoadingVillages] = useState(true)
+  const [isSubmittingVillage, setIsSubmittingVillage] = useState(false)
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
 
-  // API hooks
-  const {
-    data: villages,
-    isLoading: isVillagesLoading,
-    error: villagesError,
-  } = useGetAllVillageswithChokhlaID(chokhlaId)
-  const { data: chokhla, isLoading: isChokhlaLoading, error: chokhlaError } = useChokhlaDetails(chokhlaId)
-  const { mutate: updateChokhla, isLoading: isUpdatingChokhla } = useUpdateChokhla(chokhlaId)
-  const { mutate: createVillage, isLoading: isCreatingVillage } = useCreateVillage()
+  // Dialog states
+  const [successDialog, setSuccessDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    details?: Record<string, any>
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  })
 
-  // Computed values
-  const userType = useMemo(() => session?.user?.role, [session?.user?.role])
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onRetry?: () => void
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  })
 
-  // Error handling
-  const handleError = useCallback((error: any, defaultMessage: string = ERROR_MESSAGES.GENERIC) => {
-    let message = defaultMessage
-
-    if (error?.response?.data?.message) {
-      message = error.response.data.message
-    } else if (error?.message) {
-      message = error.message
-    } else if (typeof error === "string") {
-      message = error
-    }
-
-    setErrorMessage(message)
-    setShowErrorModal(true)
-  }, [])
-
-  // Success handling
-  const showSuccessToast = useCallback(
-    (message: string) => {
-      toast({
-        title: "सफल",
-        description: message,
-        variant: "default",
+  // Fetch profile data
+  const fetchProfile = async () => {
+    try {
+      setIsLoadingProfile(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chokhla/${chokhlaId}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-    },
-    [toast],
-  )
 
-  // Navigation handlers
-  const handleBack = useCallback(() => router.back(), [router])
-  const handleLogout = useCallback(() => signOut({ callbackUrl: "/login" }), [])
-  const handleViewVillage = useCallback(
-    (villageId: string) => {
-      router.push(`/admin/village/${villageId}?chakolaId=${chokhlaId}`)
-    },
-    [router, chokhlaId],
-  )
-
-  // Village form handlers
-  const handleVillageSubmit = useCallback(
-    (data: VillageFormData) => {
-      const payload = {
-        ...data,
-        age: data.age ? Number(data.age) : null,
-        longitude: data.longitude ? Number(data.longitude) : null,
-        latitude: data.latitude ? Number(data.latitude) : null,
-        chakola: { connect: { id: chokhlaId } },
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      createVillage(payload, {
-        onSuccess: (response) => {
-          const successData: SuccessData = {
-            ...response,
-            password: data.password, // Store original password
-          }
+      const data = await response.json()
+      setProfile(data)
+    } catch (error) {
+      console.error("Error fetching profile:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "प्रोफाइल लोड करने में त्रुटि",
+        message: "प्रोफाइल की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: fetchProfile,
+      })
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
 
-          setSuccessData(successData)
-          setShowSuccessModal(true)
-          setIsVillageDialogOpen(false)
-          showSuccessToast(SUCCESS_MESSAGES.VILLAGE_CREATED)
-        },
-        onError: (error) => {
-          handleError(error, "गांव जोड़ने में त्रुटि हुई। कृपया पुनः प्रयास करें।")
+  // Fetch villages data
+  const fetchVillages = async () => {
+    try {
+      setIsLoadingVillages(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chokhla/${chokhlaId}/villages`, {
+        headers: {
+          "Content-Type": "application/json",
         },
       })
-    },
-    [chokhlaId, createVillage, handleError, showSuccessToast],
-  )
 
-  // Profile update handler
-  const handleProfileUpdate = useCallback(
-    (data: any) => {
-      updateChokhla(data, {
-        onSuccess: () => {
-          showSuccessToast(SUCCESS_MESSAGES.PROFILE_UPDATED)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setVillages(data)
+    } catch (error) {
+      console.error("Error fetching villages:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "गांवों की सूची लोड करने में त्रुटि",
+        message: "गांवों की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: fetchVillages,
+      })
+    } finally {
+      setIsLoadingVillages(false)
+    }
+  }
+
+  // Handle village form submission
+  const handleVillageSubmit = async (data: VillageFormData) => {
+    try {
+      setIsSubmittingVillage(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chokhla/${chokhlaId}/villages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        onError: (error) => {
-          handleError(error, "प्रोफ़ाइल अपडेट करने में त्रुटि हुई।")
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const newVillage = await response.json()
+      setVillages((prev) => [...prev, newVillage])
+
+      setSuccessDialog({
+        isOpen: true,
+        title: "गांव सफलतापूर्वक पंजीकृत हुआ",
+        message: "नया गांव सफलतापूर्वक जोड़ा गया है।",
+        details: {
+          "गांव का नाम": data.name,
+          राज्य: data.state,
+          जिला: data.district,
+          पिनकोड: data.pincode,
         },
       })
-    },
-    [updateChokhla, handleError, showSuccessToast],
-  )
 
-  // Handle API errors
-  React.useEffect(() => {
-    if (villagesError) {
-      handleError(villagesError, "गांवों की सूची लोड करने में त्रुटि हुई।")
-    }
-  }, [villagesError, handleError])
+      // Switch to villages tab to show the new village
+      setActiveTab("villages")
 
-  React.useEffect(() => {
-    if (chokhlaError) {
-      handleError(chokhlaError, "चौकला की जानकारी लोड करने में त्रुटि हुई।")
+      toast.success("गांव सफलतापूर्वक पंजीकृत हुआ")
+    } catch (error) {
+      console.error("Error creating village:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "गांव पंजीकरण में त्रुटि",
+        message: error instanceof Error ? error.message : "गांव पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: () => handleVillageSubmit(data),
+      })
+    } finally {
+      setIsSubmittingVillage(false)
     }
-  }, [chokhlaError, handleError])
+  }
+
+  // Handle profile form submission
+  const handleProfileSubmit = async (data: ProfileFormData) => {
+    try {
+      setIsSubmittingProfile(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chokhla/${chokhlaId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const updatedProfile = await response.json()
+      setProfile(updatedProfile)
+
+      setSuccessDialog({
+        isOpen: true,
+        title: "प्रोफाइल सफलतापूर्वक अपडेट हुई",
+        message: "आपकी प्रोफाइल की जानकारी सफलतापूर्वक अपडेट हो गई है।",
+        details: {
+          नाम: `${data.firstName} ${data.lastName}`,
+          मोबाइल: data.mobileNumber,
+          स्थान: `${data.district}, ${data.state}`,
+        },
+      })
+
+      toast.success("प्रोफाइल सफलतापूर्वक अपडेट हुई")
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "प्रोफाइल अपडेट में त्रुटि",
+        message: error instanceof Error ? error.message : "प्रोफाइल अपडेट करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: () => handleProfileSubmit(data),
+      })
+    } finally {
+      setIsSubmittingProfile(false)
+    }
+  }
+
+  // Load data on component mount
+  useEffect(() => {
+    if (chokhlaId) {
+      fetchProfile()
+      fetchVillages()
+    }
+  }, [chokhlaId])
+
+  // Render content based on active tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case "villages":
+        return <VillageTable villages={villages} isLoading={isLoadingVillages} />
+
+      case "add-village":
+        return <VillageForm onSubmit={handleVillageSubmit} isLoading={isSubmittingVillage} />
+
+      case "profile":
+        return (
+          <ProfileForm
+            profile={profile}
+            onSubmit={handleProfileSubmit}
+            isLoading={isLoadingProfile || isSubmittingProfile}
+          />
+        )
+
+      default:
+        return <VillageTable villages={villages} isLoading={isLoadingVillages} />
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <ChokhlaHeader userType={userType || ""} onBack={handleBack} onLogout={handleLogout} />
+      <ChokhlaHeader profile={profile} isLoading={isLoadingProfile} />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
+      <div className="flex h-[calc(100vh-80px)]">
         {/* Sidebar */}
-        <CokhlaSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+        <CokhlaSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Content Area */}
-        <section className="flex-1 min-w-0">
-          {/* Village Management Tab */}
-          {activeTab === "village" && (
-            <Card className="mb-8">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-bold text-orange-800">गांव प्रबंधन</CardTitle>
-                {userType === "CHOKHLA_MEMBER" && (
-                  <Dialog open={isVillageDialogOpen} onOpenChange={setIsVillageDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                        <Plus className="w-5 h-5 mr-2" />
-                        गांव जोड़ें
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                      <VillageForm
-                        onSubmit={handleVillageSubmit}
-                        isLoading={isCreatingVillage}
-                        onCancel={() => setIsVillageDialogOpen(false)}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                )}
-              </CardHeader>
-              <CardContent>
-                <VillageTable
-                  villages={villages || []}
-                  isLoading={isVillagesLoading}
-                  onViewVillage={handleViewVillage}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Statistics Tab */}
-          {activeTab === "statics" && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-orange-800">आँकड़े</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <p className="text-gray-500">आँकड़े जल्द ही उपलब्ध होंगे</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Reports Tab */}
-          {activeTab === "reports" && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-orange-800">रिपोर्ट्स</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <p className="text-gray-500">रिपोर्ट्स जल्द ही उपलब्ध होंगे</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Profile Tab */}
-          {activeTab === "profile" && (
-            <ProfileForm
-              profile={chokhla}
-              isLoading={isChokhlaLoading}
-              isUpdating={isUpdatingChokhla}
-              onUpdate={handleProfileUpdate}
-            />
-          )}
-        </section>
-      </main>
+        <div className="flex-1 overflow-auto">
+          <div className="p-6">{renderContent()}</div>
+        </div>
+      </div>
 
       {/* Success Dialog */}
-      <SuccessDialog open={showSuccessModal} onOpenChange={setShowSuccessModal} data={successData} />
+      <SuccessDialog
+        isOpen={successDialog.isOpen}
+        onClose={() => setSuccessDialog({ ...successDialog, isOpen: false })}
+        title={successDialog.title}
+        message={successDialog.message}
+        details={successDialog.details}
+      />
 
       {/* Error Dialog */}
       <ErrorDialog
-        open={showErrorModal}
-        onOpenChange={setShowErrorModal}
-        message={errorMessage || ERROR_MESSAGES.GENERIC}
-        onRetry={() => {
-          setShowErrorModal(false)
-          // You can add specific retry logic here if needed
-        }}
+        isOpen={errorDialog.isOpen}
+        onClose={() => setErrorDialog({ ...errorDialog, isOpen: false })}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        onRetry={errorDialog.onRetry}
       />
     </div>
   )
 }
-
-export default Chokhla

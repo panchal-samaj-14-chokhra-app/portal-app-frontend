@@ -1,425 +1,328 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { MapPin, Zap, Droplets, GraduationCap, Heart, RouteIcon as Road, Loader2 } from "lucide-react"
+import { STATES_DISTRICTS } from "./constants"
 import type { VillageFormData } from "./types"
-import { VALIDATION_MESSAGES } from "./constants"
 
-const villageSchema = z
-  .object({
-    name: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
-    villageMemberName: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
-    mobileNumber: z
-      .string()
-      .min(10, VALIDATION_MESSAGES.PHONE_INVALID)
-      .max(10, VALIDATION_MESSAGES.PHONE_INVALID)
-      .regex(/^[0-9]+$/, VALIDATION_MESSAGES.PHONE_INVALID),
-    age: z
-      .string()
-      .min(1, VALIDATION_MESSAGES.REQUIRED)
-      .refine((val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 120, {
-        message: VALIDATION_MESSAGES.AGE_INVALID,
-      }),
-    email: z.string().email(VALIDATION_MESSAGES.EMAIL_INVALID).optional().or(z.literal("")),
-    tehsil: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
-    district: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
-    state: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
-    isVillageHaveSchool: z.boolean(),
-    isVillageHavePrimaryHealthCare: z.boolean(),
-    isVillageHaveCommunityHall: z.boolean(),
-    longitude: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true
-          const num = Number(val)
-          return !isNaN(num) && num >= -180 && num <= 180
-        },
-        { message: VALIDATION_MESSAGES.COORDINATES_INVALID },
-      ),
-    latitude: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true
-          const num = Number(val)
-          return !isNaN(num) && num >= -90 && num <= 90
-        },
-        { message: VALIDATION_MESSAGES.COORDINATES_INVALID },
-      ),
-    password: z
-      .string()
-      .min(8, VALIDATION_MESSAGES.PASSWORD_MIN_LENGTH)
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
-        VALIDATION_MESSAGES.PASSWORD_STRONG,
-      ),
-    repeatPassword: z.string(),
-  })
-  .refine((data) => data.password === data.repeatPassword, {
-    message: VALIDATION_MESSAGES.PASSWORD_MISMATCH,
-    path: ["repeatPassword"],
-  })
+const villageSchema = z.object({
+  name: z.string().min(2, "गांव का नाम कम से कम 2 अक्षर का होना चाहिए"),
+  state: z.string().min(1, "राज्य चुनना आवश्यक है"),
+  district: z.string().min(1, "जिला चुनना आवश्यक है"),
+  pincode: z.string().regex(/^\d{6}$/, "पिनकोड 6 अंकों का होना चाहिए"),
+  hasElectricity: z.boolean(),
+  hasWaterSupply: z.boolean(),
+  hasSchool: z.boolean(),
+  hasHealthCenter: z.boolean(),
+  hasRoadAccess: z.boolean(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+})
 
 interface VillageFormProps {
-  onSubmit: (data: VillageFormData) => void
+  onSubmit: (data: VillageFormData) => Promise<void>
   isLoading: boolean
-  onCancel: () => void
 }
 
-export function VillageForm({ onSubmit, isLoading, onCancel }: VillageFormProps) {
+export function VillageForm({ onSubmit, isLoading }: VillageFormProps) {
+  const [districts, setDistricts] = useState<string[]>([])
+
   const form = useForm<VillageFormData>({
     resolver: zodResolver(villageSchema),
     defaultValues: {
       name: "",
-      villageMemberName: "",
-      mobileNumber: "",
-      age: "",
-      email: "",
-      tehsil: "",
-      district: "",
       state: "",
-      isVillageHaveSchool: false,
-      isVillageHavePrimaryHealthCare: false,
-      isVillageHaveCommunityHall: false,
-      longitude: "",
-      latitude: "",
-      password: "",
-      repeatPassword: "",
+      district: "",
+      pincode: "",
+      hasElectricity: false,
+      hasWaterSupply: false,
+      hasSchool: false,
+      hasHealthCenter: false,
+      hasRoadAccess: false,
+      latitude: undefined,
+      longitude: undefined,
     },
   })
 
+  const selectedState = form.watch("state")
+
+  useEffect(() => {
+    if (selectedState && STATES_DISTRICTS[selectedState]) {
+      setDistricts(STATES_DISTRICTS[selectedState])
+      form.setValue("district", "")
+    } else {
+      setDistricts([])
+    }
+  }, [selectedState, form])
+
+  const handleSubmit = async (data: VillageFormData) => {
+    try {
+      await onSubmit(data)
+      form.reset()
+    } catch (error) {
+      console.error("Form submission error:", error)
+    }
+  }
+
   return (
-    <Card>
+    <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>नया गांव जोड़ें</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-blue-800">
+          <MapPin className="w-5 h-5" />
+          नया गांव पंजीकृत करें
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="max-h-[70vh] overflow-y-auto">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Basic Information */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                name="name"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700 font-medium">
+                      गांव का नाम <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="गांव का नाम दर्ज करें" className="border-gray-300" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name="pincode"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700 font-medium">
+                      पिनकोड <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="123456" maxLength={6} className="border-gray-300" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name="state"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700 font-medium">
+                      राज्य <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="border-gray-300">
+                          <SelectValue placeholder="राज्य चुनें" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.keys(STATES_DISTRICTS).map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name="district"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700 font-medium">
+                      जिला <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
+                      <FormControl>
+                        <SelectTrigger className="border-gray-300">
+                          <SelectValue placeholder="जिला चुनें" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {districts.map((district) => (
+                          <SelectItem key={district} value={district}>
+                            {district}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Location Coordinates */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-medium text-gray-800 mb-3">स्थान निर्देशांक (वैकल्पिक)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
-                  name="name"
+                  name="latitude"
                   control={form.control}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-orange-700 font-semibold">गांव का नाम *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="border-orange-200 focus:border-orange-400"
-                          placeholder="गांव का नाम दर्ज करें"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  name="villageMemberName"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-orange-700 font-semibold">गांव सदस्य का नाम *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="border-orange-200 focus:border-orange-400"
-                          placeholder="सदस्य का नाम दर्ज करें"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  name="mobileNumber"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-orange-700 font-semibold">मोबाइल नंबर *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="tel"
-                          maxLength={10}
-                          className="border-orange-200 focus:border-orange-400"
-                          placeholder="10 अंकों का मोबाइल नंबर"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  name="age"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-orange-700 font-semibold">आयु *</FormLabel>
+                      <FormLabel className="text-gray-700">अक्षांश (Latitude)</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           type="number"
-                          min="1"
-                          max="120"
-                          className="border-orange-200 focus:border-orange-400"
-                          placeholder="आयु दर्ज करें"
+                          step="any"
+                          placeholder="जैसे: 28.6139"
+                          className="border-gray-300"
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? Number.parseFloat(e.target.value) : undefined)
+                          }
                         />
                       </FormControl>
-                      <FormMessage className="text-red-500" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
 
                 <FormField
-                  name="email"
+                  name="longitude"
                   control={form.control}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-orange-700 font-semibold">ईमेल (वैकल्पिक)</FormLabel>
+                      <FormLabel className="text-gray-700">देशांतर (Longitude)</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          type="email"
-                          className="border-orange-200 focus:border-orange-400"
-                          placeholder="example@email.com"
+                          type="number"
+                          step="any"
+                          placeholder="जैसे: 77.2090"
+                          className="border-gray-300"
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? Number.parseFloat(e.target.value) : undefined)
+                          }
                         />
                       </FormControl>
-                      <FormMessage className="text-red-500" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+            </div>
 
-              {/* Location Information */}
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold text-orange-700 mb-4">स्थान की जानकारी</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    name="tehsil"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-orange-700 font-semibold">तहसील *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="border-orange-200 focus:border-orange-400"
-                            placeholder="तहसील का नाम"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-500" />
-                      </FormItem>
-                    )}
-                  />
+            {/* Facilities */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-medium text-blue-800 mb-4">उपलब्ध सुविधाएं</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  name="hasElectricity"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-yellow-600" />
+                        <FormLabel className="text-gray-700 cursor-pointer">बिजली की सुविधा</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    name="district"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-orange-700 font-semibold">जिला *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="border-orange-200 focus:border-orange-400"
-                            placeholder="जिले का नाम"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-500" />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  name="hasWaterSupply"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <Droplets className="w-4 h-4 text-blue-600" />
+                        <FormLabel className="text-gray-700 cursor-pointer">पानी की आपूर्ति</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    name="state"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-orange-700 font-semibold">राज्य *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="border-orange-200 focus:border-orange-400"
-                            placeholder="राज्य का नाम"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-500" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  name="hasSchool"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-green-600" />
+                        <FormLabel className="text-gray-700 cursor-pointer">स्कूल</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  name="hasHealthCenter"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-red-600" />
+                        <FormLabel className="text-gray-700 cursor-pointer">स्वास्थ्य केंद्र</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  name="hasRoadAccess"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <Road className="w-4 h-4 text-gray-600" />
+                        <FormLabel className="text-gray-700 cursor-pointer">सड़क पहुंच</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </div>
+            </div>
 
-              {/* Facilities */}
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold text-orange-700 mb-4">गांव की सुविधाएं</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    name="isVillageHaveSchool"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between p-3 border border-orange-200 rounded-lg">
-                        <FormLabel className="text-orange-700 font-medium">स्कूल उपलब्ध है?</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    name="isVillageHavePrimaryHealthCare"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between p-3 border border-orange-200 rounded-lg">
-                        <FormLabel className="text-orange-700 font-medium">प्राथमिक स्वास्थ्य केंद्र?</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    name="isVillageHaveCommunityHall"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between p-3 border border-orange-200 rounded-lg">
-                        <FormLabel className="text-orange-700 font-medium">कम्युनिटी हॉल?</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Coordinates */}
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold text-orange-700 mb-4">भौगोलिक निर्देशांक (वैकल्पिक)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    name="longitude"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-orange-700 font-semibold">देशांतर (Longitude)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            step="any"
-                            className="border-orange-200 focus:border-orange-400"
-                            placeholder="-180 से 180 के बीच"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-500" />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    name="latitude"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-orange-700 font-semibold">अक्षांश (Latitude)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            step="any"
-                            className="border-orange-200 focus:border-orange-400"
-                            placeholder="-90 से 90 के बीच"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-500" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Password Section */}
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold text-orange-700 mb-4">लॉगिन जानकारी</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    name="password"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-orange-700 font-semibold">पासवर्ड *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="password"
-                            className="border-orange-200 focus:border-orange-400"
-                            placeholder="मजबूत पासवर्ड बनाएं"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-500" />
-                        <p className="text-xs text-gray-600 mt-1">
-                          कम से कम 8 अक्षर, एक बड़ा अक्षर, एक छोटा अक्षर, एक संख्या और एक विशेष चिन्ह
-                        </p>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    name="repeatPassword"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-orange-700 font-semibold">पासवर्ड दोबारा लिखें *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="password"
-                            className="border-orange-200 focus:border-orange-400"
-                            placeholder="पासवर्ड दोबारा दर्ज करें"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-500" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  className="border-orange-300 text-orange-700 hover:bg-orange-50 bg-transparent"
-                >
-                  रद्द करें
-                </Button>
-                <Button type="submit" disabled={isLoading} className="bg-orange-500 hover:bg-orange-600 text-white">
-                  {isLoading ? "सहेजा जा रहा है..." : "सहेजें"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
+            <Button type="submit" disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700">
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  गांव पंजीकृत कर रहे हैं...
+                </>
+              ) : (
+                "गांव पंजीकृत करें"
+              )}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   )

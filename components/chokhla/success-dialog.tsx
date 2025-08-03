@@ -1,138 +1,76 @@
 "use client"
 
+import { useState } from "react"
+import { CheckCircle, Copy, Check } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import type { SuccessData } from "./types"
-import { CheckCircle, Copy, User, Key, MapPin } from "lucide-react"
-import { useState } from "react"
 
 interface SuccessDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  data: SuccessData | null
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  message: string
+  details?: Record<string, any>
 }
 
-export function SuccessDialog({ open, onOpenChange, data }: SuccessDialogProps) {
-  const [copied, setCopied] = useState<string | null>(null)
+export function SuccessDialog({ isOpen, onClose, title, message, details }: SuccessDialogProps) {
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(field)
-    setTimeout(() => setCopied(null), 2000)
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch (error) {
+      console.error("Failed to copy:", error)
+    }
   }
 
-  if (!data) return null
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-green-700">
-            <CheckCircle className="w-5 h-5" />
-            गांव और यूज़र सफलतापूर्वक जोड़ा गया
-          </DialogTitle>
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+          </div>
+          <DialogTitle className="text-center text-green-800">{title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* User Information */}
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
-              <User className="w-4 h-4" />
-              यूज़र की जानकारी
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">नाम:</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{data.user.fullName}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(data.user.fullName, "name")}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </Button>
+          <p className="text-center text-gray-600">{message}</p>
+
+          {details && (
+            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+              <h4 className="font-medium text-gray-800">विवरण:</h4>
+              {Object.entries(details).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 capitalize">{key}:</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-gray-800">
+                      {String(value)}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(String(value), key)}
+                      className="h-6 w-6 p-0"
+                    >
+                      {copiedField === key ? (
+                        <Check className="w-3 h-3 text-green-600" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">ईमेल:</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{data.user.email}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(data.user.email, "email")}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">पासवर्ड:</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{data.password}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(data.password, "password")}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </Button>
-                  {copied === "password" && <span className="text-xs text-green-600">कॉपी हो गया!</span>}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">भूमिका:</span>
-                <Badge variant="secondary">{data.user.globalRole}</Badge>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
 
-          {/* Village Information */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              गांव की जानकारी
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">सदस्य का नाम:</span>
-                <span className="font-medium">{data.village.villageMemberName}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">गांव ID:</span>
-                <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{data.village.id}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">यूज़र ID:</span>
-                <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{data.user.id}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Important Note */}
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <div className="flex items-start gap-2">
-              <Key className="w-4 h-4 text-yellow-600 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-yellow-800 mb-1">महत्वपूर्ण सूचना:</p>
-                <p className="text-yellow-700">कृपया लॉगिन जानकारी को सुरक्षित रखें। यह जानकारी दोबारा नहीं दिखाई जाएगी।</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4">
-          <Button onClick={() => onOpenChange(false)} className="bg-orange-500 hover:bg-orange-600 text-white">
+          <Button onClick={onClose} className="w-full bg-green-600 hover:bg-green-700">
             बंद करें
           </Button>
         </div>

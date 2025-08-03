@@ -1,65 +1,58 @@
-export interface ChokhlaProfile {
-  id: string
-  name: string
-  adhyaksh: string
-  contactNumber: string
-  state: string
-  district: string
-  villageName: string
-  createdDate?: string
-  updatedDate?: string
-}
-
 export interface Village {
   id: string
   name: string
-  villageMemberName: string
-  mobileNumber: string
-  age: number
-  email: string
-  tehsil: string
-  district: string
   state: string
-  isVillageHaveSchool: boolean
-  isVillageHavePrimaryHealthCare: boolean
-  isVillageHaveCommunityHall: boolean
-  longitude?: number
+  district: string
+  pincode: string
+  totalFamilies: number
+  totalMembers: number
+  hasElectricity: boolean
+  hasWaterSupply: boolean
+  hasSchool: boolean
+  hasHealthCenter: boolean
+  hasRoadAccess: boolean
   latitude?: number
+  longitude?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ChokhlaProfile {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber: string
+  state: string
+  district: string
+  address: string
+  totalVillages: number
+  totalFamilies: number
+  totalMembers: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface VillageFormData {
   name: string
-  villageMemberName: string
-  mobileNumber: string
-  age: string
-  email: string
-  tehsil: string
-  district: string
   state: string
-  isVillageHaveSchool: boolean
-  isVillageHavePrimaryHealthCare: boolean
-  isVillageHaveCommunityHall: boolean
-  longitude: string
-  latitude: string
-  password: string
-  repeatPassword: string
+  district: string
+  pincode: string
+  hasElectricity: boolean
+  hasWaterSupply: boolean
+  hasSchool: boolean
+  hasHealthCenter: boolean
+  hasRoadAccess: boolean
+  latitude?: number
+  longitude?: number
 }
 
-export interface TabItem {
-  key: string
-  label: string
-}
-
-export interface SuccessData {
-  user: {
-    id: string
-    fullName: string
-    email: string
-    globalRole: string
-  }
-  village: {
-    id: string
-    villageMemberName: string
-  }
-  password: string
+export interface ProfileFormData {
+  firstName: string
+  lastName: string
+  email: string
+  mobileNumber: string
+  state: string
+  district: string
+  address: string
 }
