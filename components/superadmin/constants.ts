@@ -72,15 +72,23 @@ export const STATES_DISTRICTS: Record<string, string[]> = {
 }
 
 export const USER_ROLES = [
-  { value: "SUPER_ADMIN", label: "सुपर एडमिन" },
+  { value: "ADMIN", label: "एडमिन" },
   { value: "CHOKHLA", label: "चोखला" },
-  { value: "VILLAGE_ADMIN", label: "गांव एडमिन" },
+  { value: "USER", label: "उपयोगकर्ता" },
 ]
 
 export const FACILITY_ICONS = {
-  hasElectricity: { icon: "Zap", color: "text-yellow-600", label: "बिजली" },
-  hasWaterSupply: { icon: "Droplets", color: "text-blue-600", label: "पानी" },
-  hasSchool: { icon: "GraduationCap", color: "text-green-600", label: "स्कूल" },
-  hasHealthCenter: { icon: "Heart", color: "text-red-600", label: "स्वास्थ्य केंद्र" },
-  hasRoadAccess: { icon: "Road", color: "text-gray-600", label: "सड़क" },
+  electricity: "⚡",
+  waterSupply: "💧",
+  school: "🎓",
+  healthCenter: "🏥",
+  roadAccess: "🛣️",
+}
+
+export const FACILITY_LABELS = {
+  electricity: "बिजली",
+  waterSupply: "पानी",
+  school: "स्कूल",
+  healthCenter: "स्वास्थ्य केंद्र",
+  roadAccess: "सड़क",
 }

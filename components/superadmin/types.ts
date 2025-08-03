@@ -4,12 +4,12 @@ export interface SuperAdminProfile {
   lastName: string
   email: string
   mobileNumber: string
-  role: "SUPER_ADMIN"
+  role: "SUPERADMIN"
   isActive: boolean
+  loginCount: number
+  lastLogin: string | null
   createdAt: string
   updatedAt: string
-  lastLogin?: string
-  loginCount: number
 }
 
 export interface Village {
@@ -43,9 +43,9 @@ export interface Chokhla {
   villageCount: number
   familyCount: number
   isActive: boolean
+  lastLogin: string | null
   createdAt: string
   updatedAt: string
-  lastLogin?: string
 }
 
 export interface User {
@@ -54,25 +54,45 @@ export interface User {
   lastName: string
   email: string
   mobileNumber: string
-  role: "SUPER_ADMIN" | "CHOKHLA" | "VILLAGE_ADMIN"
+  role: "ADMIN" | "CHOKHLA" | "USER"
   state?: string
   district?: string
   village?: string
   isActive: boolean
+  lastLogin: string | null
   createdAt: string
   updatedAt: string
-  lastLogin?: string
 }
 
 export interface Statistics {
   totalVillages: number
   totalChoklas: number
+  totalUsers: number
   totalFamilies: number
   totalPopulation: number
+  activeVillages: number
+  activeChoklas: number
   activeUsers: number
   recentRegistrations: number
-  completionRate: number
-  growthRate: number
+  monthlyGrowth: {
+    villages: number
+    choklas: number
+    users: number
+    families: number
+  }
+  stateDistribution: Array<{
+    state: string
+    villages: number
+    families: number
+    population: number
+  }>
+  facilityStats: {
+    electricity: number
+    waterSupply: number
+    school: number
+    healthCenter: number
+    roadAccess: number
+  }
 }
 
 export interface ChokhlaFormData {

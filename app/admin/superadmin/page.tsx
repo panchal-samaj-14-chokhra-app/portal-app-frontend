@@ -60,168 +60,193 @@ export default function SuperAdminPage() {
     message: "",
   })
 
-  // Fetch profile data
-  const fetchProfile = async () => {
-    try {
-      setIsLoadingProfile(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/profile`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+  // Mock data for development
+  useEffect(() => {
+    // Simulate API calls with mock data
+    const loadMockData = () => {
+      // Mock profile
+      setProfile({
+        id: "1",
+        firstName: "राम",
+        lastName: "पटेल",
+        email: "admin@panchalsamaj.org",
+        mobileNumber: "9876543210",
+        role: "SUPERADMIN",
+        isActive: true,
+        loginCount: 45,
+        lastLogin: new Date().toISOString(),
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: new Date().toISOString(),
       })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setProfile(data)
-    } catch (error) {
-      console.error("Error fetching profile:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "प्रोफाइल लोड करने में त्रुटि",
-        message: "प्रोफाइल की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchProfile,
-      })
-    } finally {
       setIsLoadingProfile(false)
-    }
-  }
 
-  // Fetch villages data
-  const fetchVillages = async () => {
-    try {
-      setIsLoadingVillages(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/villages`, {
-        headers: {
-          "Content-Type": "application/json",
+      // Mock villages
+      setVillages([
+        {
+          id: "1",
+          name: "रामपुर",
+          state: "गुजरात",
+          district: "अहमदाबाद",
+          pincode: "380001",
+          hasElectricity: true,
+          hasWaterSupply: true,
+          hasSchool: true,
+          hasHealthCenter: false,
+          hasRoadAccess: true,
+          latitude: 23.0225,
+          longitude: 72.5714,
+          familyCount: 150,
+          populationCount: 750,
+          isActive: true,
+          createdAt: "2024-01-15T00:00:00Z",
+          updatedAt: "2024-01-15T00:00:00Z",
         },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setVillages(data)
-    } catch (error) {
-      console.error("Error fetching villages:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "गांवों की सूची लोड करने में त्रुटि",
-        message: "गांवों की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchVillages,
-      })
-    } finally {
+        {
+          id: "2",
+          name: "श्यामपुर",
+          state: "राजस्थान",
+          district: "जयपुर",
+          pincode: "302001",
+          hasElectricity: true,
+          hasWaterSupply: false,
+          hasSchool: true,
+          hasHealthCenter: true,
+          hasRoadAccess: true,
+          familyCount: 200,
+          populationCount: 1000,
+          isActive: true,
+          createdAt: "2024-01-20T00:00:00Z",
+          updatedAt: "2024-01-20T00:00:00Z",
+        },
+      ])
       setIsLoadingVillages(false)
-    }
-  }
 
-  // Fetch choklas data
-  const fetchChoklas = async () => {
-    try {
-      setIsLoadingChoklas(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/choklas`, {
-        headers: {
-          "Content-Type": "application/json",
+      // Mock choklas
+      setChoklas([
+        {
+          id: "1",
+          firstName: "विकास",
+          lastName: "शाह",
+          email: "vikas@example.com",
+          mobileNumber: "9876543211",
+          state: "गुजरात",
+          district: "अहमदाबाद",
+          villageCount: 5,
+          familyCount: 250,
+          isActive: true,
+          lastLogin: "2024-01-25T10:30:00Z",
+          createdAt: "2024-01-10T00:00:00Z",
+          updatedAt: "2024-01-25T10:30:00Z",
         },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setChoklas(data)
-    } catch (error) {
-      console.error("Error fetching choklas:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "चोखला सूची लोड करने में त्रुटि",
-        message: "चोखला की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchChoklas,
-      })
-    } finally {
+        {
+          id: "2",
+          firstName: "प्रिया",
+          lastName: "पटेल",
+          email: "priya@example.com",
+          mobileNumber: "9876543212",
+          state: "राजस्थान",
+          district: "जयपुर",
+          villageCount: 3,
+          familyCount: 180,
+          isActive: false,
+          lastLogin: null,
+          createdAt: "2024-01-12T00:00:00Z",
+          updatedAt: "2024-01-12T00:00:00Z",
+        },
+      ])
       setIsLoadingChoklas(false)
-    }
-  }
 
-  // Fetch users data
-  const fetchUsers = async () => {
-    try {
-      setIsLoadingUsers(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/users`, {
-        headers: {
-          "Content-Type": "application/json",
+      // Mock users
+      setUsers([
+        {
+          id: "1",
+          firstName: "अमित",
+          lastName: "गुप्ता",
+          email: "amit@example.com",
+          mobileNumber: "9876543213",
+          role: "ADMIN",
+          state: "गुजरात",
+          district: "सूरत",
+          isActive: true,
+          lastLogin: "2024-01-24T15:45:00Z",
+          createdAt: "2024-01-05T00:00:00Z",
+          updatedAt: "2024-01-24T15:45:00Z",
         },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setUsers(data)
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "उपयोगकर्ता सूची लोड करने में त्रुटि",
-        message: "उपयोगकर्ता की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchUsers,
-      })
-    } finally {
+        {
+          id: "2",
+          firstName: "सुनीता",
+          lastName: "शर्मा",
+          email: "sunita@example.com",
+          mobileNumber: "9876543214",
+          role: "USER",
+          state: "राजस्थान",
+          district: "उदयपुर",
+          village: "नंदगांव",
+          isActive: true,
+          lastLogin: "2024-01-23T09:20:00Z",
+          createdAt: "2024-01-08T00:00:00Z",
+          updatedAt: "2024-01-23T09:20:00Z",
+        },
+      ])
       setIsLoadingUsers(false)
-    }
-  }
 
-  // Fetch statistics data
-  const fetchStatistics = async () => {
-    try {
-      setIsLoadingStatistics(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/statistics`, {
-        headers: {
-          "Content-Type": "application/json",
+      // Mock statistics
+      setStatistics({
+        totalVillages: 125,
+        totalChoklas: 15,
+        totalUsers: 450,
+        totalFamilies: 2500,
+        totalPopulation: 12500,
+        activeVillages: 120,
+        activeChoklas: 12,
+        activeUsers: 425,
+        recentRegistrations: 25,
+        monthlyGrowth: {
+          villages: 8.5,
+          choklas: 12.3,
+          users: 15.7,
+          families: 6.2,
+        },
+        stateDistribution: [
+          { state: "गुजरात", villages: 75, families: 1500, population: 7500 },
+          { state: "राजस्थान", villages: 50, families: 1000, population: 5000 },
+        ],
+        facilityStats: {
+          electricity: 95,
+          waterSupply: 80,
+          school: 70,
+          healthCenter: 45,
+          roadAccess: 85,
         },
       })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setStatistics(data)
-    } catch (error) {
-      console.error("Error fetching statistics:", error)
-      setErrorDialog({
-        isOpen: true,
-        title: "आंकड़े लोड करने में त्रुटि",
-        message: "आंकड़े लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
-        onRetry: fetchStatistics,
-      })
-    } finally {
       setIsLoadingStatistics(false)
     }
-  }
+
+    loadMockData()
+  }, [])
 
   // Handle chokhla creation
   const handleCreateChokhla = async (data: ChokhlaFormData) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/choklas`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      const newChokhla: Chokhla = {
+        id: Date.now().toString(),
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        mobileNumber: data.mobileNumber,
+        state: data.state,
+        district: data.district,
+        villageCount: 0,
+        familyCount: 0,
+        isActive: true,
+        lastLogin: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
 
-      const newChokhla = await response.json()
       setChoklas((prev) => [...prev, newChokhla])
 
       setSuccessDialog({
@@ -242,7 +267,7 @@ export default function SuperAdminPage() {
       setErrorDialog({
         isOpen: true,
         title: "चोखला पंजीकरण में त्रुटि",
-        message: error instanceof Error ? error.message : "चोखला पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        message: "चोखला पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
       })
     }
   }
@@ -250,40 +275,40 @@ export default function SuperAdminPage() {
   // Handle profile update
   const handleUpdateProfile = async (data: ProfileFormData) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      if (profile) {
+        const updatedProfile: SuperAdminProfile = {
+          ...profile,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          mobileNumber: data.mobileNumber,
+          updatedAt: new Date().toISOString(),
+        }
+
+        setProfile(updatedProfile)
+
+        setSuccessDialog({
+          isOpen: true,
+          title: "प्रोफाइल सफलतापूर्वक अपडेट हुई",
+          message: "आपकी प्रोफाइल की जानकारी सफलतापूर्वक अपडेट हो गई है।",
+          details: {
+            नाम: `${data.firstName} ${data.lastName}`,
+            ईमेल: data.email,
+            मोबाइल: data.mobileNumber,
+          },
+        })
+
+        toast.success("प्रोफाइल सफलतापूर्वक अपडेट हुई")
       }
-
-      const updatedProfile = await response.json()
-      setProfile(updatedProfile)
-
-      setSuccessDialog({
-        isOpen: true,
-        title: "प्रोफाइल सफलतापूर्वक अपडेट हुई",
-        message: "आपकी प्रोफाइल की जानकारी सफलतापूर्वक अपडेट हो गई है।",
-        details: {
-          नाम: `${data.firstName} ${data.lastName}`,
-          ईमेल: data.email,
-          मोबाइल: data.mobileNumber,
-        },
-      })
-
-      toast.success("प्रोफाइल सफलतापूर्वक अपडेट हुई")
     } catch (error) {
       console.error("Error updating profile:", error)
       setErrorDialog({
         isOpen: true,
         title: "प्रोफाइल अपडेट में त्रुटि",
-        message: error instanceof Error ? error.message : "प्रोफाइल अपडेट करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        message: "प्रोफाइल अपडेट करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
       })
     }
   }
@@ -291,20 +316,7 @@ export default function SuperAdminPage() {
   // Handle user status toggle
   const handleToggleUserStatus = async (id: string, isActive: boolean) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/users/${id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isActive }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
       setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, isActive } : user)))
-
       toast.success(`उपयोगकर्ता ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
     } catch (error) {
       console.error("Error toggling user status:", error)
@@ -315,20 +327,7 @@ export default function SuperAdminPage() {
   // Handle chokhla status toggle
   const handleToggleChokhlaStatus = async (id: string, isActive: boolean) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/choklas/${id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isActive }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
       setChoklas((prev) => prev.map((chokhla) => (chokhla.id === id ? { ...chokhla, isActive } : chokhla)))
-
       toast.success(`चोखला ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
     } catch (error) {
       console.error("Error toggling chokhla status:", error)
@@ -339,12 +338,8 @@ export default function SuperAdminPage() {
   // Handle logout
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      // Simulate logout API call
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
       // Redirect to login page
       window.location.href = "/login"
@@ -354,14 +349,21 @@ export default function SuperAdminPage() {
     }
   }
 
-  // Load data on component mount
-  useEffect(() => {
-    fetchProfile()
-    fetchVillages()
-    fetchChoklas()
-    fetchUsers()
-    fetchStatistics()
-  }, [])
+  // Mock refresh functions
+  const handleRefreshVillages = () => {
+    setIsLoadingVillages(true)
+    setTimeout(() => setIsLoadingVillages(false), 1000)
+  }
+
+  const handleRefreshChoklas = () => {
+    setIsLoadingChoklas(true)
+    setTimeout(() => setIsLoadingChoklas(false), 1000)
+  }
+
+  const handleRefreshUsers = () => {
+    setIsLoadingUsers(true)
+    setTimeout(() => setIsLoadingUsers(false), 1000)
+  }
 
   // Render content based on active tab
   const renderContent = () => {
@@ -370,14 +372,14 @@ export default function SuperAdminPage() {
         return <StatisticsManagement statistics={statistics} isLoading={isLoadingStatistics} />
 
       case "villages":
-        return <VillageManagement villages={villages} isLoading={isLoadingVillages} onRefresh={fetchVillages} />
+        return <VillageManagement villages={villages} isLoading={isLoadingVillages} onRefresh={handleRefreshVillages} />
 
       case "choklas":
         return (
           <ChokhlaManagement
             choklas={choklas}
             isLoading={isLoadingChoklas}
-            onRefresh={fetchChoklas}
+            onRefresh={handleRefreshChoklas}
             onCreateChokhla={handleCreateChokhla}
             onToggleStatus={handleToggleChokhlaStatus}
           />
@@ -388,7 +390,7 @@ export default function SuperAdminPage() {
           <UserManagement
             users={users}
             isLoading={isLoadingUsers}
-            onRefresh={fetchUsers}
+            onRefresh={handleRefreshUsers}
             onToggleStatus={handleToggleUserStatus}
           />
         )
