@@ -1,9 +1,10 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState } from "react"
+import { useSession, signOut } from "next-auth/react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,97 +13,98 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Shield, Settings, LogOut, User, Bell } from "lucide-react"
-import { useSuperAdmin } from "./providers/superadmin-provider"
+import { Badge } from "@/components/ui/badge"
+import { Bell, LogOut, Settings, User, Shield } from "lucide-react"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 export function SuperAdminHeader() {
-  const { profile, isLoadingProfile, setActiveTab } = useSuperAdmin()
+  const { data: session } = useSession()
+  const t = useTranslations("SuperAdmin")
+  const [notifications] = useState(3) // Mock notification count
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/login" })
+  }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md shadow-sm">
-      <div className="flex h-20 items-center justify-between px-6">
+    <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md border-white/20">
+      <div className="flex h-16 items-center justify-between px-6">
         {/* Logo and Title */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                सुपर एडमिन पैनल
+                {t("title")}
               </h1>
-              <p className="text-sm text-gray-500">पंचाल समाज जनगणना प्रबंधन</p>
+              <p className="text-xs text-gray-500">Administration Panel</p>
             </div>
           </div>
         </div>
 
-        {/* User Profile Section */}
+        {/* Right Side Actions */}
         <div className="flex items-center gap-4">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="ghost" size="sm" className="relative">
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
+            {notifications > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              >
+                {notifications}
+              </Badge>
+            )}
           </Button>
 
-          {/* User Profile */}
-          {isLoadingProfile ? (
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <div className="space-y-1">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-16" />
-              </div>
-            </div>
-          ) : profile ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-3 h-auto p-2 hover:bg-gray-50">
-                  <Avatar className="h-10 w-10 ring-2 ring-blue-100">
-                    <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.firstName} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
-                      {profile.firstName?.[0]}
-                      {profile.lastName?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-left">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">
-                        {profile.firstName} {profile.lastName}
-                      </span>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
-                        {profile.role}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-500">{profile.email}</p>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>मेरा खाता</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setActiveTab("profile")}>
-                  <User className="mr-2 h-4 w-4" />
-                  प्रोफाइल देखें
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  सेटिंग्स
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  लॉग आउट
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-gray-200"></div>
-              <div>
-                <p className="text-sm text-gray-500">लोड हो रहा है...</p>
-              </div>
-            </div>
-          )}
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10 ring-2 ring-gradient-to-r from-blue-500 to-purple-500">
+                  <AvatarImage
+                    src={session?.user?.image || "/placeholder-user.jpg"}
+                    alt={session?.user?.name || "User"}
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                    {session?.user?.name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{session?.user?.name || "Super Admin"}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {session?.user?.email || "admin@example.com"}
+                  </p>
+                  <Badge variant="secondary" className="w-fit mt-1">
+                    Super Admin
+                  </Badge>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

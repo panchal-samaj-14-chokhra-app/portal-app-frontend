@@ -1,31 +1,18 @@
 "use client"
 
-import { useSuperAdmin } from "../providers/superadmin-provider"
-import { SuccessDialog } from "../success-dialog"
-import { ErrorDialog } from "../error-dialog"
+import { useSuperAdmin } from "@/components/superadmin/providers/superadmin-provider"
+import { SuccessDialog } from "@/components/superadmin/success-dialog"
+import { ErrorDialog } from "@/components/superadmin/error-dialog"
 
 export function SuperAdminDialogs() {
-  const { successDialog, errorDialog, setSuccessDialog, setErrorDialog } = useSuperAdmin()
+  const { showSuccessDialog, setShowSuccessDialog, showErrorDialog, setShowErrorDialog, successMessage, errorMessage } =
+    useSuperAdmin()
 
   return (
     <>
-      {/* Success Dialog */}
-      <SuccessDialog
-        isOpen={successDialog.isOpen}
-        onClose={() => setSuccessDialog({ ...successDialog, isOpen: false })}
-        title={successDialog.title}
-        message={successDialog.message}
-        details={successDialog.details}
-      />
+      <SuccessDialog isOpen={showSuccessDialog} onClose={() => setShowSuccessDialog(false)} message={successMessage} />
 
-      {/* Error Dialog */}
-      <ErrorDialog
-        isOpen={errorDialog.isOpen}
-        onClose={() => setErrorDialog({ ...errorDialog, isOpen: false })}
-        title={errorDialog.title}
-        message={errorDialog.message}
-        onRetry={errorDialog.onRetry}
-      />
+      <ErrorDialog isOpen={showErrorDialog} onClose={() => setShowErrorDialog(false)} message={errorMessage} />
     </>
   )
 }
