@@ -6,61 +6,55 @@ import { Button } from "@/components/ui/button"
 
 export function ReportsView() {
   return (
-    <div className="space-y-6">
-      <Card className="shadow-xl border-green-100 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
-          <CardTitle className="text-2xl font-bold text-green-800 flex items-center gap-2">
-            <FileText className="w-6 h-6" />
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="shadow-xl border-orange-100 bg-white/80 backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200 p-4 sm:p-6">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-orange-800 flex items-center gap-2">
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
             रिपोर्ट्स
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-3 mb-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between mb-3">
                 <Calendar className="w-6 h-6 text-blue-600" />
-                <h3 className="font-semibold text-blue-800">मासिक रिपोर्ट</h3>
+                <Button size="sm" variant="outline" className="text-xs bg-transparent">
+                  <Download className="w-3 h-3 mr-1" />
+                  डाउनलोड
+                </Button>
               </div>
-              <p className="text-blue-600 text-sm mb-4">पिछले महीने की गतिविधियों की रिपोर्ट</p>
-              <Button
-                variant="outline"
-                className="w-full border-blue-300 text-blue-600 hover:bg-blue-100 bg-transparent"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                डाउनलोड करें
-              </Button>
+              <h3 className="font-semibold text-blue-800 mb-2">मासिक रिपोर्ट</h3>
+              <p className="text-sm text-blue-600">गांव की मासिक गतिविधियों की रिपोर्ट</p>
             </div>
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg border border-orange-200">
-              <div className="flex items-center gap-3 mb-4">
-                <Filter className="w-6 h-6 text-orange-600" />
-                <h3 className="font-semibold text-orange-800">गांव रिपोर्ट</h3>
+
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between mb-3">
+                <Filter className="w-6 h-6 text-green-600" />
+                <Button size="sm" variant="outline" className="text-xs bg-transparent">
+                  <Download className="w-3 h-3 mr-1" />
+                  डाउनलोड
+                </Button>
               </div>
-              <p className="text-orange-600 text-sm mb-4">सभी गांवों की विस्तृत जानकारी</p>
-              <Button
-                variant="outline"
-                className="w-full border-orange-300 text-orange-600 hover:bg-orange-100 bg-transparent"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                डाउनलोड करें
-              </Button>
+              <h3 className="font-semibold text-green-800 mb-2">जनसंख्या रिपोर्ट</h3>
+              <p className="text-sm text-green-600">गांव की जनसंख्या का विस्तृत विवरण</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
-              <div className="flex items-center gap-3 mb-4">
+
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <div className="flex items-center justify-between mb-3">
                 <FileText className="w-6 h-6 text-purple-600" />
-                <h3 className="font-semibold text-purple-800">सदस्य रिपोर्ट</h3>
+                <Button size="sm" variant="outline" className="text-xs bg-transparent">
+                  <Download className="w-3 h-3 mr-1" />
+                  डाउनलोड
+                </Button>
               </div>
-              <p className="text-purple-600 text-sm mb-4">सभी सदस्यों की सूची और विवरण</p>
-              <Button
-                variant="outline"
-                className="w-full border-purple-300 text-purple-600 hover:bg-purple-100 bg-transparent"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                डाउनलोड करें
-              </Button>
+              <h3 className="font-semibold text-purple-800 mb-2">वार्षिक रिपोर्ट</h3>
+              <p className="text-sm text-purple-600">साल भर की गतिविधियों का सारांश</p>
             </div>
           </div>
+
           <div className="mt-8 text-center text-gray-500">
-            <p>रिपोर्ट जेनरेशन सुविधा जल्द ही उपलब्ध होगी</p>
+            <p>रिपोर्ट्स जल्द ही उपलब्ध होंगे</p>
           </div>
         </CardContent>
       </Card>

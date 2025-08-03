@@ -181,44 +181,46 @@ function Chokhla() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Enhanced Navbar */}
-      <header className="bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 shadow-xl">
-        <div className="container mx-auto px-4 py-4">
+      {/* Enhanced Mobile-First Navbar */}
+      <header className="bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 shadow-xl sticky top-0 z-50">
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+              <div className="relative flex-shrink-0">
                 <Image
                   src="/images/main-logo.png"
                   alt="Panchal Samaj Logo"
-                  width={48}
-                  height={48}
-                  className="rounded-full shadow-lg ring-2 ring-white/20"
+                  width={32}
+                  height={32}
+                  className="sm:w-12 sm:h-12 rounded-full shadow-lg ring-2 ring-white/20"
                 />
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-white"></div>
               </div>
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</h1>
-                <p className="text-orange-100 text-sm">चौकला प्रबंधन पैनल</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm sm:text-xl lg:text-2xl font-bold text-white truncate">पंचाल समाज 14 चोखरा</h1>
+                <p className="text-orange-100 text-xs hidden sm:block">चौकला प्रबंधन पैनल</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
               {userType === "SUPER_ADMIN" && (
                 <Button
                   variant="outline"
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-200"
+                  size="sm"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-xs px-2 sm:px-4"
                   onClick={handleBack}
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  वापस
+                  <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">वापस</span>
                 </Button>
               )}
               <Button
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-200"
+                size="sm"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-xs px-2 sm:px-4"
                 onClick={handleLogout}
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                लॉगआउट
+                <LogOut className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">लॉगआउट</span>
               </Button>
             </div>
           </div>
@@ -226,8 +228,8 @@ function Chokhla() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-2 sm:px-4 py-4 lg:py-8">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
           <NavigationSidebar activeTab={activeTab} onTabChange={setActiveTab} />
           <section className="flex-1 min-w-0">{renderTabContent()}</section>
         </div>

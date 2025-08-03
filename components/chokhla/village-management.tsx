@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AddVillageForm } from "./add-village-form"
 import type { UseFormReturn } from "react-hook-form"
-import { Loader2, Eye } from "lucide-react"
+import { Loader2, Eye, MapPin } from "lucide-react"
 
 interface VillageManagementProps {
   villages: any[]
@@ -33,9 +33,12 @@ export function VillageManagement({
 }: VillageManagementProps) {
   return (
     <Card className="shadow-xl border-orange-100 bg-white/80 backdrop-blur-sm">
-      <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
+      <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <CardTitle className="text-2xl font-bold text-orange-800">गांव सूची</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-orange-800 flex items-center gap-2">
+            <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
+            गांव सूची
+          </CardTitle>
           <AddVillageForm
             open={open}
             onOpenChange={onOpenChange}
@@ -48,32 +51,32 @@ export function VillageManagement({
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <div className="min-w-full">
+          <div className="min-w-[800px]">
             <table className="w-full divide-y divide-orange-200">
               <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
                 <tr>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
-                    नाम
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                    गांव का नाम
                   </th>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     सदस्य
                   </th>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     मोबाइल नंबर
                   </th>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     आयु
                   </th>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     तहसील
                   </th>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     जिला
                   </th>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     राज्य
                   </th>
-                  <th className="px-3 py-4 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     कार्रवाई
                   </th>
                 </tr>
@@ -96,25 +99,35 @@ export function VillageManagement({
                         idx % 2 === 0 ? "bg-orange-50 hover:bg-orange-100" : "bg-white hover:bg-orange-50"
                       }`}
                     >
-                      <td className="px-3 py-4 whitespace-nowrap font-medium text-orange-900 text-sm">
-                        {village.name}
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap">
+                        <div className="font-semibold text-orange-900 text-sm">{village.name}</div>
                       </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-orange-800 text-sm">
-                        {village.villageMemberName}
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-orange-800 text-sm">
+                        {village.villageMemberName || "-"}
                       </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-orange-800 text-sm">{village.mobileNumber}</td>
-                      <td className="px-3 py-4 whitespace-nowrap text-orange-800 text-sm">{village.age}</td>
-                      <td className="px-3 py-4 whitespace-nowrap text-orange-800 text-sm">{village.tehsil}</td>
-                      <td className="px-3 py-4 whitespace-nowrap text-orange-800 text-sm">{village.district}</td>
-                      <td className="px-3 py-4 whitespace-nowrap text-orange-800 text-sm">{village.state}</td>
-                      <td className="px-3 py-4 whitespace-nowrap">
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-orange-800 text-sm">
+                        {village.mobileNumber || "-"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-orange-800 text-sm">
+                        {village.age || "-"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-orange-800 text-sm">
+                        {village.tehsil || "-"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-orange-800 text-sm">
+                        {village.district || "-"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-orange-800 text-sm">
+                        {village.state || "-"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-orange-400 text-orange-600 hover:bg-orange-100 hover:text-orange-800 transition-colors bg-transparent"
+                          className="border-orange-300 text-orange-600 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 transition-all duration-200 bg-transparent text-xs sm:text-sm"
                           onClick={() => onVillageView(village.id)}
                         >
-                          <Eye className="w-4 h-4 mr-1" />
+                          <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           देखें
                         </Button>
                       </td>

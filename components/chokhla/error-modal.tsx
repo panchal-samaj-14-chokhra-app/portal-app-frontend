@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 
 interface ErrorModalProps {
@@ -13,26 +13,20 @@ interface ErrorModalProps {
 export function ErrorModal({ open, onOpenChange, errorMessage }: ErrorModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95vw] max-w-md mx-auto p-4 sm:p-6">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-            </div>
-            <DialogTitle className="text-red-800">त्रुटि</DialogTitle>
-          </div>
+          <DialogTitle className="text-center text-red-700 flex items-center justify-center gap-2 text-lg sm:text-xl">
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+            त्रुटि
+          </DialogTitle>
         </DialogHeader>
-        <div className="bg-red-50 rounded-lg p-4">
-          <div className="text-sm text-red-700 mb-4">{errorMessage}</div>
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-red-300 text-red-700 hover:bg-red-50"
-            >
-              बंद करें
-            </Button>
-          </div>
+        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+          <p className="text-red-700 text-sm text-center">{errorMessage}</p>
+        </div>
+        <div className="flex justify-end pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+            बंद करें
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -2,36 +2,21 @@
 
 import type React from "react"
 
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff, Loader2, X } from "lucide-react"
-import { useState } from "react"
-
-interface FormData {
-  name: string
-  adhyaksh: string
-  contactNumber: string
-  state: string
-  district: string
-  villageName: string
-  email: string
-  password: string
-  repeatPassword: string
-}
-
-interface FormErrors {
-  [key: string]: string
-}
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 
 interface AddChokhlaFormProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (formData: FormData) => void
+  onSubmit: (data: any) => void
   isSubmitting: boolean
 }
 
 export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting }: AddChokhlaFormProps) {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     name: "",
     adhyaksh: "",
     contactNumber: "",
@@ -42,54 +27,51 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
     password: "",
     repeatPassword: "",
   })
-
-  const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showRepeatPassword, setShowRepeatPassword] = useState(false)
-
-  if (!isOpen) return null
-
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {}
-
-    // Required field validation
-    Object.keys(formData).forEach((key) => {
-      if (!formData[key as keyof FormData].trim()) {
-        errors[key] = "यह फील्ड आवश्यक है"
-      }
-    })
-
-    // Mobile number validation
-    if (formData.contactNumber && !/^[6-9]\d{9}$/.test(formData.contactNumber)) {
-      errors.contactNumber = "मान्य मोबाइल नंबर दर्ज करें (10 अंक, 6-9 से शुरू)"
-    }
-
-    // Email validation
-    if (formData.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
-      errors.email = "मान्य ईमेल दर्ज करें"
-    }
-
-    // Password validation
-    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/
-    if (formData.password && !strongPassword.test(formData.password)) {
-      errors.password = "पासवर्ड मजबूत होना चाहिए (कम से कम 8 अक्षर, एक बड़ा, एक छोटा, एक संख्या, एक विशेष चिन्ह)"
-    }
-
-    // Repeat password validation
-    if (formData.password !== formData.repeatPassword) {
-      errors.repeatPassword = "पासवर्ड मेल नहीं खाते"
-    }
-
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
+  const [errors, setErrors] = useState<any>({})
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({ ...prev, [name]: "" }))
+    if (errors[name]) {
+      setErrors((prev: any) => ({ ...prev, [name]: "" }))
     }
+  }
+
+  const validateForm = () => {
+    const newErrors: any = {}
+
+    if (!formData.name) newErrors.name = "चौकला का नाम आवश्यक है"
+    if (!formData.adhyaksh) newErrors.adhyaksh = "अध्यक्ष का नाम आवश्यक है"
+    if (!formData.contactNumber) {
+      newErrors.contactNumber = "संपर्क नंबर आवश्यक है"
+    } else if (!/^[6-9]\d{9}$/.test(formData.contactNumber)) {
+      newErrors.contactNumber = "वैध मोबाइल नंबर दर्ज करें"
+    }
+    if (!formData.state) newErrors.state = "राज्य आवश्यक है"
+    if (!formData.district) newErrors.district = "जिला आवश्यक है"
+    if (!formData.villageName) newErrors.villageName = "गांव का नाम आवश्यक है"
+    if (!formData.email) {
+      newErrors.email = "ईमेल आवश्यक है"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "वैध ईमेल पता दर्ज करें"
+    }
+    if (!formData.password) {
+      newErrors.password = "पासवर्ड आवश्यक है"
+    } else if (
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(formData.password)
+    ) {
+      newErrors.password = "पासवर्ड मजबूत होना चाहिए (8+ अक्षर, बड़ा, छोटा, संख्या, विशेष चिन्ह)"
+    }
+    if (!formData.repeatPassword) {
+      newErrors.repeatPassword = "पासवर्ड दोबारा लिखें आवश्यक है"
+    } else if (formData.password !== formData.repeatPassword) {
+      newErrors.repeatPassword = "पासवर्ड मेल नहीं खाते"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,7 +81,7 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
     }
   }
 
-  const handleClose = () => {
+  const resetForm = () => {
     setFormData({
       name: "",
       adhyaksh: "",
@@ -111,138 +93,130 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
       password: "",
       repeatPassword: "",
     })
-    setFormErrors({})
+    setErrors({})
+    setShowPassword(false)
+    setShowRepeatPassword(false)
+  }
+
+  const handleClose = () => {
+    resetForm()
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-orange-200">
-          <h3 className="text-2xl font-bold text-orange-700">नया चौकला जोड़ें</h3>
-          <Button variant="ghost" size="sm" onClick={handleClose} className="h-8 w-8 p-0 hover:bg-orange-100">
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Scrollable Form Container */}
-        <div className="overflow-y-auto flex-1 p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* बुनियादी जानकारी */}
-            <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg border-l-4 border-orange-500">
-              <h4 className="text-lg font-semibold text-orange-800 mb-4">बुनियादी जानकारी</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden p-2 sm:p-4 lg:p-6">
+        <DialogHeader>
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-orange-800 text-center">नया चौकला जोड़ें</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[70vh] overflow-y-auto px-1">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            {/* Basic Information */}
+            <div className="bg-orange-50 rounded-lg p-3 sm:p-4 border border-orange-200">
+              <h3 className="text-base sm:text-lg font-semibold text-orange-800 mb-3 sm:mb-4">बुनियादी जानकारी</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-orange-700 mb-2">चौकला का नाम *</label>
+                  <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम *</label>
                   <Input
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="चौकला का नाम दर्ज करें"
+                    className="border-orange-300 focus:border-orange-500 text-sm"
                   />
-                  {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                  {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-orange-700 mb-2">अध्यक्ष *</label>
+                  <label className="block text-sm font-medium text-orange-700 mb-1">अध्यक्ष *</label>
                   <Input
                     name="adhyaksh"
                     value={formData.adhyaksh}
                     onChange={handleChange}
-                    className="focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="अध्यक्ष का नाम दर्ज करें"
+                    className="border-orange-300 focus:border-orange-500 text-sm"
                   />
-                  {formErrors.adhyaksh && <p className="text-red-500 text-xs mt-1">{formErrors.adhyaksh}</p>}
+                  {errors.adhyaksh && <p className="text-red-600 text-xs mt-1">{errors.adhyaksh}</p>}
                 </div>
               </div>
             </div>
 
-            {/* संपर्क जानकारी */}
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border-l-4 border-blue-500">
-              <h4 className="text-lg font-semibold text-blue-800 mb-4">संपर्क जानकारी</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Contact Information */}
+            <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
+              <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3 sm:mb-4">संपर्क जानकारी</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-blue-700 mb-2">मोबाइल नंबर *</label>
+                  <label className="block text-sm font-medium text-blue-700 mb-1">संपर्क नंबर *</label>
                   <Input
                     name="contactNumber"
+                    type="tel"
                     value={formData.contactNumber}
                     onChange={handleChange}
-                    className="focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="मोबाइल नंबर दर्ज करें"
-                    maxLength={10}
+                    className="border-blue-300 focus:border-blue-500 text-sm"
                   />
-                  {formErrors.contactNumber && <p className="text-red-500 text-xs mt-1">{formErrors.contactNumber}</p>}
+                  {errors.contactNumber && <p className="text-red-600 text-xs mt-1">{errors.contactNumber}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-blue-700 mb-2">ईमेल *</label>
+                  <label className="block text-sm font-medium text-blue-700 mb-1">ईमेल *</label>
                   <Input
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="ईमेल दर्ज करें"
+                    className="border-blue-300 focus:border-blue-500 text-sm"
                   />
-                  {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                  {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
                 </div>
               </div>
             </div>
 
-            {/* स्थान की जानकारी */}
-            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border-l-4 border-green-500">
-              <h4 className="text-lg font-semibold text-green-800 mb-4">स्थान की जानकारी</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Location Information */}
+            <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
+              <h3 className="text-base sm:text-lg font-semibold text-green-800 mb-3 sm:mb-4">स्थान की जानकारी</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-green-700 mb-2">राज्य *</label>
+                  <label className="block text-sm font-medium text-green-700 mb-1">राज्य *</label>
                   <Input
                     name="state"
                     value={formData.state}
                     onChange={handleChange}
-                    className="focus:ring-green-500 focus:border-green-500"
-                    placeholder="राज्य दर्ज करें"
+                    className="border-green-300 focus:border-green-500 text-sm"
                   />
-                  {formErrors.state && <p className="text-red-500 text-xs mt-1">{formErrors.state}</p>}
+                  {errors.state && <p className="text-red-600 text-xs mt-1">{errors.state}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-green-700 mb-2">जिला *</label>
+                  <label className="block text-sm font-medium text-green-700 mb-1">जिला *</label>
                   <Input
                     name="district"
                     value={formData.district}
                     onChange={handleChange}
-                    className="focus:ring-green-500 focus:border-green-500"
-                    placeholder="जिला दर्ज करें"
+                    className="border-green-300 focus:border-green-500 text-sm"
                   />
-                  {formErrors.district && <p className="text-red-500 text-xs mt-1">{formErrors.district}</p>}
+                  {errors.district && <p className="text-red-600 text-xs mt-1">{errors.district}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-green-700 mb-2">गांव *</label>
+                  <label className="block text-sm font-medium text-green-700 mb-1">गांव *</label>
                   <Input
                     name="villageName"
                     value={formData.villageName}
                     onChange={handleChange}
-                    className="focus:ring-green-500 focus:border-green-500"
-                    placeholder="गांव का नाम दर्ज करें"
+                    className="border-green-300 focus:border-green-500 text-sm"
                   />
-                  {formErrors.villageName && <p className="text-red-500 text-xs mt-1">{formErrors.villageName}</p>}
+                  {errors.villageName && <p className="text-red-600 text-xs mt-1">{errors.villageName}</p>}
                 </div>
               </div>
             </div>
 
-            {/* सुरक्षा जानकारी */}
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border-l-4 border-purple-500">
-              <h4 className="text-lg font-semibold text-purple-800 mb-4">सुरक्षा जानकारी</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Security Information */}
+            <div className="bg-red-50 rounded-lg p-3 sm:p-4 border border-red-200">
+              <h3 className="text-base sm:text-lg font-semibold text-red-800 mb-3 sm:mb-4">सुरक्षा जानकारी</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-purple-700 mb-2">पासवर्ड *</label>
+                  <label className="block text-sm font-medium text-red-700 mb-1">पासवर्ड *</label>
                   <div className="relative">
                     <Input
                       name="password"
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
-                      className="focus:ring-purple-500 focus:border-purple-500 pr-10"
-                      placeholder="पासवर्ड दर्ज करें"
+                      className="border-red-300 focus:border-red-500 pr-10 text-sm"
                     />
                     <Button
                       type="button"
@@ -252,24 +226,23 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-500" />
+                        <EyeOff className="h-4 w-4 text-red-500" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-500" />
+                        <Eye className="h-4 w-4 text-red-500" />
                       )}
                     </Button>
                   </div>
-                  {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
+                  {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-purple-700 mb-2">पासवर्ड दोबारा लिखें *</label>
+                  <label className="block text-sm font-medium text-red-700 mb-1">पासवर्ड दोबारा लिखें *</label>
                   <div className="relative">
                     <Input
                       name="repeatPassword"
                       type={showRepeatPassword ? "text" : "password"}
                       value={formData.repeatPassword}
                       onChange={handleChange}
-                      className="focus:ring-purple-500 focus:border-purple-500 pr-10"
-                      placeholder="पासवर्ड दोबारा लिखें"
+                      className="border-red-300 focus:border-red-500 pr-10 text-sm"
                     />
                     <Button
                       type="button"
@@ -279,48 +252,44 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
                       onClick={() => setShowRepeatPassword(!showRepeatPassword)}
                     >
                       {showRepeatPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-500" />
+                        <EyeOff className="h-4 w-4 text-red-500" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-500" />
+                        <Eye className="h-4 w-4 text-red-500" />
                       )}
                     </Button>
                   </div>
-                  {formErrors.repeatPassword && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.repeatPassword}</p>
-                  )}
+                  {errors.repeatPassword && <p className="text-red-600 text-xs mt-1">{errors.repeatPassword}</p>}
                 </div>
               </div>
             </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                className="border-gray-300 w-full sm:w-auto bg-transparent"
+              >
+                रद्द करें
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 w-full sm:w-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    सहेजा जा रहा है...
+                  </>
+                ) : (
+                  "सहेजें"
+                )}
+              </Button>
+            </div>
           </form>
         </div>
-
-        {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSubmitting}
-            className="border-orange-300 text-orange-700 hover:bg-orange-50 bg-transparent"
-          >
-            रद्द करें
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white hover:from-orange-700 hover:to-orange-800"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                सहेज रहे हैं...
-              </>
-            ) : (
-              "सहेजें"
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

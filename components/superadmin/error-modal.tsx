@@ -1,5 +1,6 @@
 "use client"
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 
@@ -10,29 +11,24 @@ interface ErrorModalProps {
 }
 
 export default function ErrorModal({ isOpen, onClose, message }: ErrorModalProps) {
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform animate-in zoom-in-95 duration-300">
-        <div className="text-center mb-6">
-          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <AlertCircle className="w-8 h-8 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-red-700">त्रुटि!</h2>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="w-[95vw] max-w-md mx-auto p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="text-center text-red-700 flex items-center justify-center gap-2 text-lg sm:text-xl">
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+            त्रुटि
+          </DialogTitle>
+        </DialogHeader>
+        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+          <p className="text-red-700 text-sm text-center">{message}</p>
         </div>
-
-        <p className="text-center text-gray-700 mb-6">{message}</p>
-
-        <div className="flex justify-center">
-          <Button
-            onClick={onClose}
-            className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200"
-          >
-            ठीक है
+        <div className="flex justify-end pt-4">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto bg-transparent">
+            बंद करें
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

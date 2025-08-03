@@ -23,14 +23,14 @@ interface UserManagementProps {
 export default function UserManagement({ users, isLoading, error, onToggleActive }: UserManagementProps) {
   if (isLoading) {
     return (
-      <Card className="mb-8 bg-white/80 backdrop-blur-sm shadow-lg border-orange-200/50">
+      <Card className="w-full bg-white/80 backdrop-blur-sm shadow-lg">
         <CardHeader>
-          <CardTitle className="text-orange-800">यूज़र प्रबंधन</CardTitle>
+          <CardTitle className="text-lg lg:text-xl">यूज़र प्रबंधन</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-600 mx-auto mb-4" />
-            <p className="text-orange-600">यूज़र की जानकारी लोड हो रही है...</p>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            <span className="ml-2 text-orange-600">लोड हो रहा है...</span>
           </div>
         </CardContent>
       </Card>
@@ -39,14 +39,14 @@ export default function UserManagement({ users, isLoading, error, onToggleActive
 
   if (error) {
     return (
-      <Card className="mb-8 bg-white/80 backdrop-blur-sm shadow-lg border-red-200/50">
+      <Card className="w-full bg-white/80 backdrop-blur-sm shadow-lg">
         <CardHeader>
-          <CardTitle className="text-orange-800">यूज़र प्रबंधन</CardTitle>
+          <CardTitle className="text-lg lg:text-xl">यूज़र प्रबंधन</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
-            <p className="text-red-600">डेटा लोड करने में त्रुटि हुई</p>
+        <CardContent>
+          <div className="flex items-center justify-center py-8 text-red-600">
+            <AlertCircle className="w-6 h-6 mr-2" />
+            <span>{error}</span>
           </div>
         </CardContent>
       </Card>
@@ -54,54 +54,68 @@ export default function UserManagement({ users, isLoading, error, onToggleActive
   }
 
   return (
-    <Card className="mb-8 bg-white/80 backdrop-blur-sm shadow-lg border-orange-200/50">
+    <Card className="w-full bg-white/80 backdrop-blur-sm shadow-lg">
       <CardHeader>
-        <CardTitle className="text-orange-800">यूज़र प्रबंधन</CardTitle>
+        <CardTitle className="text-lg lg:text-xl">यूज़र प्रबंधन</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] bg-white border border-orange-200 rounded-lg shadow">
-            <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">ईमेल</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">नाम</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">भूमिका</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">सक्रिय</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                  निर्माण तिथि
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-orange-100">
-              {users?.map((user) => (
-                <tr key={user.id} className="hover:bg-orange-50 transition-colors duration-150">
-                  <td className="px-4 py-3 text-orange-900 text-xs break-all font-mono">{user.id}</td>
-                  <td className="px-4 py-3 text-orange-800 font-medium">{user.email}</td>
-                  <td className="px-4 py-3 text-orange-800">{user.fullName}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.globalRole === "superadmin"
-                          ? "bg-purple-100 text-purple-800"
-                          : user.globalRole === "admin"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {user.globalRole}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Switch checked={user.isActive} onCheckedChange={() => onToggleActive(user.id, user.isActive)} />
-                  </td>
-                  <td className="px-4 py-3 text-orange-700 text-xs">
-                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString("hi-IN") : "-"}
-                  </td>
+          <div className="min-w-[900px]">
+            <table className="w-full bg-white border border-orange-200 rounded-lg shadow">
+              <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
+                <tr>
+                  <th className="px-2 lg:px-4 py-2 text-left text-xs font-bold text-white uppercase">ID</th>
+                  <th className="px-2 lg:px-4 py-2 text-left text-xs font-bold text-white uppercase">ईमेल</th>
+                  <th className="px-2 lg:px-4 py-2 text-left text-xs font-bold text-white uppercase">नाम</th>
+                  <th className="px-2 lg:px-4 py-2 text-left text-xs font-bold text-white uppercase">भूमिका</th>
+                  <th className="px-2 lg:px-4 py-2 text-left text-xs font-bold text-white uppercase">सक्रिय</th>
+                  <th className="px-2 lg:px-4 py-2 text-left text-xs font-bold text-white uppercase">निर्माण तिथि</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users && users.length > 0 ? (
+                  users.map((user, idx) => (
+                    <tr
+                      key={user.id}
+                      className={`border-b border-orange-100 hover:bg-orange-50 ${idx % 2 === 0 ? "bg-orange-25" : "bg-white"}`}
+                    >
+                      <td className="px-2 lg:px-4 py-2 text-orange-900 text-xs break-all max-w-[100px]">
+                        <div className="truncate" title={user.id}>
+                          {user.id}
+                        </div>
+                      </td>
+                      <td className="px-2 lg:px-4 py-2 text-orange-800 text-xs lg:text-sm">
+                        <div className="truncate max-w-[120px] lg:max-w-none" title={user.email}>
+                          {user.email}
+                        </div>
+                      </td>
+                      <td className="px-2 lg:px-4 py-2 text-orange-800 text-xs lg:text-sm">
+                        <div className="truncate max-w-[100px] lg:max-w-none" title={user.fullName}>
+                          {user.fullName}
+                        </div>
+                      </td>
+                      <td className="px-2 lg:px-4 py-2 text-orange-800 text-xs lg:text-sm">{user.globalRole}</td>
+                      <td className="px-2 lg:px-4 py-2">
+                        <Switch
+                          checked={user.isActive}
+                          onCheckedChange={() => onToggleActive(user.id, user.isActive)}
+                        />
+                      </td>
+                      <td className="px-2 lg:px-4 py-2 text-orange-700 text-xs">
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString("hi-IN") : "-"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      कोई यूज़र नहीं मिला
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </CardContent>
     </Card>

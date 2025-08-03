@@ -1,5 +1,6 @@
 "use client"
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Copy } from "lucide-react"
 import { useState } from "react"
@@ -7,72 +8,78 @@ import { useState } from "react"
 interface SuccessModalProps {
   isOpen: boolean
   onClose: () => void
-  data: {
-    chokhlaId: string
-    userId: string
-    email: string
-    fullName: string
-    role: string
-    password: string
-  } | null
+  data: any
 }
 
 export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProps) {
-  const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  if (!isOpen || !data) return null
-
-  const copyToClipboard = (text: string, field: string) => {
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
+  if (!data) return null
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform animate-in zoom-in-95 duration-300">
-        <div className="text-center mb-6">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-green-700">चौकला सफलतापूर्वक जोड़ा गया!</h2>
-        </div>
-
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="w-[95vw] max-w-md mx-auto p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="text-center text-green-700 flex items-center justify-center gap-2 text-lg sm:text-xl">
+            <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+            चौकला सफलतापूर्वक जोड़ा गया!
+          </DialogTitle>
+        </DialogHeader>
         <div className="space-y-3 text-sm">
-          {[
-            { label: "चौकला ID", value: data.chokhlaId, field: "chokhlaId" },
-            { label: "यूज़र ID", value: data.userId, field: "userId" },
-            { label: "ईमेल", value: data.email, field: "email" },
-            { label: "पूरा नाम", value: data.fullName, field: "fullName" },
-            { label: "भूमिका", value: data.role, field: "role" },
-            { label: "पासवर्ड", value: data.password, field: "password" },
-          ].map(({ label, value, field }) => (
-            <div key={field} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <strong className="text-gray-700">{label}:</strong>
-                <span className="ml-2 text-gray-900">{value}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => copyToClipboard(value, field)}
-                className="h-8 w-8 p-0 hover:bg-gray-200"
-              >
-                <Copy className={`w-4 h-4 ${copiedField === field ? "text-green-600" : "text-gray-500"}`} />
-              </Button>
+          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+            <p className="font-semibold text-green-800 mb-2">चौकला की जानकारी:</p>
+            <div className="space-y-1 text-xs sm:text-sm">
+              <p>
+                <strong>चौकला ID:</strong> {data.chokhlaId}
+              </p>
+              <p>
+                <strong>यूज़र ID:</strong> {data.userId}
+              </p>
             </div>
-          ))}
+          </div>
+
+          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+            <p className="font-semibold text-blue-800 mb-2">यूज़र की जानकारी:</p>
+            <div className="space-y-1 text-xs sm:text-sm">
+              <p>
+                <strong>ईमेल:</strong> {data.email}
+              </p>
+              <p>
+                <strong>पूरा नाम:</strong> {data.fullName}
+              </p>
+              <p>
+                <strong>भूमिका:</strong> {data.role}
+              </p>
+              <div className="flex items-center gap-2">
+                <p>
+                  <strong>पासवर्ड:</strong> {data.password}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(data.password)}
+                  className="h-6 px-2 text-xs"
+                >
+                  <Copy className="w-3 h-3" />
+                  {copied ? "कॉपी हो गया!" : "कॉपी"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-center mt-6">
-          <Button
-            onClick={onClose}
-            className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200"
-          >
+        <div className="flex justify-end pt-4">
+          <Button onClick={onClose} className="w-full sm:w-auto">
             ठीक है
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
