@@ -134,9 +134,6 @@ export const statesAndDistricts: Record<string, string[]> = {
   "पश्चिम बंगाल": ["कोलकाता", "हावड़ा", "दुर्गापुर", "आसनसोल", "सिलीगुड़ी", "बर्धमान", "मालदा", "कूच बिहार"],
 }
 
-// Export alias for backward compatibility
-export const STATES_DISTRICTS = statesAndDistricts
-
 export const occupationTypes = [
   { label: "किसान", value: "farmer" },
   { label: "मजदूर", value: "laborer" },
@@ -299,24 +296,3 @@ export const welfareSchemeOptions = [
   { label: "बेटी बचाओ बेटी पढ़ाओ", value: "beti_bachao" },
   { label: "अन्य", value: "other" },
 ]
-
-// New exports for employment section
-export const EMPLOYMENT_STATUS_OPTIONS = [
-  { label: "रोजगार में है", value: "employed" },
-  { label: "बेरोजगार", value: "unemployed" },
-  { label: "स्व-रोजगार", value: "self_employed" },
-  { label: "छात्र", value: "student" },
-  { label: "सेवानिवृत्त", value: "retired" },
-  { label: "गृहिणी", value: "housewife" },
-  { label: "अन्य", value: "other" },
-]
-
-export const OCCUPATION_TYPE_OPTIONS = [
-  { label: "नौकरी", value: "job" },
-  { label: "व्यापार", value: "business" },
-  { label: "कृषि", value: "agriculture" },
-  { label: "अन्य", value: "other" },
-]
-
-export const JOB_TYPES = jobTypes
-export const BUSINESS_TYPES = businessTypes

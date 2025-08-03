@@ -106,6 +106,7 @@ export function EmploymentInfoSection({ member, index, errors, onUpdateMember }:
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <SelectInput
+
                   label="व्यवसाय का प्रकार"
                   value={member.occupationType}
                   options={occupationTypes}
@@ -473,7 +474,7 @@ export function SelectInput({
   placeholder,
   required = false,
   disabled,
-  id,
+  id
 }: {
   label: string
   value?: string
