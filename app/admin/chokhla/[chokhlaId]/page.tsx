@@ -1,578 +1,257 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { useCreateVillage, useChokhlaDetails, useUpdateChokhla, useGetAllVillageswithChokhlaID } from '@/data-hooks/mutation-query/useQueryAndMutation';
-import { useForm } from 'react-hook-form';
-import { useParams, useRouter } from 'next/navigation';
-import { signOut, useSession } from "next-auth/react";
-import Image from "next/image";
-import { LogOut, ArrowLeft, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useMemo, useCallback } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { signOut, useSession } from "next-auth/react"
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
-const TABS = [
-    { key: 'village', label: 'गांव प्रबंधन' },
-    { key: 'statics', label: 'आँकड़े' },
-    { key: 'reports', label: 'रिपोर्ट्स' },
-    { key: 'profile', label: 'चौकला प्रोफ़ाइल' },
-];
+// Import custom components
+import { ChokhlaHeader } from "@/components/chokhla/chokhla-header"
+import { CokhlaSidebar } from "@/components/chokhla/chokhla-sidebar"
+import { VillageForm } from "@/components/chokhla/village-form"
+import { VillageTable } from "@/components/chokhla/village-table"
+import { ProfileForm } from "@/components/chokhla/profile-form"
+import { SuccessDialog } from "@/components/chokhla/success-dialog"
+import { ErrorDialog } from "@/components/chokhla/error-dialog"
+
+// Import hooks and types
+import {
+  useCreateVillage,
+  useChokhlaDetails,
+  useUpdateChokhla,
+  useGetAllVillageswithChokhlaID,
+} from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { TABS, SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/components/chokhla/constants"
+import type { VillageFormData, SuccessData } from "@/components/chokhla/types"
 
 function Chokhla() {
-    const { data: session, status } = useSession()
+  const { data: session } = useSession()
+  const { toast } = useToast()
+  const router = useRouter()
+  const chokhlaId = useParams().chokhlaId as string
 
-    const [activeTab, setActiveTab] = useState('village');
-    const [open, setOpen] = useState(false);
+  // State management
+  const [activeTab, setActiveTab] = useState("village")
+  const [isVillageDialogOpen, setIsVillageDialogOpen] = useState(false)
+  const [successData, setSuccessData] = useState<SuccessData | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [showErrorModal, setShowErrorModal] = useState(false)
 
-    const ChokhlaID = useParams().chokhlaId
-    const { data: villages, isLoading } = useGetAllVillageswithChokhlaID(ChokhlaID);
-    const { data: chokhla, isLoading: isChokhlaLoading, error: chokhlaError } = useChokhlaDetails(ChokhlaID);
-    const { mutate: updateChokhla, isLoading: isUpdatingChokhla } = useUpdateChokhla(ChokhlaID);
-    const [editProfile, setEditProfile] = useState(false);
-    const [profileForm, setProfileForm] = useState<any>(null);
-    const [successData, setSuccessData] = useState<null | any>(null);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [showErrorModal, setShowErrorModal] = useState(false);
+  // API hooks
+  const {
+    data: villages,
+    isLoading: isVillagesLoading,
+    error: villagesError,
+  } = useGetAllVillageswithChokhlaID(chokhlaId)
+  const { data: chokhla, isLoading: isChokhlaLoading, error: chokhlaError } = useChokhlaDetails(chokhlaId)
+  const { mutate: updateChokhla, isLoading: isUpdatingChokhla } = useUpdateChokhla(chokhlaId)
+  const { mutate: createVillage, isLoading: isCreatingVillage } = useCreateVillage()
 
-    React.useEffect(() => {
-        if (chokhla && !editProfile) {
-            setProfileForm({
-                name: chokhla.name || '',
-                adhyaksh: chokhla.adhyaksh || '',
-                contactNumber: chokhla.contactNumber || '',
-                state: chokhla.state || '',
-                district: chokhla.district || '',
-                villageName: chokhla.villageName || '',
-            });
-        }
-    }, [chokhla, editProfile]);
+  // Computed values
+  const userType = useMemo(() => session?.user?.role, [session?.user?.role])
 
-    useEffect(() => {
-        if (showSuccessModal) {
-            const timer = setTimeout(() => setShowSuccessModal(false), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [showSuccessModal]);
+  // Error handling
+  const handleError = useCallback((error: any, defaultMessage: string = ERROR_MESSAGES.GENERIC) => {
+    let message = defaultMessage
 
-    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
-    };
-    const handleProfileSave = () => {
-        updateChokhla(profileForm, {
-            onSuccess: () => setEditProfile(false),
-        });
-    };
-    const router = useRouter();
-    const userType = useMemo(() => session?.user?.role, [session?.user?.role])
+    if (error?.response?.data?.message) {
+      message = error.response.data.message
+    } else if (error?.message) {
+      message = error.message
+    } else if (typeof error === "string") {
+      message = error
+    }
 
+    setErrorMessage(message)
+    setShowErrorModal(true)
+  }, [])
 
-    const handleBack = () => router.back();
-    const handleLogout = () => signOut({ callbackUrl: "/login" });
+  // Success handling
+  const showSuccessToast = useCallback(
+    (message: string) => {
+      toast({
+        title: "सफल",
+        description: message,
+        variant: "default",
+      })
+    },
+    [toast],
+  )
 
-    const form = useForm({
-        mode: "onChange",
-        criteriaMode: "all",
-        defaultValues: {
-            name: '',
-            villageMemberName: '',
-            mobileNumber: '',
-            age: '',
-            email: '',
-            tehsil: '',
-            district: '',
-            state: '',
-            isVillageHaveSchool: false,
-            isVillageHavePrimaryHealthCare: false,
-            isVillageHaveCommunityHall: false,
-            longitude: '',
-            latitude: '',
-            password: '',
-            repeatPassword: '',
+  // Navigation handlers
+  const handleBack = useCallback(() => router.back(), [router])
+  const handleLogout = useCallback(() => signOut({ callbackUrl: "/login" }), [])
+  const handleViewVillage = useCallback(
+    (villageId: string) => {
+      router.push(`/admin/village/${villageId}?chakolaId=${chokhlaId}`)
+    },
+    [router, chokhlaId],
+  )
+
+  // Village form handlers
+  const handleVillageSubmit = useCallback(
+    (data: VillageFormData) => {
+      const payload = {
+        ...data,
+        age: data.age ? Number(data.age) : null,
+        longitude: data.longitude ? Number(data.longitude) : null,
+        latitude: data.latitude ? Number(data.latitude) : null,
+        chakola: { connect: { id: chokhlaId } },
+      }
+
+      createVillage(payload, {
+        onSuccess: (response) => {
+          const successData: SuccessData = {
+            ...response,
+            password: data.password, // Store original password
+          }
+
+          setSuccessData(successData)
+          setShowSuccessModal(true)
+          setIsVillageDialogOpen(false)
+          showSuccessToast(SUCCESS_MESSAGES.VILLAGE_CREATED)
         },
-    });
+        onError: (error) => {
+          handleError(error, "गांव जोड़ने में त्रुटि हुई। कृपया पुनः प्रयास करें।")
+        },
+      })
+    },
+    [chokhlaId, createVillage, handleError, showSuccessToast],
+  )
 
-    const { mutate: createVillage, isLoading: isCreating } = useCreateVillage();
-    const onSubmit = (data: any) => {
-        const plainPassword = data.password; // Store before hash
-        createVillage(
-            {
-                ...data,
-                age: data.age ? Number(data.age) : null,
-                longitude: data.longitude ? Number(data.longitude) : null,
-                latitude: data.latitude ? Number(data.latitude) : null,
-                chakola: { connect: { id: ChokhlaID } },
-            },
-            {
+  // Profile update handler
+  const handleProfileUpdate = useCallback(
+    (data: any) => {
+      updateChokhla(data, {
+        onSuccess: () => {
+          showSuccessToast(SUCCESS_MESSAGES.PROFILE_UPDATED)
+        },
+        onError: (error) => {
+          handleError(error, "प्रोफ़ाइल अपडेट करने में त्रुटि हुई।")
+        },
+      })
+    },
+    [updateChokhla, handleError, showSuccessToast],
+  )
 
-                onSuccess: (res) => {
-                    setSuccessData({ ...res, password: plainPassword });
-                    setShowSuccessModal(true);
-                    setOpen(false);
-                    form.reset();
-                },
-                onError: (error: any) => {
-                    const message =
-                        error?.response?.data?.message || error?.message || "कुछ गलत हो गया। कृपया पुनः प्रयास करें।";
-                    setErrorMessage(message);
-                    setShowErrorModal(true);
-                },
+  // Handle API errors
+  React.useEffect(() => {
+    if (villagesError) {
+      handleError(villagesError, "गांवों की सूची लोड करने में त्रुटि हुई।")
+    }
+  }, [villagesError, handleError])
 
-            }
-        );
-    };
+  React.useEffect(() => {
+    if (chokhlaError) {
+      handleError(chokhlaError, "चौकला की जानकारी लोड करने में त्रुटि हुई।")
+    }
+  }, [chokhlaError, handleError])
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-            {/* Navbar */}
-            <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-                <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Image
-                            src="/images/main-logo.png"
-                            alt="Panchal Samaj Logo"
-                            width={44}
-                            height={44}
-                            className="rounded-full shadow-lg"
-                        />
-                        <span className="text-xl md:text-2xl font-bold text-white">पंचाल समाज 14 चोखरा</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {userType === 'SUPER_ADMIN' && (< Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleBack}>
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            वापस
-                        </Button>)}
-                        <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={handleLogout}>
-                            <LogOut className="w-4 h-4 mr-2" />
-                            लॉगआउट
-                        </Button>
-                    </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
+      {/* Header */}
+      <ChokhlaHeader userType={userType || ""} onBack={handleBack} onLogout={handleLogout} />
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
+        {/* Sidebar */}
+        <CokhlaSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {/* Content Area */}
+        <section className="flex-1 min-w-0">
+          {/* Village Management Tab */}
+          {activeTab === "village" && (
+            <Card className="mb-8">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl font-bold text-orange-800">गांव प्रबंधन</CardTitle>
+                {userType === "CHOKHLA_MEMBER" && (
+                  <Dialog open={isVillageDialogOpen} onOpenChange={setIsVillageDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                        <Plus className="w-5 h-5 mr-2" />
+                        गांव जोड़ें
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <VillageForm
+                        onSubmit={handleVillageSubmit}
+                        isLoading={isCreatingVillage}
+                        onCancel={() => setIsVillageDialogOpen(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </CardHeader>
+              <CardContent>
+                <VillageTable
+                  villages={villages || []}
+                  isLoading={isVillagesLoading}
+                  onViewVillage={handleViewVillage}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Statistics Tab */}
+          {activeTab === "statics" && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-orange-800">आँकड़े</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <p className="text-gray-500">आँकड़े जल्द ही उपलब्ध होंगे</p>
                 </div>
-            </header >
-            <main className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
-                {/* Sidebar */}
-                <aside className="w-full md:w-64 mb-6 md:mb-0">
-                    <nav className="bg-white rounded-lg shadow border border-orange-200 p-4 flex md:flex-col gap-2">
-                        {TABS.map(tab => (
-                            <Button
-                                key={tab.key}
-                                variant={activeTab === tab.key ? 'default' : 'ghost'}
-                                onClick={() => setActiveTab(tab.key)}
-                                className={`w-full justify-start text-base font-semibold ${activeTab === tab.key ? 'bg-orange-500 text-white' : 'text-orange-700'}`}
-                            >
-                                {tab.label}
-                            </Button>
-                        ))}
-                    </nav>
-                </aside>
-                {/* Main Content */}
-                <section className="flex-1 min-w-0">
-                    {activeTab === 'village' && (
-                        <Card className="mb-8">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>गांव सूची</CardTitle>
-                                <Dialog open={open} onOpenChange={setOpen}>
-                                    <DialogTrigger asChild>
-                                        {userType === 'CHOKHLA_MEMBER' && (<Button variant="outline">
-                                            <Plus className="w-5 h-5 mr-2" />
-                                            गांव जोड़ें</Button>)}
+              </CardContent>
+            </Card>
+          )}
 
-                                    </DialogTrigger>
-                                    <DialogContent className="max-w-full sm:max-w-lg p-2 sm:p-6">
-                                        <DialogHeader>
-                                            <DialogTitle>नया गांव जोड़ें</DialogTitle>
-                                        </DialogHeader>
-                                        <div className="max-h-[80vh] overflow-y-auto">
-                                            <Form {...form}>
-                                                <form onSubmit={form.handleSubmit(onSubmit)}>
-                                                    <div className="grid grid-cols-1 gap-4">
-                                                        <FormField name="name" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>गांव का नाम</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} required />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="villageMemberName" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>गांव सदस्य का नाम</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="mobileNumber" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>मोबाइल नंबर</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} type="tel" />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="age" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>आयु</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} type="number" value={field.value ?? ''} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="email" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>ईमेल</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} type="email" />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="tehsil" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>तहसील</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="district" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>जिला</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="state" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>राज्य</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="isVillageHaveSchool" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>क्या गांव में स्कूल है?</FormLabel>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="isVillageHavePrimaryHealthCare" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>क्या प्राथमिक स्वास्थ्य केंद्र है?</FormLabel>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="isVillageHaveCommunityHall" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>क्या कम्युनिटी हॉल है?</FormLabel>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="longitude" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>देशांतर (Longitude)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} type="number" step="any" value={field.value ?? ''} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField name="latitude" control={form.control} render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>अक्षांश (Latitude)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} type="number" step="any" value={field.value ?? ''} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField
-                                                            name="password"
-                                                            control={form.control}
-                                                            rules={{
-                                                                required: "पासवर्ड आवश्यक है",
-                                                                minLength: { value: 8, message: "कम से कम 8 अक्षर" },
-                                                                pattern: {
-                                                                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
-                                                                    message: "पासवर्ड मजबूत होना चाहिए (एक बड़ा, एक छोटा, एक संख्या, एक विशेष चिन्ह)"
-                                                                }
-                                                            }}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>पासवर्ड</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input {...field} type="password" required />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                        <FormField
-                                                            name="repeatPassword"
-                                                            control={form.control}
-                                                            rules={{
-                                                                required: "पासवर्ड दोबारा लिखें आवश्यक है",
-                                                                validate: value => value === form.getValues('password') || 'पासवर्ड मेल नहीं खाते'
-                                                            }}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>पासवर्ड दोबारा लिखें</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input {...field} type="password" required />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
-                                                    <div className="flex justify-end mt-4">
-                                                        <Button className='border' type="submit" disabled={isCreating}>
-                                                            {isCreating ? 'सहेजा जा रहा है...' : 'सहेजें'}
-                                                        </Button>
-                                                    </div>
-                                                </form>
-                                            </Form>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                                <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-                                    <DialogContent className="sm:max-w-lg">
-                                        <DialogHeader>
-                                            <DialogTitle>गांव और यूज़र सफलतापूर्वक जोड़ा गया</DialogTitle>
-                                        </DialogHeader>
-                                        {successData && (
-                                            <div className="space-y-3 text-sm">
-                                                <p><strong>यूज़र का नाम:</strong> {successData.user.fullName}</p>
-                                                <p><strong>ईमेल:</strong> {successData.user.email}</p>
-                                                <p><strong>पासवर्ड:</strong> {successData.password}</p>
-                                                <p><strong>गांव सदस्य का नाम:</strong> {successData.village.villageMemberName}</p>
-                                                <p><strong>गांव ID:</strong> {successData.village.id}</p>
-                                                <p><strong>यूज़र ID:</strong> {successData.user.id}</p>
-                                                <p><strong>भूमिका:</strong> {successData.user.globalRole}</p>
-                                                <div className="flex justify-end pt-2">
-                                                    <Button onClick={() => setShowSuccessModal(false)}>बंद करें</Button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </DialogContent>
-                                </Dialog>
-                                <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
-                                    <DialogContent className="sm:max-w-md">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-red-600">त्रुटि</DialogTitle>
-                                        </DialogHeader>
-                                        <div className="text-sm text-red-700">
-                                            {errorMessage}
-                                        </div>
-                                        <div className="flex justify-end pt-4">
-                                            <Button variant="outline" onClick={() => setShowErrorModal(false)}>बंद करें</Button>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
+          {/* Reports Tab */}
+          {activeTab === "reports" && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-orange-800">रिपोर्ट्स</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <p className="text-gray-500">रिपोर्ट्स जल्द ही उपलब्ध होंगे</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
+          {/* Profile Tab */}
+          {activeTab === "profile" && (
+            <ProfileForm
+              profile={chokhla}
+              isLoading={isChokhlaLoading}
+              isUpdating={isUpdatingChokhla}
+              onUpdate={handleProfileUpdate}
+            />
+          )}
+        </section>
+      </main>
 
-                            </CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
-                                    <div className="rounded-lg shadow overflow-hidden border border-orange-200 bg-white w-full overflow-x-auto">
-                                        <table className="w-full min-w-[600px] sm:min-w-[900px] divide-y divide-orange-200 text-sm sm:text-base">
-                                            <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
-                                                <tr>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">नाम</th>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">सदस्य</th>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">मोबाइल नंबर</th>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">आयु</th>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">तहसील</th>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">जिला</th>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">राज्य</th>
-                                                    <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">कार्रवाई</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-orange-100">
-                                                {isLoading ? (
-                                                    <tr>
-                                                        <td colSpan={8} className="px-6 py-4 text-center text-orange-500 font-semibold">लोड हो रहा है...</td>
-                                                    </tr>
-                                                ) : (
-                                                    (villages || []).map((village: any, idx: number) => (
-                                                        <tr
-                                                            key={village.id}
-                                                            className={
-                                                                idx % 2 === 0
-                                                                    ? 'bg-orange-50 hover:bg-orange-100 transition-colors'
-                                                                    : 'bg-white hover:bg-orange-50 transition-colors'
-                                                            }
-                                                        >
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap font-medium text-orange-900">{village.name}</td>
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-orange-800">{village.villageMemberName}</td>
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-orange-800">{village.mobileNumber}</td>
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-orange-800">{village.age}</td>
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-orange-800">{village.tehsil}</td>
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-orange-800">{village.district}</td>
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-orange-800">{village.state}</td>
-                                                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
-                                                                <Button
-                                                                    variant="outline"
-                                                                    className="border-orange-400 text-orange-600 hover:bg-orange-100 hover:text-orange-800 transition-colors px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm"
-                                                                    onClick={() => router.push(`/admin/village/${village.id}?chakolaId=${ChokhlaID}`)}
-                                                                >
-                                                                    देखें
-                                                                </Button>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                    {activeTab === 'statics' && (
-                        <Card className="mb-8">
-                            <CardHeader>
-                                <CardTitle>आँकड़े</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {/* Statics content here */}
-                            </CardContent>
-                        </Card>
-                    )}
-                    {activeTab === 'reports' && (
-                        <Card className="mb-8">
-                            <CardHeader>
-                                <CardTitle>रिपोर्ट्स</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {/* Reports content here */}
-                            </CardContent>
-                        </Card>
-                    )}
-                    {activeTab === 'profile' && (
-                        <Card className="mb-8">
-                            <CardHeader>
-                                <CardTitle>चौकला प्रोफ़ाइल</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {isChokhlaLoading ? (
-                                    <div className="text-orange-600">लोड हो रहा है...</div>
-                                ) : chokhlaError ? (
-                                    <div className="text-red-600">त्रुटि: {chokhlaError.message}</div>
-                                ) : chokhla && profileForm ? (
-                                    <div className="max-w-md bg-white rounded-lg shadow p-4 border border-orange-200">
-                                        <div className="flex justify-end mb-2">
-                                            {!editProfile ? (
-                                                <Button variant="outline" onClick={() => setEditProfile(true)}>
-                                                    संपादित करें
-                                                </Button>
-                                            ) : (
-                                                <Button variant="default" onClick={handleProfileSave} disabled={isUpdatingChokhla}>
-                                                    {isUpdatingChokhla ? 'सहेजा जा रहा है...' : 'सहेजें'}
-                                                </Button>
-                                            )}
-                                        </div>
-                                        <form className="space-y-3">
-                                            <div>
-                                                <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम</label>
-                                                <input
-                                                    type="text"
-                                                    name="name"
-                                                    value={profileForm.name}
-                                                    onChange={handleProfileChange}
-                                                    disabled={!editProfile}
-                                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-orange-700 mb-1">अध्यक्ष</label>
-                                                <input
-                                                    type="text"
-                                                    name="adhyaksh"
-                                                    value={profileForm.adhyaksh}
-                                                    onChange={handleProfileChange}
-                                                    disabled={!editProfile}
-                                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-orange-700 mb-1">संपर्क नंबर</label>
-                                                <input
-                                                    type="text"
-                                                    name="contactNumber"
-                                                    value={profileForm.contactNumber}
-                                                    onChange={handleProfileChange}
-                                                    disabled={!editProfile}
-                                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-orange-700 mb-1">राज्य</label>
-                                                <input
-                                                    type="text"
-                                                    name="state"
-                                                    value={profileForm.state}
-                                                    onChange={handleProfileChange}
-                                                    disabled={!editProfile}
-                                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-orange-700 mb-1">जिला</label>
-                                                <input
-                                                    type="text"
-                                                    name="district"
-                                                    value={profileForm.district}
-                                                    onChange={handleProfileChange}
-                                                    disabled={!editProfile}
-                                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-orange-700 mb-1">गांव का नाम</label>
-                                                <input
-                                                    type="text"
-                                                    name="villageName"
-                                                    value={profileForm.villageName}
-                                                    onChange={handleProfileChange}
-                                                    disabled={!editProfile}
-                                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                                                <span className="text-xs text-orange-700 font-semibold">निर्माण तिथि: {chokhla.createdDate ? new Date(chokhla.createdDate).toLocaleDateString('hi-IN') : '-'}</span>
-                                                <span className="text-xs text-gray-500">अद्यतन तिथि: {chokhla.updatedDate ? new Date(chokhla.updatedDate).toLocaleDateString('hi-IN') : '-'}</span>
-                                            </div>
-                                        </form>
-                                    </div>
-                                ) : null}
-                            </CardContent>
-                        </Card>
-                    )}
-                </section>
-            </main>
-        </div >
-    );
+      {/* Success Dialog */}
+      <SuccessDialog open={showSuccessModal} onOpenChange={setShowSuccessModal} data={successData} />
+
+      {/* Error Dialog */}
+      <ErrorDialog
+        open={showErrorModal}
+        onOpenChange={setShowErrorModal}
+        message={errorMessage || ERROR_MESSAGES.GENERIC}
+        onRetry={() => {
+          setShowErrorModal(false)
+          // You can add specific retry logic here if needed
+        }}
+      />
+    </div>
+  )
 }
 
-export default Chokhla;
+export default Chokhla

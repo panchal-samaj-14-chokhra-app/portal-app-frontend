@@ -1,507 +1,446 @@
 "use client"
 
-import { Briefcase, MapPin, Building, Users, Globe } from "lucide-react"
-import { Label } from "@/components/ui/label"
+import { useCallback, useEffect, useState } from "react"
+import type { UseFormReturn } from "react-hook-form"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import type { MemberFormProps } from "./types"
-import { useState, useEffect, useCallback } from "react"
-import { countries, businessTypes, jobTypes, occupationTypes, statesAndDistricts } from "./constants"
+import { Briefcase, Building, MapPin, DollarSign, Users, Clock } from "lucide-react"
+import {
+  EMPLOYMENT_STATUS_OPTIONS,
+  OCCUPATION_TYPE_OPTIONS,
+  JOB_TYPES,
+  BUSINESS_TYPES,
+  STATES_DISTRICTS,
+} from "./constants"
 
-export function EmploymentInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
+interface EmploymentInfoSectionProps {
+  form: UseFormReturn<any>
+  memberIndex: number
+}
+
+export function EmploymentInfoSection({ form, memberIndex }: EmploymentInfoSectionProps) {
   const [districts, setDistricts] = useState<string[]>([])
 
-  // Memoize the update function to prevent infinite loops
-  const updateMemberField = useCallback(
-    (field: string, value: any) => {
-      onUpdateMember(member.id, field as any, value)
+  const employmentStatus = form.watch(`members.${memberIndex}.employmentStatus`)
+  const occupationType = form.watch(`members.${memberIndex}.occupationType`)
+  const workState = form.watch(`members.${memberIndex}.workState`)
+
+  // Update districts when state changes
+  const updateDistricts = useCallback(
+    (selectedState: string) => {
+      if (selectedState && STATES_DISTRICTS[selectedState]) {
+        setDistricts(STATES_DISTRICTS[selectedState])
+        // Clear district if it's not valid for the new state
+        const currentDistrict = form.getValues(`members.${memberIndex}.workDistrict`)
+        if (currentDistrict && !STATES_DISTRICTS[selectedState].includes(currentDistrict)) {
+          form.setValue(`members.${memberIndex}.workDistrict`, "")
+        }
+      } else {
+        setDistricts([])
+        form.setValue(`members.${memberIndex}.workDistrict`, "")
+      }
     },
-    [member.id, onUpdateMember],
+    [form, memberIndex],
   )
 
-  // Handle state change and district updates
   useEffect(() => {
-    const currentState = member.occupationState
-    if (currentState && statesAndDistricts[currentState]) {
-      const availableDistricts = statesAndDistricts[currentState]
-      setDistricts(availableDistricts)
+    if (workState) {
+      updateDistricts(workState)
+    }
+  }, [workState, updateDistricts])
 
-      // Only clear city if it's not in the new districts list
-      const currentCity = member.occupationCity
-      if (currentCity && !availableDistricts.includes(currentCity)) {
-        updateMemberField("occupationCity", "")
-      }
-    } else {
-      setDistricts([])
-      if (member.occupationCity) {
-        updateMemberField("occupationCity", "")
+  // Reset fields when employment status changes
+  useEffect(() => {
+    if (employmentStatus) {
+      // Clear occupation type if not relevant
+      if (employmentStatus === "unemployed" || employmentStatus === "student" || employmentStatus === "retired") {
+        form.setValue(`members.${memberIndex}.occupationType`, "")
+        form.setValue(`members.${memberIndex}.jobType`, "")
+        form.setValue(`members.${memberIndex}.businessType`, "")
       }
     }
-  }, [member.occupationState]) // Remove onUpdateMember and member.id from dependencies
+  }, [employmentStatus, form, memberIndex])
 
-  const isJobTypeRequired = ["private_job", "government_job", "intern"].includes(member.occupationType || "")
-  const isProfessionalOrSelfEmployed = [
-    "self_employed",
-    "vendor",
-    "artisan",
-    "gig_worker",
-    "retired",
-    "professional",
-    "freelancer",
-    "domestic_worker",
-  ].includes(member.occupationType || "")
-  const isBusinessOrStartup = ["business", "startup_founder"].includes(member.occupationType || "")
-  const showLocationFields = !member.incomeSourceCountry && (isJobTypeRequired || isBusinessOrStartup)
+  // Reset job/business specific fields when occupation type changes
+  useEffect(() => {
+    if (occupationType === "job") {
+      form.setValue(`members.${memberIndex}.businessType`, "")
+    } else if (occupationType === "business") {
+      form.setValue(`members.${memberIndex}.jobType`, "")
+    }
+  }, [occupationType, form, memberIndex])
+
+  const shouldShowOccupationFields =
+    employmentStatus && !["unemployed", "student", "retired"].includes(employmentStatus)
+
+  const shouldShowJobFields = shouldShowOccupationFields && occupationType === "job"
+  const shouldShowBusinessFields = shouldShowOccupationFields && occupationType === "business"
 
   return (
-    <Card className="border-l-4 border-l-blue-500">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Briefcase className="w-5 h-5 text-blue-600" />
-          <h4 className="font-semibold text-gray-800 hindi-text text-base sm:text-lg">रोजगार की जानकारी</h4>
+    <Card className="border-blue-200 shadow-sm">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+        <CardTitle className="flex items-center gap-2 text-blue-800">
+          <Briefcase className="w-5 h-5" />
+          रोजगार की जानकारी
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6 space-y-6">
+        {/* Employment Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            name={`members.${memberIndex}.employmentStatus`}
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-blue-700 font-semibold flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  रोजगार की स्थिति *
+                </FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                      <SelectValue placeholder="रोजगार की स्थिति चुनें" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {EMPLOYMENT_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {shouldShowOccupationFields && (
+            <FormField
+              name={`members.${memberIndex}.occupationType`}
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-blue-700 font-semibold flex items-center gap-1">
+                    <Building className="w-4 h-4" />
+                    व्यवसाय का प्रकार *
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                        <SelectValue placeholder="व्यवसाय का प्रकार चुनें" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {OCCUPATION_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
 
-        <div className="space-y-6">
-          {/* Employment Status */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <Label className="text-sm font-medium text-gray-700 mb-3 block">रोजगार की स्थिति</Label>
-            <div className="flex flex-wrap gap-4">
-              <CheckboxWithLabel
-                id={`employed-${member.id}`}
-                label="रोजगार में है"
-                checked={member.isEmployed || false}
-                onChange={(checked) => {
-                  updateMemberField("isEmployed", checked)
-                  if (checked) updateMemberField("isSeekingJob", false)
-                }}
+        {/* Job Specific Fields */}
+        {shouldShowJobFields && (
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h3 className="text-green-800 font-semibold mb-4 flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              नौकरी की जानकारी
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                name={`members.${memberIndex}.jobType`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-green-700 font-medium">नौकरी का प्रकार *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="border-green-200 focus:border-green-400">
+                          <SelectValue placeholder="नौकरी का प्रकार चुनें" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {JOB_TYPES.map((job) => (
+                          <SelectItem key={job.value} value={job.value}>
+                            {job.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <CheckboxWithLabel
-                id={`seekingJob-${member.id}`}
-                label="रोजगार की तलाश में है"
-                checked={member.isSeekingJob || false}
-                onChange={(checked) => {
-                  updateMemberField("isSeekingJob", checked)
-                  if (checked) updateMemberField("isEmployed", false)
-                }}
+
+              <FormField
+                name={`members.${memberIndex}.companyName`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-green-700 font-medium">कंपनी/संस्था का नाम</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="border-green-200 focus:border-green-400"
+                        placeholder="कंपनी का नाम दर्ज करें"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name={`members.${memberIndex}.designation`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-green-700 font-medium">पदनाम</FormLabel>
+                    <FormControl>
+                      <Input {...field} className="border-green-200 focus:border-green-400" placeholder="आपका पदनाम" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name={`members.${memberIndex}.monthlySalary`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-green-700 font-medium flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" />
+                      मासिक वेतन (₹)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        className="border-green-200 focus:border-green-400"
+                        placeholder="मासिक वेतन दर्ज करें"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-
-            {member.isEmployed && (
-              <div className="mt-4">
-                <CheckboxWithLabel
-                  id={`incomeSourceCountry-${member.id}`}
-                  label="आय का स्रोत विदेश में है"
-                  checked={member.incomeSourceCountry || false}
-                  onChange={(checked) => updateMemberField("incomeSourceCountry", checked)}
-                />
-              </div>
-            )}
           </div>
+        )}
 
-          {/* Employment Details */}
-          {member.isEmployed && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectInput
-
-                  label="व्यवसाय का प्रकार"
-                  value={member.occupationType}
-                  options={occupationTypes}
-                  onChange={(val) => updateMemberField("occupationType", val)}
-                  placeholder="व्यवसाय चुनें"
-                  required
-                />
-
-                {member.occupationType && (
-                  <div>
-                    <Label className="hindi-text text-sm font-medium">
-                      मासिक आय <span className="text-red-500">*</span>
-                      <span className="text-gray-500 font-normal"> (₹ में)</span>
-                    </Label>
-                    <div className="relative mt-1">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="10000"
-                        className="pl-8 text-sm"
-                        value={member.monthlyIncome || ""}
-                        onChange={(e) => {
-                          const value = Number.parseInt(e.target.value, 10)
-                          updateMemberField("monthlyIncome", !isNaN(value) && value >= 0 ? value : 0)
-                        }}
-                      />
-                    </div>
-                  </div>
+        {/* Business Specific Fields */}
+        {shouldShowBusinessFields && (
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <h3 className="text-purple-800 font-semibold mb-4 flex items-center gap-2">
+              <Building className="w-4 h-4" />
+              व्यवसाय की जानकारी
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                name={`members.${memberIndex}.businessType`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-purple-700 font-medium">व्यवसाय का प्रकार *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="border-purple-200 focus:border-purple-400">
+                          <SelectValue placeholder="व्यवसाय का प्रकार चुनें" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {BUSINESS_TYPES.map((business) => (
+                          <SelectItem key={business.value} value={business.value}>
+                            {business.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
+              />
 
-              {/* Job Type Specific Fields */}
-              {isJobTypeRequired && (
-                <div className="bg-blue-50 p-4 rounded-lg space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Building className="w-4 h-4 text-blue-600" />
-                    <Label className="font-medium text-blue-800">नौकरी की विस्तृत जानकारी</Label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <SelectInput
-                      label="नौकरी का प्रकार (प्रोफेशन)"
-                      value={member.jobType}
-                      options={jobTypes}
-                      onChange={(val) => updateMemberField("jobType", val)}
-                      placeholder="प्रोफेशन चुनें"
-                    />
-
-                    <div>
-                      <Label className="hindi-text text-sm font-medium">पदनाम</Label>
+              <FormField
+                name={`members.${memberIndex}.businessName`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-purple-700 font-medium">व्यवसाय का नाम</FormLabel>
+                    <FormControl>
                       <Input
-                        className="mt-1 text-sm"
-                        placeholder="जैसे: सीनियर डेवलपर, मैनेजर"
-                        value={member.jobPosition || ""}
-                        onChange={(e) => updateMemberField("jobPosition", e.target.value)}
+                        {...field}
+                        className="border-purple-200 focus:border-purple-400"
+                        placeholder="व्यवसाय का नाम दर्ज करें"
                       />
-                    </div>
-
-                    <div>
-                      <Label className="hindi-text text-sm font-medium">कार्य अनुभव</Label>
-                      <div className="relative mt-1">
-                        <Input
-                          type="number"
-                          min={0}
-                          className="text-sm pr-12"
-                          placeholder="5"
-                          value={member.workExperienceYears || ""}
-                          onChange={(e) => {
-                            const value = Number.parseInt(e.target.value, 10)
-                            updateMemberField("workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
-                          }}
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                          वर्ष
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="hindi-text text-sm font-medium">संस्थान का नाम</Label>
-                      <Input
-                        className="mt-1 text-sm"
-                        placeholder="कंपनी/संस्थान का नाम"
-                        value={member.employerOrganizationName || ""}
-                        onChange={(e) => updateMemberField("employerOrganizationName", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Professional/Self-Employed Fields */}
-              {isProfessionalOrSelfEmployed && (
-                <div className="bg-green-50 p-4 rounded-lg space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users className="w-4 h-4 text-green-600" />
-                    <Label className="font-medium text-green-800">व्यावसायिक जानकारी</Label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="hindi-text text-sm font-medium">कार्य अनुभव</Label>
-                      <div className="relative mt-1">
-                        <Input
-                          type="number"
-                          min={0}
-                          className="text-sm pr-12"
-                          placeholder="5"
-                          value={member.workExperienceYears || ""}
-                          onChange={(e) => {
-                            const value = Number.parseInt(e.target.value, 10)
-                            updateMemberField("workExperienceYears", !isNaN(value) && value >= 0 ? value : 0)
-                          }}
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                          वर्ष
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2 pt-6">
-                      <CheckboxWithLabel
-                        id={`businessRegistered-${member.id}`}
-                        label="व्यवसाय पंजीकृत है"
-                        checked={member.isBusinessRegistered || false}
-                        onChange={(checked) => updateMemberField("isBusinessRegistered", checked)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Business/Startup Fields */}
-              {isBusinessOrStartup && (
-                <div className="bg-purple-50 p-4 rounded-lg space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Building className="w-4 h-4 text-purple-600" />
-                    <Label className="font-medium text-purple-800">व्यापारिक जानकारी</Label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="hindi-text text-sm font-medium">कंपनी/व्यापार का नाम</Label>
-                      <Input
-                        className="mt-1 text-sm"
-                        placeholder="व्यापार का नाम दर्ज करें"
-                        value={member.employerOrganizationName || ""}
-                        onChange={(e) => updateMemberField("employerOrganizationName", e.target.value)}
-                      />
-                    </div>
-
-                    <SelectInput
-                      label="व्यवसाय प्रकार"
-                      value={member.businessType}
-                      onChange={(val) => updateMemberField("businessType", val)}
-                      options={businessTypes}
-                      placeholder="व्यवसाय प्रकार चुनें"
-                    />
-
-                    {member.businessType === "other" && (
-                      <div>
-                        <Label className="hindi-text text-sm font-medium">अन्य व्यवसाय प्रकार</Label>
-                        <Input
-                          className="mt-1 text-sm"
-                          placeholder="व्यवसाय प्रकार दर्ज करें"
-                          value={member.customBusinessType || ""}
-                          onChange={(e) => updateMemberField("customBusinessType", e.target.value)}
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <Label className="hindi-text text-sm font-medium">कर्मचारियों की संख्या</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        className="mt-1 text-sm"
-                        placeholder="10"
-                        value={member.numberOfEmployees || ""}
-                        onChange={(e) => {
-                          const value = Number.parseInt(e.target.value, 10)
-                          updateMemberField("numberOfEmployees", !isNaN(value) && value >= 0 ? value : 0)
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center space-x-2 pt-6">
-                      <CheckboxWithLabel
-                        id={`needsEmployees-${member.id}`}
-                        label="कर्मचारियों की आवश्यकता है"
-                        checked={member.needsEmployees || false}
-                        onChange={(checked) => updateMemberField("needsEmployees", checked)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Location Fields */}
-              {showLocationFields && (
-                <div className="bg-orange-50 p-4 rounded-lg space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin className="w-4 h-4 text-orange-600" />
-                    <Label className="font-medium text-orange-800">कार्यस्थल का स्थान</Label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <SelectInput
-                      label="राज्य"
-                      value={member.occupationState}
-                      options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
-                      onChange={(val) => updateMemberField("occupationState", val)}
-                      placeholder="राज्य चुनें"
-                    />
-
-                    {districts.length > 0 && (
-                      <SelectInput
-                        label="जिला"
-                        value={member.occupationCity}
-                        options={districts.map((district) => ({ label: district, value: district }))}
-                        onChange={(val) => updateMemberField("occupationCity", val)}
-                        placeholder="जिला चुनें"
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Foreign Income Source */}
-              {member.incomeSourceCountry && (
-                <div className="bg-indigo-50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Globe className="w-4 h-4 text-indigo-600" />
-                    <Label className="font-medium text-indigo-800">विदेशी आय स्रोत</Label>
-                  </div>
-
-                  <SelectInput
-                    label="देश का नाम"
-                    value={member.incomeSourceCountryName}
-                    onChange={(val) => updateMemberField("incomeSourceCountryName", val)}
-                    options={countries}
-                    placeholder="देश चुनें"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Job Seeking Details */}
-          {member.isSeekingJob && (
-            <div className="bg-yellow-50 p-4 rounded-lg space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Briefcase className="w-4 h-4 text-yellow-600" />
-                <Label className="font-medium text-yellow-800">रोजगार की तलाश</Label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectInput
-                  label="इच्छित कार्य क्षेत्र"
-                  value={member.jobSearchSector}
-                  options={occupationTypes}
-                  onChange={(val) => updateMemberField("jobSearchSector", val)}
-                  placeholder="कार्य क्षेत्र चुनें"
-                />
-
-                {member.jobSearchSector === "other" && (
-                  <div>
-                    <Label className="hindi-text text-sm font-medium">अन्य कार्य क्षेत्र</Label>
-                    <Input
-                      className="mt-1 text-sm"
-                      placeholder="अपना कार्य क्षेत्र दर्ज करें"
-                      value={member.customJobSearchSector || ""}
-                      onChange={(e) => updateMemberField("customJobSearchSector", e.target.value)}
-                    />
-                  </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
 
-                <div>
-                  <Label className="hindi-text text-sm font-medium">पसंदीदा कार्य क्षेत्र</Label>
-                  <Input
-                    className="mt-1 text-sm"
-                    placeholder="जैसे: IT, Healthcare, Education"
-                    value={member.preferredSector || ""}
-                    onChange={(e) => updateMemberField("preferredSector", e.target.value)}
-                  />
-                </div>
-              </div>
+              <FormField
+                name={`members.${memberIndex}.monthlyIncome`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-purple-700 font-medium flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" />
+                      मासिक आय (₹)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        className="border-purple-200 focus:border-purple-400"
+                        placeholder="अनुमानित मासिक आय"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="flex flex-wrap gap-4 pt-2">
-                <CheckboxWithLabel
-                  id={`wantsToGoAbroad-${member.id}`}
-                  label="विदेश जाने की इच्छा"
-                  checked={member.wantsToGoAbroad || false}
-                  onChange={(checked) => updateMemberField("wantsToGoAbroad", checked)}
-                />
-
-                <CheckboxWithLabel
-                  id={`hasPassport-${member.id}`}
-                  label="पासपोर्ट उपलब्ध है"
-                  checked={member.hasPassport || false}
-                  onChange={(checked) => updateMemberField("hasPassport", checked)}
-                />
-              </div>
+              <FormField
+                name={`members.${memberIndex}.businessExperience`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-purple-700 font-medium flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      व्यवसाय का अनुभव (वर्ष)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        className="border-purple-200 focus:border-purple-400"
+                        placeholder="कितने वर्षों से व्यवसाय कर रहे हैं"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Status Badges */}
-          {(member.isEmployed || member.isSeekingJob) && (
-            <div className="flex flex-wrap gap-2">
-              {member.isEmployed && (
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  रोजगार में
-                </Badge>
-              )}
-              {member.isSeekingJob && (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                  नौकरी की तलाश में
-                </Badge>
-              )}
-              {member.incomeSourceCountry && (
-                <Badge variant="outline" className="border-blue-500 text-blue-700">
-                  विदेशी आय
-                </Badge>
-              )}
-              {member.isBusinessRegistered && (
-                <Badge variant="outline" className="border-purple-500 text-purple-700">
-                  पंजीकृत व्यापार
-                </Badge>
-              )}
+        {/* Work Location */}
+        {shouldShowOccupationFields && (
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+            <h3 className="text-orange-800 font-semibold mb-4 flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              कार्यस्थल की जानकारी
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                name={`members.${memberIndex}.workState`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-orange-700 font-medium">कार्यस्थल - राज्य</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                          <SelectValue placeholder="राज्य चुनें" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.keys(STATES_DISTRICTS).map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name={`members.${memberIndex}.workDistrict`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-orange-700 font-medium">कार्यस्थल - जिला</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={!workState || districts.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                          <SelectValue placeholder="जिला चुनें" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {districts.map((district) => (
+                          <SelectItem key={district} value={district}>
+                            {district}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name={`members.${memberIndex}.workCity`}
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-orange-700 font-medium">कार्यस्थल - शहर</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="border-orange-200 focus:border-orange-400"
+                        placeholder="शहर का नाम दर्ज करें"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
+          </div>
+        )}
+
+        {/* Employment Status Badge */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">वर्तमान स्थिति:</span>
+          {employmentStatus && (
+            <Badge
+              variant="outline"
+              className={`${
+                employmentStatus === "employed"
+                  ? "border-green-500 text-green-700"
+                  : employmentStatus === "unemployed"
+                    ? "border-red-500 text-red-700"
+                    : employmentStatus === "self_employed"
+                      ? "border-blue-500 text-blue-700"
+                      : "border-gray-500 text-gray-700"
+              }`}
+            >
+              {EMPLOYMENT_STATUS_OPTIONS.find((opt) => opt.value === employmentStatus)?.label}
+            </Badge>
           )}
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function CheckboxWithLabel({
-  id,
-  label,
-  checked,
-  onChange,
-}: {
-  id: string
-  label: string
-  checked: boolean
-  onChange: (val: boolean) => void
-}) {
-  return (
-    <div className="flex items-center space-x-2">
-      <Checkbox id={id} checked={checked} onCheckedChange={onChange} />
-      <Label htmlFor={id} className="hindi-text text-sm cursor-pointer">
-        {label}
-      </Label>
-    </div>
-  )
-}
-
-export function SelectInput({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder,
-  required = false,
-  disabled,
-  id
-}: {
-  label: string
-  value?: string
-  options: { label: string; value: string }[]
-  onChange: (val: string) => void
-  placeholder?: string
-  required?: boolean
-  disabled?: boolean
-  id?: string
-}) {
-  return (
-    <div>
-      <Label className="hindi-text text-sm font-medium">
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
-      <Select disabled={disabled} value={value || ""} onValueChange={onChange}>
-        <SelectTrigger className="mt-1">
-          <SelectValue placeholder={placeholder || "चुनें"} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
   )
 }
