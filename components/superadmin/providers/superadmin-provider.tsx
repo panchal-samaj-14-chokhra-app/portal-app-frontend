@@ -2,50 +2,63 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
-import type { SuperAdminProfile, Village, Chokhla, User, Statistics, ChokhlaFormData, ProfileFormData } from "../types"
+import type {
+  SuperAdminUser,
+  Village,
+  Chokhla,
+  SuperAdminStats,
+  VillageFormData,
+  ChokhlaFormData,
+  UserFormData,
+  ProfileFormData,
+} from "../types"
+
+interface DialogState {
+  isOpen: boolean
+  title: string
+  message: string
+  details?: Record<string, any>
+  onRetry?: () => void
+}
 
 interface SuperAdminContextType {
   // State
   activeTab: string
-  profile: SuperAdminProfile | null
+  setActiveTab: (tab: string) => void
+
+  // Data
+  profile: SuperAdminUser | null
   villages: Village[]
-  choklas: Chokhla[]
-  users: User[]
-  statistics: Statistics | null
+  chokhlas: Chokhla[]
+  users: SuperAdminUser[]
+  stats: SuperAdminStats | null
 
   // Loading states
   isLoadingProfile: boolean
   isLoadingVillages: boolean
-  isLoadingChoklas: boolean
+  isLoadingChokhlas: boolean
   isLoadingUsers: boolean
-  isLoadingStatistics: boolean
+  isLoadingStats: boolean
+  isSubmitting: boolean
 
   // Dialog states
-  successDialog: {
-    isOpen: boolean
-    title: string
-    message: string
-    details?: Record<string, any>
-  }
-  errorDialog: {
-    isOpen: boolean
-    title: string
-    message: string
-    onRetry?: () => void
-  }
+  successDialog: DialogState
+  errorDialog: DialogState
+  setSuccessDialog: (dialog: DialogState) => void
+  setErrorDialog: (dialog: DialogState) => void
 
   // Actions
-  setActiveTab: (tab: string) => void
-  handleCreateChokhla: (data: ChokhlaFormData) => Promise<void>
-  handleUpdateProfile: (data: ProfileFormData) => Promise<void>
-  handleToggleUserStatus: (id: string, isActive: boolean) => Promise<void>
-  handleToggleChokhlaStatus: (id: string, isActive: boolean) => Promise<void>
-  handleLogout: () => Promise<void>
-  handleRefreshVillages: () => void
-  handleRefreshChoklas: () => void
-  handleRefreshUsers: () => void
-  setSuccessDialog: (dialog: any) => void
-  setErrorDialog: (dialog: any) => void
+  handleVillageSubmit: (data: VillageFormData) => Promise<void>
+  handleChokhlaSubmit: (data: ChokhlaFormData) => Promise<void>
+  handleUserSubmit: (data: UserFormData) => Promise<void>
+  handleProfileSubmit: (data: ProfileFormData) => Promise<void>
+
+  // Data fetching
+  fetchProfile: () => Promise<void>
+  fetchVillages: () => Promise<void>
+  fetchChokhlas: () => Promise<void>
+  fetchUsers: () => Promise<void>
+  fetchStats: () => Promise<void>
 }
 
 const SuperAdminContext = createContext<SuperAdminContextType | undefined>(undefined)
@@ -64,375 +77,410 @@ interface SuperAdminProviderProps {
 
 export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
   // State management
-  const [activeTab, setActiveTab] = useState("statistics")
-  const [profile, setProfile] = useState<SuperAdminProfile | null>(null)
+  const [activeTab, setActiveTab] = useState("dashboard")
+  const [profile, setProfile] = useState<SuperAdminUser | null>(null)
   const [villages, setVillages] = useState<Village[]>([])
-  const [choklas, setChoklas] = useState<Chokhla[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [statistics, setStatistics] = useState<Statistics | null>(null)
+  const [chokhlas, setChokhlas] = useState<Chokhla[]>([])
+  const [users, setUsers] = useState<SuperAdminUser[]>([])
+  const [stats, setStats] = useState<SuperAdminStats | null>(null)
 
   // Loading states
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [isLoadingVillages, setIsLoadingVillages] = useState(true)
-  const [isLoadingChoklas, setIsLoadingChoklas] = useState(true)
+  const [isLoadingChokhlas, setIsLoadingChokhlas] = useState(true)
   const [isLoadingUsers, setIsLoadingUsers] = useState(true)
-  const [isLoadingStatistics, setIsLoadingStatistics] = useState(true)
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Dialog states
-  const [successDialog, setSuccessDialog] = useState<{
-    isOpen: boolean
-    title: string
-    message: string
-    details?: Record<string, any>
-  }>({
+  const [successDialog, setSuccessDialog] = useState<DialogState>({
     isOpen: false,
     title: "",
     message: "",
   })
 
-  const [errorDialog, setErrorDialog] = useState<{
-    isOpen: boolean
-    title: string
-    message: string
-    onRetry?: () => void
-  }>({
+  const [errorDialog, setErrorDialog] = useState<DialogState>({
     isOpen: false,
     title: "",
     message: "",
   })
 
-  // Load mock data on mount
-  useEffect(() => {
-    loadMockData()
-  }, [])
-
-  const loadMockData = () => {
-    // Mock profile
-    setProfile({
-      id: "1",
-      firstName: "राम",
-      lastName: "पटेल",
-      email: "admin@panchalsamaj.org",
-      mobileNumber: "9876543210",
-      role: "SUPERADMIN",
-      isActive: true,
-      loginCount: 45,
-      lastLogin: new Date().toISOString(),
-      createdAt: "2024-01-01T00:00:00Z",
-      updatedAt: new Date().toISOString(),
-    })
-    setIsLoadingProfile(false)
-
-    // Mock villages
-    setVillages([
-      {
-        id: "1",
-        name: "रामपुर",
-        state: "गुजरात",
-        district: "अहमदाबाद",
-        pincode: "380001",
-        hasElectricity: true,
-        hasWaterSupply: true,
-        hasSchool: true,
-        hasHealthCenter: false,
-        hasRoadAccess: true,
-        latitude: 23.0225,
-        longitude: 72.5714,
-        familyCount: 150,
-        populationCount: 750,
-        isActive: true,
-        createdAt: "2024-01-15T00:00:00Z",
-        updatedAt: "2024-01-15T00:00:00Z",
-      },
-      {
-        id: "2",
-        name: "श्यामपुर",
-        state: "राजस्थान",
-        district: "जयपुर",
-        pincode: "302001",
-        hasElectricity: true,
-        hasWaterSupply: false,
-        hasSchool: true,
-        hasHealthCenter: true,
-        hasRoadAccess: true,
-        familyCount: 200,
-        populationCount: 1000,
-        isActive: true,
-        createdAt: "2024-01-20T00:00:00Z",
-        updatedAt: "2024-01-20T00:00:00Z",
-      },
-    ])
-    setIsLoadingVillages(false)
-
-    // Mock choklas
-    setChoklas([
-      {
-        id: "1",
-        firstName: "विकास",
-        lastName: "शाह",
-        email: "vikas@example.com",
-        mobileNumber: "9876543211",
-        state: "गुजरात",
-        district: "अहमदाबाद",
-        villageCount: 5,
-        familyCount: 250,
-        isActive: true,
-        lastLogin: "2024-01-25T10:30:00Z",
-        createdAt: "2024-01-10T00:00:00Z",
-        updatedAt: "2024-01-25T10:30:00Z",
-      },
-      {
-        id: "2",
-        firstName: "प्रिया",
-        lastName: "पटेल",
-        email: "priya@example.com",
-        mobileNumber: "9876543212",
-        state: "राजस्थान",
-        district: "जयपुर",
-        villageCount: 3,
-        familyCount: 180,
-        isActive: false,
-        lastLogin: null,
-        createdAt: "2024-01-12T00:00:00Z",
-        updatedAt: "2024-01-12T00:00:00Z",
-      },
-    ])
-    setIsLoadingChoklas(false)
-
-    // Mock users
-    setUsers([
-      {
-        id: "1",
-        firstName: "अमित",
-        lastName: "गुप्ता",
-        email: "amit@example.com",
-        mobileNumber: "9876543213",
-        role: "ADMIN",
-        state: "गुजरात",
-        district: "सूरत",
-        isActive: true,
-        lastLogin: "2024-01-24T15:45:00Z",
-        createdAt: "2024-01-05T00:00:00Z",
-        updatedAt: "2024-01-24T15:45:00Z",
-      },
-      {
-        id: "2",
-        firstName: "सुनीता",
-        lastName: "शर्मा",
-        email: "sunita@example.com",
-        mobileNumber: "9876543214",
-        role: "USER",
-        state: "राजस्थान",
-        district: "उदयपुर",
-        village: "नंदगांव",
-        isActive: true,
-        lastLogin: "2024-01-23T09:20:00Z",
-        createdAt: "2024-01-08T00:00:00Z",
-        updatedAt: "2024-01-23T09:20:00Z",
-      },
-    ])
-    setIsLoadingUsers(false)
-
-    // Mock statistics
-    setStatistics({
-      totalVillages: 125,
-      totalChoklas: 15,
-      totalUsers: 450,
-      totalFamilies: 2500,
-      totalPopulation: 12500,
-      activeVillages: 120,
-      activeChoklas: 12,
-      activeUsers: 425,
-      recentRegistrations: 25,
-      monthlyGrowth: {
-        villages: 8.5,
-        choklas: 12.3,
-        users: 15.7,
-        families: 6.2,
-      },
-      stateDistribution: [
-        { state: "गुजरात", villages: 75, families: 1500, population: 7500 },
-        { state: "राजस्थान", villages: 50, families: 1000, population: 5000 },
-      ],
-      facilityStats: {
-        electricity: 95,
-        waterSupply: 80,
-        school: 70,
-        healthCenter: 45,
-        roadAccess: 85,
-      },
-    })
-    setIsLoadingStatistics(false)
-  }
-
-  // Handle chokhla creation
-  const handleCreateChokhla = async (data: ChokhlaFormData) => {
+  // Fetch profile data
+  const fetchProfile = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      setIsLoadingProfile(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/profile`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
 
-      const newChokhla: Chokhla = {
-        id: Date.now().toString(),
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        mobileNumber: data.mobileNumber,
-        state: data.state,
-        district: data.district,
-        villageCount: 0,
-        familyCount: 0,
-        isActive: true,
-        lastLogin: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      setChoklas((prev) => [...prev, newChokhla])
+      const data = await response.json()
+      setProfile(data)
+    } catch (error) {
+      console.error("Error fetching profile:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "प्रोफाइल लोड करने में त्रुटि",
+        message: "प्रोफाइल की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: fetchProfile,
+      })
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
+
+  // Fetch villages data
+  const fetchVillages = async () => {
+    try {
+      setIsLoadingVillages(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/villages`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setVillages(data)
+    } catch (error) {
+      console.error("Error fetching villages:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "गांवों की सूची लोड करने में त्रुटि",
+        message: "गांवों की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: fetchVillages,
+      })
+    } finally {
+      setIsLoadingVillages(false)
+    }
+  }
+
+  // Fetch chokhlas data
+  const fetchChokhlas = async () => {
+    try {
+      setIsLoadingChokhlas(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/chokhlas`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setChokhlas(data)
+    } catch (error) {
+      console.error("Error fetching chokhlas:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "चोखला की सूची लोड करने में त्रुटि",
+        message: "चोखला की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: fetchChokhlas,
+      })
+    } finally {
+      setIsLoadingChokhlas(false)
+    }
+  }
+
+  // Fetch users data
+  const fetchUsers = async () => {
+    try {
+      setIsLoadingUsers(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/users`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setUsers(data)
+    } catch (error) {
+      console.error("Error fetching users:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "उपयोगकर्ताओं की सूची लोड करने में त्रुटि",
+        message: "उपयोगकर्ताओं की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: fetchUsers,
+      })
+    } finally {
+      setIsLoadingUsers(false)
+    }
+  }
+
+  // Fetch statistics data
+  const fetchStats = async () => {
+    try {
+      setIsLoadingStats(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/statistics`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setStats(data)
+    } catch (error) {
+      console.error("Error fetching statistics:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "आंकड़े लोड करने में त्रुटि",
+        message: "आंकड़ों की जानकारी लोड करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: fetchStats,
+      })
+    } finally {
+      setIsLoadingStats(false)
+    }
+  }
+
+  // Handle village form submission
+  const handleVillageSubmit = async (data: VillageFormData) => {
+    try {
+      setIsSubmitting(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/villages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const newVillage = await response.json()
+      setVillages((prev) => [...prev, newVillage])
+
+      setSuccessDialog({
+        isOpen: true,
+        title: "गांव सफलतापूर्वक पंजीकृत हुआ",
+        message: "नया गांव सफलतापूर्वक जोड़ा गया है।",
+        details: {
+          "गांव का नाम": data.name,
+          राज्य: data.state,
+          जिला: data.district,
+          पिनकोड: data.pincode,
+        },
+      })
+
+      setActiveTab("villages")
+      toast.success("गांव सफलतापूर्वक पंजीकृत हुआ")
+    } catch (error) {
+      console.error("Error creating village:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "गांव पंजीकरण में त्रुटि",
+        message: error instanceof Error ? error.message : "गांव पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: () => handleVillageSubmit(data),
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Handle chokhla form submission
+  const handleChokhlaSubmit = async (data: ChokhlaFormData) => {
+    try {
+      setIsSubmitting(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/chokhlas`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const newChokhla = await response.json()
+      setChokhlas((prev) => [...prev, newChokhla])
 
       setSuccessDialog({
         isOpen: true,
         title: "चोखला सफलतापूर्वक पंजीकृत हुआ",
-        message: "नया चोखला खाता सफलतापूर्वक बनाया गया है।",
+        message: "नया चोखला सफलतापूर्वक जोड़ा गया है।",
         details: {
           नाम: `${data.firstName} ${data.lastName}`,
-          ईमेल: data.email,
           मोबाइल: data.mobileNumber,
           स्थान: `${data.district}, ${data.state}`,
         },
       })
 
+      setActiveTab("chokhlas")
       toast.success("चोखला सफलतापूर्वक पंजीकृत हुआ")
     } catch (error) {
       console.error("Error creating chokhla:", error)
       setErrorDialog({
         isOpen: true,
         title: "चोखला पंजीकरण में त्रुटि",
-        message: "चोखला पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        message: error instanceof Error ? error.message : "चोखला पंजीकृत करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: () => handleChokhlaSubmit(data),
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  // Handle profile update
-  const handleUpdateProfile = async (data: ProfileFormData) => {
+  // Handle user form submission
+  const handleUserSubmit = async (data: UserFormData) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      setIsSubmitting(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
 
-      if (profile) {
-        const updatedProfile: SuperAdminProfile = {
-          ...profile,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          mobileNumber: data.mobileNumber,
-          updatedAt: new Date().toISOString(),
-        }
-
-        setProfile(updatedProfile)
-
-        setSuccessDialog({
-          isOpen: true,
-          title: "प्रोफाइल सफलतापूर्वक अपडेट हुई",
-          message: "आपकी प्रोफाइल की जानकारी सफलतापूर्वक अपडेट हो गई है।",
-          details: {
-            नाम: `${data.firstName} ${data.lastName}`,
-            ईमेल: data.email,
-            मोबाइल: data.mobileNumber,
-          },
-        })
-
-        toast.success("प्रोफाइल सफलतापूर्वक अपडेट हुई")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
+
+      const newUser = await response.json()
+      setUsers((prev) => [...prev, newUser])
+
+      setSuccessDialog({
+        isOpen: true,
+        title: "उपयोगकर्ता सफलतापूर्वक जोड़ा गया",
+        message: "नया उपयोगकर्ता सफलतापूर्वक जोड़ा गया है।",
+        details: {
+          नाम: `${data.firstName} ${data.lastName}`,
+          ईमेल: data.email,
+          भूमिका: data.role,
+        },
+      })
+
+      setActiveTab("users")
+      toast.success("उपयोगकर्ता सफलतापूर्वक जोड़ा गया")
+    } catch (error) {
+      console.error("Error creating user:", error)
+      setErrorDialog({
+        isOpen: true,
+        title: "उपयोगकर्ता जोड़ने में त्रुटि",
+        message: error instanceof Error ? error.message : "उपयोगकर्ता जोड़ने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: () => handleUserSubmit(data),
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Handle profile form submission
+  const handleProfileSubmit = async (data: ProfileFormData) => {
+    try {
+      setIsSubmitting(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const updatedProfile = await response.json()
+      setProfile(updatedProfile)
+
+      setSuccessDialog({
+        isOpen: true,
+        title: "प्रोफाइल सफलतापूर्वक अपडेट हुई",
+        message: "आपकी प्रोफाइल की जानकारी सफलतापूर्वक अपडेट हो गई है।",
+        details: {
+          नाम: `${data.firstName} ${data.lastName}`,
+          ईमेल: data.email,
+        },
+      })
+
+      toast.success("प्रोफाइल सफलतापूर्वक अपडेट हुई")
     } catch (error) {
       console.error("Error updating profile:", error)
       setErrorDialog({
         isOpen: true,
         title: "प्रोफाइल अपडेट में त्रुटि",
-        message: "प्रोफाइल अपडेट करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        message: error instanceof Error ? error.message : "प्रोफाइल अपडेट करने में समस्या हुई है। कृपया पुनः प्रयास करें।",
+        onRetry: () => handleProfileSubmit(data),
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  // Handle user status toggle
-  const handleToggleUserStatus = async (id: string, isActive: boolean) => {
-    try {
-      setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, isActive } : user)))
-      toast.success(`उपयोगकर्ता ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
-    } catch (error) {
-      console.error("Error toggling user status:", error)
-      toast.error("उपयोगकर्ता स्थिति बदलने में त्रुटि")
-    }
-  }
+  // Load data on component mount
+  useEffect(() => {
+    fetchProfile()
+    fetchVillages()
+    fetchChokhlas()
+    fetchUsers()
+    fetchStats()
+  }, [])
 
-  // Handle chokhla status toggle
-  const handleToggleChokhlaStatus = async (id: string, isActive: boolean) => {
-    try {
-      setChoklas((prev) => prev.map((chokhla) => (chokhla.id === id ? { ...chokhla, isActive } : chokhla)))
-      toast.success(`चोखला ${isActive ? "सक्रिय" : "निष्क्रिय"} किया गया`)
-    } catch (error) {
-      console.error("Error toggling chokhla status:", error)
-      toast.error("चोखला स्थिति बदलने में त्रुटि")
-    }
-  }
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      window.location.href = "/login"
-    } catch (error) {
-      console.error("Error logging out:", error)
-      toast.error("लॉग आउट करने में त्रुटि")
-    }
-  }
-
-  // Refresh functions
-  const handleRefreshVillages = () => {
-    setIsLoadingVillages(true)
-    setTimeout(() => setIsLoadingVillages(false), 1000)
-  }
-
-  const handleRefreshChoklas = () => {
-    setIsLoadingChoklas(true)
-    setTimeout(() => setIsLoadingChoklas(false), 1000)
-  }
-
-  const handleRefreshUsers = () => {
-    setIsLoadingUsers(true)
-    setTimeout(() => setIsLoadingUsers(false), 1000)
-  }
-
-  const value: SuperAdminContextType = {
+  const contextValue: SuperAdminContextType = {
     // State
     activeTab,
+    setActiveTab,
+
+    // Data
     profile,
     villages,
-    choklas,
+    chokhlas,
     users,
-    statistics,
+    stats,
 
     // Loading states
     isLoadingProfile,
     isLoadingVillages,
-    isLoadingChoklas,
+    isLoadingChokhlas,
     isLoadingUsers,
-    isLoadingStatistics,
+    isLoadingStats,
+    isSubmitting,
 
     // Dialog states
     successDialog,
     errorDialog,
-
-    // Actions
-    setActiveTab,
-    handleCreateChokhla,
-    handleUpdateProfile,
-    handleToggleUserStatus,
-    handleToggleChokhlaStatus,
-    handleLogout,
-    handleRefreshVillages,
-    handleRefreshChoklas,
-    handleRefreshUsers,
     setSuccessDialog,
     setErrorDialog,
+
+    // Actions
+    handleVillageSubmit,
+    handleChokhlaSubmit,
+    handleUserSubmit,
+    handleProfileSubmit,
+
+    // Data fetching
+    fetchProfile,
+    fetchVillages,
+    fetchChokhlas,
+    fetchUsers,
+    fetchStats,
   }
 
-  return <SuperAdminContext.Provider value={value}>{children}</SuperAdminContext.Provider>
+  return <SuperAdminContext.Provider value={contextValue}>{children}</SuperAdminContext.Provider>
 }

@@ -1,8 +1,8 @@
 "use client"
 
+import { useSuperAdmin } from "../providers/superadmin-provider"
 import { SuccessDialog } from "../success-dialog"
 import { ErrorDialog } from "../error-dialog"
-import { useSuperAdmin } from "../providers/superadmin-provider"
 
 export function SuperAdminDialogs() {
   const { successDialog, errorDialog, setSuccessDialog, setErrorDialog } = useSuperAdmin()
