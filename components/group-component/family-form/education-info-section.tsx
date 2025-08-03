@@ -1,282 +1,378 @@
 "use client"
 
-import { GraduationCap } from "lucide-react"
+import { GraduationCap, BookOpen, Award } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import type { MemberFormProps } from "./types"
+import { educationLevels } from "./constants"
 
 export function EducationInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
+  const errorPrefix = `member_${index}_`
+
   return (
-    <div>
-      <h4 className="font-semibold text-gray-700 mb-3 flex items-center hindi-text text-sm sm:text-base">
-        <GraduationCap className="w-4 h-4 mr-2" />
-        शिक्षा की जानकारी
-      </h4>
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={`student-${member.id}`}
-              checked={member.isStudent}
-              onCheckedChange={(checked) => onUpdateMember(member.id, "isStudent", checked)}
-            />
-            <Label htmlFor={`student-${member.id}`} className="hindi-text text-sm">
-              वर्तमान में छात्र/छात्रा है
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={`currentlyEnrolled-${member.id}`}
-              checked={member.isCurrentlyEnrolled}
-              onCheckedChange={(checked) => onUpdateMember(member.id, "isCurrentlyEnrolled", checked)}
-            />
-            <Label htmlFor={`currentlyEnrolled-${member.id}`} className="hindi-text text-sm">
-              वर्तमान में नामांकित है
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={`studyingAbroad-${member.id}`}
-              checked={member.isStudyingAbroad}
-              onCheckedChange={(checked) => onUpdateMember(member.id, "isStudyingAbroad", checked)}
-            />
-            <Label htmlFor={`studyingAbroad-${member.id}`} className="hindi-text text-sm">
-              विदेश में पढ़ाई कर रहे हैं
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={`helpFromSamaj-${member.id}`}
-              checked={member.isHelpRequiredFromSamaj}
-              onCheckedChange={(checked) => onUpdateMember(member.id, "isHelpRequiredFromSamaj", checked)}
-            />
-            <Label htmlFor={`helpFromSamaj-${member.id}`} className="hindi-text text-sm">
-              समाज से सहायता चाहिए
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={`scholarship-${member.id}`}
-              checked={member.scholarshipReceived}
-              onCheckedChange={(checked) => onUpdateMember(member.id, "scholarshipReceived", checked)}
-            />
-            <Label htmlFor={`scholarship-${member.id}`} className="hindi-text text-sm">
-              छात्रवृत्ति प्राप्त है
-            </Label>
-          </div>
+    <Card className="border-l-4 border-l-indigo-500">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <GraduationCap className="w-5 h-5 text-indigo-600" />
+          <h4 className="font-semibold text-gray-800 hindi-text text-base sm:text-lg">शिक्षा की जानकारी</h4>
         </div>
 
-        <div className="mobile-form-grid">
-          <div>
-            <Label className="hindi-text text-sm">शिक्षा का स्तर</Label>
-            <Select
-              value={member.educationLevel}
-              onValueChange={(value) => onUpdateMember(member.id, "educationLevel", value)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="शिक्षा का स्तर चुनें" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="illiterate">निरक्षर</SelectItem>
-                <SelectItem value="primary">प्राथमिक (कक्षा 1-5)</SelectItem>
-                <SelectItem value="middle">मध्य (कक्षा 6-8)</SelectItem>
-                <SelectItem value="secondary">माध्यमिक (कक्षा 9-10)</SelectItem>
-                <SelectItem value="higher_secondary">उच्च माध्यमिक (कक्षा 11-12)</SelectItem>
-                <SelectItem value="undergraduate">स्नातक</SelectItem>
-                <SelectItem value="postgraduate">स्नातकोत्तर</SelectItem>
-                <SelectItem value="doctorate">डॉक्टरेट</SelectItem>
-                <SelectItem value="diploma">डिप्लोमा</SelectItem>
-                <SelectItem value="certificate">प्रमाणपत्र कोर्स</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="space-y-6">
+          {/* Student Status */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`isStudent-${member.id}`}
+                checked={member.isStudent}
+                onCheckedChange={(checked) => onUpdateMember(member.id, "isStudent", checked)}
+              />
+              <Label htmlFor={`isStudent-${member.id}`} className="hindi-text text-sm cursor-pointer font-medium">
+                वर्तमान में छात्र/छात्रा है
+              </Label>
+            </div>
           </div>
 
-          <div>
-            <Label className="hindi-text text-sm">पूर्ण की गई कक्षा</Label>
-            <Select
-              value={member.classCompleted}
-              onValueChange={(value) => onUpdateMember(member.id, "classCompleted", value)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="पूर्ण की गई कक्षा चुनें" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">कोई नहीं</SelectItem>
-                <SelectItem value="1">कक्षा 1</SelectItem>
-                <SelectItem value="2">कक्षा 2</SelectItem>
-                <SelectItem value="3">कक्षा 3</SelectItem>
-                <SelectItem value="4">कक्षा 4</SelectItem>
-                <SelectItem value="5">कक्षा 5</SelectItem>
-                <SelectItem value="6">कक्षा 6</SelectItem>
-                <SelectItem value="7">कक्षा 7</SelectItem>
-                <SelectItem value="8">कक्षा 8</SelectItem>
-                <SelectItem value="9">कक्षा 9</SelectItem>
-                <SelectItem value="10">कक्षा 10</SelectItem>
-                <SelectItem value="11">कक्षा 11</SelectItem>
-                <SelectItem value="12">कक्षा 12</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {member.isStudent && (
+          {/* Education Level */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="hindi-text text-sm">वर्तमान कक्षा</Label>
+              <Label htmlFor={`educationLevel-${member.id}`} className="hindi-text text-sm font-medium">
+                शिक्षा का स्तर
+              </Label>
               <Select
-                value={member.currentClass || ""}
-                onValueChange={(value) => onUpdateMember(member.id, "currentClass", value)}
+                value={member.educationLevel}
+                onValueChange={(value) => onUpdateMember(member.id, "educationLevel", value)}
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="वर्तमान कक्षा चुनें" />
+                  <SelectValue placeholder="शिक्षा का स्तर चुनें" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">कक्षा 1</SelectItem>
-                  <SelectItem value="2">कक्षा 2</SelectItem>
-                  <SelectItem value="3">कक्षा 3</SelectItem>
-                  <SelectItem value="4">कक्षा 4</SelectItem>
-                  <SelectItem value="5">कक्षा 5</SelectItem>
-                  <SelectItem value="6">कक्षा 6</SelectItem>
-                  <SelectItem value="7">कक्षा 7</SelectItem>
-                  <SelectItem value="8">कक्षा 8</SelectItem>
-                  <SelectItem value="9">कक्षा 9</SelectItem>
-                  <SelectItem value="10">कक्षा 10</SelectItem>
-                  <SelectItem value="11">कक्षा 11</SelectItem>
-                  <SelectItem value="12">कक्षा 12</SelectItem>
+                  {educationLevels.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor={`classCompleted-${member.id}`} className="hindi-text text-sm font-medium">
+                पूर्ण की गई कक्षा
+              </Label>
+              <Input
+                id={`classCompleted-${member.id}`}
+                value={member.classCompleted}
+                onChange={(e) => onUpdateMember(member.id, "classCompleted", e.target.value)}
+                placeholder="जैसे: 12वीं, स्नातक"
+                className="mt-1 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Current Education (if student) */}
+          {member.isStudent && (
+            <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <Label className="font-medium text-blue-800">वर्तमान शिक्षा</Label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor={`currentClass-${member.id}`} className="hindi-text text-sm font-medium">
+                    वर्तमान कक्षा/कोर्स
+                  </Label>
+                  <Input
+                    id={`currentClass-${member.id}`}
+                    value={member.currentClass || ""}
+                    onChange={(e) => onUpdateMember(member.id, "currentClass", e.target.value)}
+                    placeholder="वर्तमान कक्षा/कोर्स"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`institutionName-${member.id}`} className="hindi-text text-sm font-medium">
+                    संस्थान का नाम
+                  </Label>
+                  <Input
+                    id={`institutionName-${member.id}`}
+                    value={member.institutionName}
+                    onChange={(e) => onUpdateMember(member.id, "institutionName", e.target.value)}
+                    placeholder="स्कूल/कॉलेज का नाम"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`fieldOfStudy-${member.id}`} className="hindi-text text-sm font-medium">
+                    अध्ययन का क्षेत्र
+                  </Label>
+                  <Input
+                    id={`fieldOfStudy-${member.id}`}
+                    value={member.fieldOfStudy}
+                    onChange={(e) => onUpdateMember(member.id, "fieldOfStudy", e.target.value)}
+                    placeholder="जैसे: इंजीनियरिंग, मेडिसिन"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`educationMode-${member.id}`} className="hindi-text text-sm font-medium">
+                    शिक्षा का माध्यम
+                  </Label>
+                  <Select
+                    value={member.educationMode}
+                    onValueChange={(value) => onUpdateMember(member.id, "educationMode", value)}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="शिक्षा का माध्यम चुनें" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="regular">नियमित</SelectItem>
+                      <SelectItem value="distance">दूरस्थ शिक्षा</SelectItem>
+                      <SelectItem value="online">ऑनलाइन</SelectItem>
+                      <SelectItem value="correspondence">पत्राचार</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`isCurrentlyEnrolled-${member.id}`}
+                    checked={member.isCurrentlyEnrolled}
+                    onCheckedChange={(checked) => onUpdateMember(member.id, "isCurrentlyEnrolled", checked)}
+                  />
+                  <Label htmlFor={`isCurrentlyEnrolled-${member.id}`} className="hindi-text text-sm cursor-pointer">
+                    वर्तमान में नामांकित है
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`isStudyingAbroad-${member.id}`}
+                    checked={member.isStudyingAbroad}
+                    onCheckedChange={(checked) => onUpdateMember(member.id, "isStudyingAbroad", checked)}
+                  />
+                  <Label htmlFor={`isStudyingAbroad-${member.id}`} className="hindi-text text-sm cursor-pointer">
+                    विदेश में अध्ययन कर रहे हैं
+                  </Label>
+                </div>
+              </div>
+
+              {member.isStudyingAbroad && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor={`currentEducationCity-${member.id}`} className="hindi-text text-sm font-medium">
+                      शिक्षा का शहर
+                    </Label>
+                    <Input
+                      id={`currentEducationCity-${member.id}`}
+                      value={member.currentEducationCity}
+                      onChange={(e) => onUpdateMember(member.id, "currentEducationCity", e.target.value)}
+                      placeholder="शहर का नाम"
+                      className="mt-1 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`currentEducationCountry-${member.id}`} className="hindi-text text-sm font-medium">
+                      शिक्षा का देश
+                    </Label>
+                    <Input
+                      id={`currentEducationCountry-${member.id}`}
+                      value={member.currentEducationCountry}
+                      onChange={(e) => onUpdateMember(member.id, "currentEducationCountry", e.target.value)}
+                      placeholder="देश का नाम"
+                      className="mt-1 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
-          <div>
-            <Label className="hindi-text text-sm">कॉलेज कोर्स</Label>
-            <Input
-              value={member.collegeCourse}
-              onChange={(e) => onUpdateMember(member.id, "collegeCourse", e.target.value)}
-              placeholder="कॉलेज कोर्स का नाम"
-              className="mt-1 text-sm"
-            />
+          {/* Higher Education Details */}
+          {(member.educationLevel === "graduate" ||
+            member.educationLevel === "post_graduate" ||
+            member.educationLevel === "doctorate") && (
+            <div className="bg-green-50 p-4 rounded-lg space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Award className="w-4 h-4 text-green-600" />
+                <Label className="font-medium text-green-800">उच्च शिक्षा विवरण</Label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor={`collegeCourse-${member.id}`} className="hindi-text text-sm font-medium">
+                    कॉलेज कोर्स
+                  </Label>
+                  <Input
+                    id={`collegeCourse-${member.id}`}
+                    value={member.collegeCourse}
+                    onChange={(e) => onUpdateMember(member.id, "collegeCourse", e.target.value)}
+                    placeholder="कोर्स का नाम"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`boardOrUniversity-${member.id}`} className="hindi-text text-sm font-medium">
+                    बोर्ड/विश्वविद्यालय
+                  </Label>
+                  <Input
+                    id={`boardOrUniversity-${member.id}`}
+                    value={member.boardOrUniversity}
+                    onChange={(e) => onUpdateMember(member.id, "boardOrUniversity", e.target.value)}
+                    placeholder="बोर्ड/विश्वविद्यालय का नाम"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`yearOfPassing-${member.id}`} className="hindi-text text-sm font-medium">
+                    उत्तीर्ण वर्ष
+                  </Label>
+                  <Input
+                    id={`yearOfPassing-${member.id}`}
+                    type="number"
+                    min="1950"
+                    max={new Date().getFullYear()}
+                    value={member.yearOfPassing || ""}
+                    onChange={(e) => {
+                      const value = Number.parseInt(e.target.value)
+                      onUpdateMember(member.id, "yearOfPassing", isNaN(value) ? undefined : value)
+                    }}
+                    placeholder="उत्तीर्ण वर्ष"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`higherEducationType-${member.id}`} className="hindi-text text-sm font-medium">
+                    उच्च शिक्षा का प्रकार
+                  </Label>
+                  <Select
+                    value={member.higherEducationType}
+                    onValueChange={(value) => onUpdateMember(member.id, "higherEducationType", value)}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="शिक्षा का प्रकार चुनें" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="technical">तकनीकी</SelectItem>
+                      <SelectItem value="medical">चिकित्सा</SelectItem>
+                      <SelectItem value="management">प्रबंधन</SelectItem>
+                      <SelectItem value="arts">कला</SelectItem>
+                      <SelectItem value="science">विज्ञान</SelectItem>
+                      <SelectItem value="commerce">वाणिज्य</SelectItem>
+                      <SelectItem value="law">कानून</SelectItem>
+                      <SelectItem value="other">अन्य</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scholarship Information */}
+          <div className="bg-yellow-50 p-4 rounded-lg space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Award className="w-4 h-4 text-yellow-600" />
+              <Label className="font-medium text-yellow-800">छात्रवृत्ति की जानकारी</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`scholarshipReceived-${member.id}`}
+                checked={member.scholarshipReceived}
+                onCheckedChange={(checked) => onUpdateMember(member.id, "scholarshipReceived", checked)}
+              />
+              <Label htmlFor={`scholarshipReceived-${member.id}`} className="hindi-text text-sm cursor-pointer">
+                छात्रवृत्ति प्राप्त की है
+              </Label>
+            </div>
+
+            {member.scholarshipReceived && (
+              <div>
+                <Label htmlFor={`scholarshipDetails-${member.id}`} className="hindi-text text-sm font-medium">
+                  छात्रवृत्ति का विवरण
+                </Label>
+                <Textarea
+                  id={`scholarshipDetails-${member.id}`}
+                  value={member.scholarshipDetails}
+                  onChange={(e) => onUpdateMember(member.id, "scholarshipDetails", e.target.value)}
+                  placeholder="छात्रवृत्ति का नाम और विवरण"
+                  className="mt-1 min-h-[60px] text-sm"
+                  rows={2}
+                />
+              </div>
+            )}
           </div>
 
-          <div>
-            <Label className="hindi-text text-sm">संस्थान का नाम</Label>
-            <Input
-              value={member.institutionName}
-              onChange={(e) => onUpdateMember(member.id, "institutionName", e.target.value)}
-              placeholder="स्कूल/कॉलेज/विश्वविद्यालय का नाम"
-              className="mt-1 text-sm"
-            />
+          {/* Support from Samaj */}
+          <div className="bg-orange-50 p-4 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`isHelpRequiredFromSamaj-${member.id}`}
+                checked={member.isHelpRequiredFromSamaj}
+                onCheckedChange={(checked) => onUpdateMember(member.id, "isHelpRequiredFromSamaj", checked)}
+              />
+              <Label htmlFor={`isHelpRequiredFromSamaj-${member.id}`} className="hindi-text text-sm cursor-pointer">
+                समाज से शिक्षा में सहायता चाहिए
+              </Label>
+            </div>
           </div>
 
-          <div>
-            <Label className="hindi-text text-sm">स्कूल का नाम</Label>
-            <Input
-              value={member.schoolName || ""}
-              onChange={(e) => onUpdateMember(member.id, "schoolName", e.target.value)}
-              placeholder="स्कूल का नाम"
-              className="mt-1 text-sm"
-            />
-          </div>
+          {/* Dropout Information */}
+          {!member.isStudent && member.educationLevel !== "illiterate" && (
+            <div className="bg-red-50 p-4 rounded-lg">
+              <Label htmlFor={`dropoutReason-${member.id}`} className="hindi-text text-sm font-medium">
+                शिक्षा छोड़ने का कारण (यदि कोई हो)
+              </Label>
+              <Textarea
+                id={`dropoutReason-${member.id}`}
+                value={member.dropoutReason}
+                onChange={(e) => onUpdateMember(member.id, "dropoutReason", e.target.value)}
+                placeholder="शिक्षा छोड़ने का कारण बताएं"
+                className="mt-1 min-h-[60px] text-sm"
+                rows={2}
+              />
+            </div>
+          )}
 
-          <div>
-            <Label className="hindi-text text-sm">शिक्षा का तरीका</Label>
-            <Select
-              value={member.educationMode || ""}
-              onValueChange={(value) => onUpdateMember(member.id, "educationMode", value)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="शिक्षा का तरीका चुनें" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="regular">नियमित</SelectItem>
-                <SelectItem value="distance">दूरस्थ शिक्षा</SelectItem>
-                <SelectItem value="online">ऑनलाइन</SelectItem>
-                <SelectItem value="correspondence">पत्राचार</SelectItem>
-                <SelectItem value="part_time">अंशकालिक</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label className="hindi-text text-sm">वर्तमान शिक्षा शहर</Label>
-            <Input
-              value={member.currentEducationCity || ""}
-              onChange={(e) => onUpdateMember(member.id, "currentEducationCity", e.target.value)}
-              placeholder="शिक्षा प्राप्त कर रहे शहर का नाम"
-              className="mt-1 text-sm"
-            />
-          </div>
-
-          <div>
-            <Label className="hindi-text text-sm">वर्तमान शिक्षा देश</Label>
-            <Input
-              value={member.currentEducationCountry || ""}
-              onChange={(e) => onUpdateMember(member.id, "currentEducationCountry", e.target.value)}
-              placeholder="शिक्षा प्राप्त कर रहे देश का नाम"
-              className="mt-1 text-sm"
-            />
-          </div>
-
-          <div>
-            <Label className="hindi-text text-sm">बोर्ड/विश्वविद्यालय</Label>
-            <Input
-              value={member.boardOrUniversity || ""}
-              onChange={(e) => onUpdateMember(member.id, "boardOrUniversity", e.target.value)}
-              placeholder="बोर्ड या विश्वविद्यालय का नाम"
-              className="mt-1 text-sm"
-            />
-          </div>
-
-          <div>
-            <Label className="hindi-text text-sm">अध्ययन क्षेत्र</Label>
-            <Input
-              value={member.fieldOfStudy || ""}
-              onChange={(e) => onUpdateMember(member.id, "fieldOfStudy", e.target.value)}
-              placeholder="अध्ययन का विषय/क्षेत्र"
-              className="mt-1 text-sm"
-            />
-          </div>
-
-          <div>
-            <Label className="hindi-text text-sm">उत्तीर्ण वर्ष</Label>
-            <Input
-              type="number"
-              value={member.yearOfPassing || ""}
-              onChange={(e) => onUpdateMember(member.id, "yearOfPassing", Number.parseInt(e.target.value) || undefined)}
-              placeholder="उत्तीर्ण होने का वर्ष"
-              min="1950"
-              max={new Date().getFullYear() + 10}
-              className="mt-1 text-sm"
-            />
+          {/* Status Badges */}
+          <div className="flex flex-wrap gap-2">
+            {member.isStudent && (
+              <Badge variant="default" className="bg-blue-100 text-blue-800">
+                छात्र/छात्रा
+              </Badge>
+            )}
+            {member.isStudyingAbroad && (
+              <Badge variant="outline" className="border-green-500 text-green-700">
+                विदेश में अध्ययन
+              </Badge>
+            )}
+            {member.scholarshipReceived && (
+              <Badge variant="outline" className="border-yellow-500 text-yellow-700">
+                छात्रवृत्ति प्राप्त
+              </Badge>
+            )}
+            {member.isHelpRequiredFromSamaj && (
+              <Badge variant="outline" className="border-orange-500 text-orange-700">
+                समाज से सहायता चाहिए
+              </Badge>
+            )}
           </div>
         </div>
-
-        {member.scholarshipReceived && (
-          <div>
-            <Label className="hindi-text text-sm">छात्रवृत्ति विवरण</Label>
-            <Textarea
-              value={member.scholarshipDetails || ""}
-              onChange={(e) => onUpdateMember(member.id, "scholarshipDetails", e.target.value)}
-              placeholder="छात्रवृत्ति का विवरण"
-              className="mt-1 text-sm"
-              rows={2}
-            />
-          </div>
-        )}
-
-        {member.enrollmentStatus === "dropped" && (
-          <div>
-            <Label className="hindi-text text-sm">छोड़ने का कारण</Label>
-            <Input
-              value={member.dropoutReason || ""}
-              onChange={(e) => onUpdateMember(member.id, "dropoutReason", e.target.value)}
-              placeholder="छोड़ने का कारण बताएं"
-              className="mt-1 text-sm"
-            />
-          </div>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

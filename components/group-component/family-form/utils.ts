@@ -1,8 +1,7 @@
 import type { FamilyData, FamilyMember } from "./types"
 
-export const calculateAge = (dateOfBirth: string): number => {
+export function calculateAge(dateOfBirth: string): number {
   if (!dateOfBirth) return 0
-
   const today = new Date()
   const birthDate = new Date(dateOfBirth)
   let age = today.getFullYear() - birthDate.getFullYear()
@@ -15,235 +14,206 @@ export const calculateAge = (dateOfBirth: string): number => {
   return Math.max(0, age)
 }
 
-export const validateForm = (familyData: FamilyData, isDraft = false): Record<string, string> => {
-  const newErrors: Record<string, string> = {}
+export function validateForm(familyData: FamilyData, isDraft = false): Record<string, string> {
+  const errors: Record<string, string> = {}
 
-  // For draft, we can be more lenient with validation
+  // Family level validations
   if (!isDraft) {
-    // Check if there's exactly one Mukhiya
-    const mukhiyaCount = familyData.members.filter((m) => m.isMukhiya).length
-    if (mukhiyaCount === 0) {
-      newErrors.mukhiya = "कम से कम एक मुखिया होना आवश्यक है"
-    } else if (mukhiyaCount > 1) {
-      newErrors.mukhiya = "केवल एक मुखिया हो सकता है"
-    }
-
-    // Check for unique mobile numbers
-    const mobileNumbers = familyData.members.map((m) => m.mobileNumber).filter(Boolean)
-    const duplicateMobile = mobileNumbers.find((num, index) => mobileNumbers.indexOf(num) !== index)
-    if (duplicateMobile) {
-      newErrors.mobile = `मोबाइल नंबर ${duplicateMobile} डुप्लिकेट है`
-    }
-
-    // Check required fields for each member
-    familyData.members.forEach((member, index) => {
-      if (!member.firstName.trim()) {
-        newErrors[`member-${index}-firstName`] = "पहला नाम आवश्यक है"
-      }
-      if (!member.lastName.trim()) {
-        newErrors[`member-${index}-lastName`] = "अंतिम नाम आवश्यक है"
-      }
-      if (!member.dateOfBirth) {
-        newErrors[`member-${index}-dob`] = "जन्म तिथि आवश्यक है"
-      }
-    })
-
-    // Check economic status is selected
     if (!familyData.economicStatus) {
-      newErrors.economicStatus = "आर्थिक स्थिति का चयन आवश्यक है"
+      errors.economicStatus = "आर्थिक स्थिति चुनना आवश्यक है"
+    }
+
+    if (!familyData.permanentAddress.trim()) {
+      errors.permanentAddress = "स्थायी पता आवश्यक है"
+    }
+
+    if (!familyData.currentAddress.trim()) {
+      errors.currentAddress = "वर्तमान पता आवश्यक है"
+    }
+
+    if (familyData.familyPincode && !/^\d{6}$/.test(familyData.familyPincode)) {
+      errors.familyPincode = "पिनकोड 6 अंकों का होना चाहिए"
     }
   }
 
-  // Validate format for filled fields (both draft and final)
+  // Member validations
+  const mukhiyaCount = familyData.members.filter((m) => m.isMukhiya).length
+  if (mukhiyaCount === 0) {
+    errors.mukhiya = "कम से कम एक मुखिया चुनना आवश्यक है"
+  } else if (mukhiyaCount > 1) {
+    errors.mukhiya = "केवल एक मुखिया हो सकता है"
+  }
+
+  // Mobile number validation
+  const mobileNumbers = familyData.members.map((m) => m.mobileNumber).filter((mobile) => mobile && mobile.trim())
+
+  const duplicateMobiles = mobileNumbers.filter((mobile, index) => mobileNumbers.indexOf(mobile) !== index)
+
+  if (duplicateMobiles.length > 0) {
+    errors.mobile = "मोबाइल नंबर दोहराए नहीं जा सकते"
+  }
+
+  // Individual member validations
   familyData.members.forEach((member, index) => {
-    if (member.mobileNumber && !/^[6-9]\d{9}$/.test(member.mobileNumber)) {
-      newErrors[`member-${index}-mobile`] = "वैध मोबाइल नंबर दर्ज करें"
-    }
-    if (member.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)) {
-      newErrors[`member-${index}-email`] = "वैध ईमेल पता दर्ज करें"
-    }
-    if (member.dateOfBirth) {
-      const birthDate = new Date(member.dateOfBirth)
-      const today = new Date()
-      if (birthDate > today) {
-        newErrors[`member-${index}-dob`] = "जन्म तिथि भविष्य में नहीं हो सकती"
+    const prefix = `member_${index}_`
+
+    if (!isDraft) {
+      if (!member.firstName.trim()) {
+        errors[`${prefix}firstName`] = "नाम आवश्यक है"
+      }
+
+      if (!member.dateOfBirth) {
+        errors[`${prefix}dateOfBirth`] = "जन्म तिथि आवश्यक है"
+      }
+
+      if (!member.relation) {
+        errors[`${prefix}relation`] = "रिश्ता चुनना आवश्यक है"
       }
     }
+
+    // Mobile number format validation
+    if (member.mobileNumber && !/^\d{10}$/.test(member.mobileNumber)) {
+      errors[`${prefix}mobileNumber`] = "मोबाइल नंबर 10 अंकों का होना चाहिए"
+    }
+
+    // Email validation
+    if (member.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)) {
+      errors[`${prefix}email`] = "ईमेल का प्रारूप सही नहीं है"
+    }
+
+    // Pincode validation
     if (member.pincode && !/^\d{6}$/.test(member.pincode)) {
-      newErrors[`member-${index}-pincode`] = "पिनकोड 6 अंकों का होना चाहिए"
+      errors[`${prefix}pincode`] = "पिनकोड 6 अंकों का होना चाहिए"
+    }
+
+    // Employment validations
+    if (member.isEmployed && !member.occupationType) {
+      errors[`${prefix}occupationType`] = "व्यवसाय का प्रकार चुनना आवश्यक है"
+    }
+
+    if (member.isEmployed && (!member.monthlyIncome || member.monthlyIncome <= 0)) {
+      errors[`${prefix}monthlyIncome`] = "मासिक आय दर्ज करना आवश्यक है"
     }
   })
 
-  // Validate family pincode
-  if (familyData.familyPincode && !/^\d{6}$/.test(familyData.familyPincode)) {
-    newErrors.familyPincode = "पिनकोड 6 अंकों का होना चाहिए"
-  }
-
-  return newErrors
+  return errors
 }
 
-export const transformMembersForAPI = (members: FamilyMember[]) => {
+export function transformMembersForAPI(members: FamilyMember[]) {
   return members.map((member) => ({
-    firstName: member.firstName,
-    lastName: member.lastName,
-    dateOfBirth: member.dateOfBirth ? new Date(member.dateOfBirth).toISOString() : null,
-    age: member.age,
-    gender: member.gender,
-    relation: member.isMukhiya ? "Mukhiya" : member.relation,
-    maritalStatus:
-      member.maritalStatus === "unmarried"
-        ? "Unmarried"
-        : member.maritalStatus === "married"
-          ? "Married"
-          : member.maritalStatus === "widowed"
-            ? "Widowed"
-            : member.maritalStatus === "divorced"
-              ? "Divorced"
-              : member.maritalStatus === "separated"
-                ? "Separated"
-                : member.maritalStatus === "engaged"
-                  ? "Engaged"
-                  : member.maritalStatus === "remarried"
-                    ? "Remarried"
-                    : member.maritalStatus,
-    gotra: member.gotra,
-    disability: member.disability,
-    bloodGroup: member.bloodGroup,
-    mobileNumber: member.mobileNumber,
-    email: member.email,
-    permanentAddress: member.permanentAddress,
-    currentAddress: member.currentAddress,
-    state: member.state,
-    district: member.district,
-    pincode: member.pincode,
-    village: member.village,
-    isCurrentAddressInIndia: member.isCurrentAddressInIndia,
-    currentCountry: member.currentCountry,
-    isStudent: member.isStudent,
-    educationLevel:
-      member.educationLevel === "illiterate"
-        ? "Illiterate"
-        : member.educationLevel === "primary"
-          ? "Primary"
-          : member.educationLevel === "middle"
-            ? "Middle"
-            : member.educationLevel === "secondary"
-              ? "Secondary"
-              : member.educationLevel === "higher_secondary"
-                ? "Higher Secondary"
-                : member.educationLevel === "undergraduate"
-                  ? "Graduate"
-                  : member.educationLevel === "postgraduate"
-                    ? "Post Graduate"
-                    : member.educationLevel === "doctorate"
-                      ? "Doctorate"
-                      : member.educationLevel === "diploma"
-                        ? "Diploma"
-                        : member.educationLevel === "certificate"
-                          ? "Certificate"
-                          : member.educationLevel,
-    classCompleted: member.classCompleted,
-    currentClass: member.currentClass || null,
-    collegeCourse: member.collegeCourse,
-    institutionName: member.institutionName,
-    enrollmentStatus: member.enrollmentStatus || null,
-    schoolName: member.schoolName || null,
-    higherEducationType: member.higherEducationType || null,
-    currentEducationCity: member.currentEducationCity || null,
-    currentEducationCountry: member.currentEducationCountry || null,
-    isHelpRequiredFromSamaj: member.isHelpRequiredFromSamaj,
-    isCurrentlyEnrolled: member.isCurrentlyEnrolled || false,
-    dropoutReason: member.dropoutReason || null,
-    educationMode: member.educationMode || null,
-    isStudyingAbroad: member.isStudyingAbroad,
-    scholarshipReceived: member.scholarshipReceived,
-    scholarshipDetails: member.scholarshipDetails || null,
-    boardOrUniversity: member.boardOrUniversity || null,
+    ...member,
+    age: member.age || calculateAge(member.dateOfBirth),
+    welfareSchemes: Array.isArray(member.welfareSchemes) ? member.welfareSchemes : [],
+    monthlyIncome: member.monthlyIncome || 0,
+    landOwned: member.landOwned || 0,
+    workExperienceYears: member.workExperienceYears || 0,
+    numberOfEmployees: member.numberOfEmployees || 0,
+    workingHoursPerWeek: member.workingHoursPerWeek || 0,
     yearOfPassing: member.yearOfPassing || null,
-    fieldOfStudy: member.fieldOfStudy || null,
-    isEmployed: member.isEmployed,
-    occupationType: member.occupationType || null,
-    employmentStatus: member.employmentStatus || null,
-    monthlyIncome: member.monthlyIncome || null,
-    incomeSourceCountry: member.incomeSourceCountry,
-    countryName: member.countryName || null,
-    jobCategory: member.jobCategory || null,
-    employerOrganizationName: member.employerOrganizationName || null,
-    isGovernmentJob: member.isGovernmentJob,
-    jobPosition: member.jobPosition || null,
-    jobType: member.jobType || null,
-    workExperienceYears: member.workExperienceYears || null,
-    isSelfEmployed: member.isSelfEmployed,
-    selfEmployedJobType: member.selfEmployedJobType || null,
-    nameOfBusiness: member.nameOfBusiness || null,
-    businessCategory: member.businessCategory || null,
-    sizeOfBusiness: member.sizeOfBusiness || null,
-    businessRegistration: member.businessRegistration,
-    willingToHirePeople: member.willingToHirePeople,
-    occupationState: member.occupationState || null,
-    occupationCity: member.occupationCity || null,
-    preferredJobLocation: member.preferredJobLocation || null,
-    isOpenToRelocate: member.isOpenToRelocate,
-    workingHoursPerWeek: member.workingHoursPerWeek || null,
-    hasAdditionalSkills: member.hasAdditionalSkills,
-    livestock: member.livestock,
-    landOwned: member.landOwned,
-    houseType:
-      member.houseType === "kutcha"
-        ? "Kutcha"
-        : member.houseType === "pucca"
-          ? "Pucca"
-          : member.houseType === "semi_pucca"
-            ? "Semi Pucca"
-            : member.houseType,
-    houseOwnership:
-      member.houseOwnership === "owned"
-        ? "Owned"
-        : member.houseOwnership === "rented"
-          ? "Rented"
-          : member.houseOwnership === "family"
-            ? "Family"
-            : member.houseOwnership === "government"
-              ? "Government"
-              : member.houseOwnership,
-    hasElectricity: member.hasElectricity,
-    waterSource:
-      member.waterSource === "tap"
-        ? "Tap"
-        : member.waterSource === "well"
-          ? "Well"
-          : member.waterSource === "hand_pump"
-            ? "Hand Pump"
-            : member.waterSource === "borewell"
-              ? "Borewell"
-              : member.waterSource === "river"
-                ? "River"
-                : member.waterSource,
-    hasToilet: member.hasToilet,
-    cookingFuel:
-      member.cookingFuel === "lpg"
-        ? "LPG"
-        : member.cookingFuel === "firewood"
-          ? "Firewood"
-          : member.cookingFuel === "kerosene"
-            ? "Kerosene"
-            : member.cookingFuel === "cow_dung"
-              ? "Cow Dung"
-              : member.cookingFuel === "coal"
-                ? "Coal"
-                : member.cookingFuel,
-    hasHealthIssues: member.hasHealthIssues,
-    chronicDisease: member.chronicDisease,
-    isVaccinated: member.isVaccinated,
-    hasHealthInsurance: member.hasHealthInsurance,
-    isInterestedInFutureHealthPolicy: member.isInterestedInFutureHealthPolicy,
-    hasSmartphone: member.hasSmartphone,
-    hasInternet: member.hasInternet,
-    hasBankAccount: member.hasBankAccount,
-    hasJanDhan: member.hasJanDhan,
-    isMukhiya: member.isMukhiya,
-    welfareSchemes: member.welfareSchemes,
-    isInterestedInFutureSamuhikVivah: member.isInterestedInFutureSamuhikVivah,
-    vehicleType: member.vehicleType,
+  }))
+}
+
+export function transformAPIDataToMembers(apiMembers: any[]): FamilyMember[] {
+  return apiMembers.map((member) => ({
+    id: member.id || `member-${Date.now()}-${Math.random()}`,
+    firstName: member.firstName || "",
+    lastName: member.lastName || "",
+    dateOfBirth: member.dateOfBirth || "",
+    age: member.age || 0,
+    gender: member.gender || "MALE",
+    relation: member.relation || "",
+    maritalStatus: member.maritalStatus || "",
+    gotra: member.gotra || "",
+    disability: Boolean(member.disability),
+    bloodGroup: member.bloodGroup || "",
+    mobileNumber: member.mobileNumber || "",
+    email: member.email || "",
+    permanentAddress: member.permanentAddress || "",
+    currentAddress: member.currentAddress || "",
+    state: member.state || "",
+    district: member.district || "",
+    pincode: member.pincode || "",
+    village: member.village || "",
+    isCurrentAddressInIndia: Boolean(member.isCurrentAddressInIndia ?? true),
+    currentCountry: member.currentCountry || "भारत",
+    isStudent: Boolean(member.isStudent),
+    educationLevel: member.educationLevel || "",
+    classCompleted: member.classCompleted || "",
+    currentClass: member.currentClass || "",
+    collegeCourse: member.collegeCourse || "",
+    institutionName: member.institutionName || "",
+    enrollmentStatus: member.enrollmentStatus || "",
+    schoolName: member.schoolName || "",
+    higherEducationType: member.higherEducationType || "",
+    currentEducationCity: member.currentEducationCity || "",
+    currentEducationCountry: member.currentEducationCountry || "",
+    isHelpRequiredFromSamaj: Boolean(member.isHelpRequiredFromSamaj),
+    isCurrentlyEnrolled: Boolean(member.isCurrentlyEnrolled),
+    dropoutReason: member.dropoutReason || "",
+    educationMode: member.educationMode || "",
+    isStudyingAbroad: Boolean(member.isStudyingAbroad),
+    scholarshipReceived: Boolean(member.scholarshipReceived),
+    scholarshipDetails: member.scholarshipDetails || "",
+    boardOrUniversity: member.boardOrUniversity || "",
+    yearOfPassing: member.yearOfPassing || undefined,
+    fieldOfStudy: member.fieldOfStudy || "",
+    isEmployed: Boolean(member.isEmployed),
+    isSeekingJob: Boolean(member.isSeekingJob),
+    occupationType: member.occupationType || "",
+    employmentStatus: member.employmentStatus || "",
+    monthlyIncome: Number(member.monthlyIncome) || 0,
+    incomeSourceCountry: Boolean(member.incomeSourceCountry),
+    incomeSourceCountryName: member.incomeSourceCountryName || "",
+    countryName: member.countryName || "",
+    jobCategory: member.jobCategory || "",
+    employerOrganizationName: member.employerOrganizationName || "",
+    isGovernmentJob: Boolean(member.isGovernmentJob),
+    jobPosition: member.jobPosition || "",
+    jobType: member.jobType || "",
+    workExperienceYears: Number(member.workExperienceYears) || 0,
+    isSelfEmployed: Boolean(member.isSelfEmployed),
+    selfEmployedJobType: member.selfEmployedJobType || "",
+    nameOfBusiness: member.nameOfBusiness || "",
+    businessCategory: member.businessCategory || "",
+    businessType: member.businessType || "",
+    customBusinessType: member.customBusinessType || "",
+    numberOfEmployees: Number(member.numberOfEmployees) || 0,
+    sizeOfBusiness: member.sizeOfBusiness || "",
+    businessRegistration: Boolean(member.businessRegistration),
+    isBusinessRegistered: Boolean(member.isBusinessRegistered),
+    willingToHirePeople: Boolean(member.willingToHirePeople),
+    needsEmployees: Boolean(member.needsEmployees),
+    occupationState: member.occupationState || "",
+    occupationCity: member.occupationCity || "",
+    preferredJobLocation: member.preferredJobLocation || "",
+    preferredSector: member.preferredSector || "",
+    isOpenToRelocate: Boolean(member.isOpenToRelocate),
+    workingHoursPerWeek: Number(member.workingHoursPerWeek) || 0,
+    hasAdditionalSkills: Boolean(member.hasAdditionalSkills),
+    jobSearchSector: member.jobSearchSector || "",
+    customJobSearchSector: member.customJobSearchSector || "",
+    wantsToGoAbroad: Boolean(member.wantsToGoAbroad),
+    hasPassport: Boolean(member.hasPassport),
+    livestock: member.livestock || "",
+    landOwned: Number(member.landOwned) || 0,
+    houseType: member.houseType || "",
+    houseOwnership: member.houseOwnership || "",
+    hasElectricity: Boolean(member.hasElectricity),
+    waterSource: member.waterSource || "",
+    hasToilet: Boolean(member.hasToilet),
+    cookingFuel: member.cookingFuel || "",
+    hasHealthIssues: Boolean(member.hasHealthIssues),
+    chronicDisease: member.chronicDisease || "",
+    isVaccinated: Boolean(member.isVaccinated),
+    hasHealthInsurance: Boolean(member.hasHealthInsurance),
+    isInterestedInFutureHealthPolicy: Boolean(member.isInterestedInFutureHealthPolicy),
+    hasSmartphone: Boolean(member.hasSmartphone),
+    hasInternet: Boolean(member.hasInternet),
+    hasBankAccount: Boolean(member.hasBankAccount),
+    hasJanDhan: Boolean(member.hasJanDhan),
+    isMukhiya: Boolean(member.isMukhiya),
+    welfareSchemes: Array.isArray(member.welfareSchemes) ? member.welfareSchemes : [],
+    isInterestedInFutureSamuhikVivah: Boolean(member.isInterestedInFutureSamuhikVivah),
+    vehicleType: member.vehicleType || "NONE",
   }))
 }

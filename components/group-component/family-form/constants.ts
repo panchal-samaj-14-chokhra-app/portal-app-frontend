@@ -1,13 +1,14 @@
 import type { FamilyMember } from "./types"
 
-export const initialMember: Omit<FamilyMember, "id"> = {
+export const initialMember: FamilyMember = {
+  id: "",
   firstName: "",
   lastName: "",
   dateOfBirth: "",
   age: 0,
   gender: "MALE",
   relation: "",
-  maritalStatus: "unmarried",
+  maritalStatus: "",
   gotra: "",
   disability: false,
   bloodGroup: "",
@@ -20,7 +21,7 @@ export const initialMember: Omit<FamilyMember, "id"> = {
   pincode: "",
   village: "",
   isCurrentAddressInIndia: true,
-  currentCountry: "India",
+  currentCountry: "भारत",
   isStudent: false,
   educationLevel: "",
   classCompleted: "",
@@ -81,12 +82,12 @@ export const initialMember: Omit<FamilyMember, "id"> = {
   hasPassport: false,
   livestock: "",
   landOwned: 0,
-  houseType: "kutcha",
-  houseOwnership: "owned",
+  houseType: "",
+  houseOwnership: "",
   hasElectricity: false,
-  waterSource: "tap",
+  waterSource: "",
   hasToilet: false,
-  cookingFuel: "firewood",
+  cookingFuel: "",
   hasHealthIssues: false,
   chronicDisease: "",
   isVaccinated: false,
@@ -102,6 +103,36 @@ export const initialMember: Omit<FamilyMember, "id"> = {
   vehicleType: "NONE",
 }
 
+export const statesAndDistricts: Record<string, string[]> = {
+  "आंध्र प्रदेश": ["विशाखापत्तनम", "विजयवाड़ा", "गुंटूर", "नेल्लोर", "कुर्नूल", "राजमहेंद्रवरम", "तिरुपति", "अनंतपुर"],
+  "अरुणाचल प्रदेश": ["ईटानगर", "नाहरलागुन", "पासीघाट", "अलोंग", "बोमडिला", "तेजू", "सेपा", "चांगलांग"],
+  असम: ["गुवाहाटी", "सिलचर", "डिब्रूगढ़", "जोरहाट", "नगांव", "तिनसुकिया", "बोंगाईगांव", "धुबरी"],
+  बिहार: ["पटना", "गया", "भागलपुर", "मुजफ्फरपुर", "दरभंगा", "बिहार शरीफ", "आरा", "पूर्णिया"],
+  छत्तीसगढ़: ["रायपुर", "भिलाई", "बिलासपुर", "कोरबा", "दुर्ग", "राजनांदगांव", "रायगढ़", "जगदलपुर"],
+  गोवा: ["पणजी", "वास्को दा गामा", "मडगांव", "पोंडा", "मापुसा", "बिचोलिम", "कैंडोलिम", "कलंगुट"],
+  गुजरात: ["अहमदाबाद", "सूरत", "वडोदरा", "राजकोट", "भावनगर", "जामनगर", "जूनागढ़", "गांधीनगर"],
+  हरियाणा: ["गुरुग्राम", "फरीदाबाद", "पानीपत", "अंबाला", "यमुनानगर", "रोहतक", "हिसार", "करनाल"],
+  "हिमाचल प्रदेश": ["शिमला", "मंडी", "सोलन", "नाहन", "हमीरपुर", "उना", "कुल्लू", "धर्मशाला"],
+  झारखंड: ["रांची", "जमशेदपुर", "धनबाद", "बोकारो", "देवघर", "हजारीबाग", "गिरिडीह", "रामगढ़"],
+  कर्नाटक: ["बेंगलुरु", "मैसूर", "हुबली", "मंगलुरु", "बेलगावी", "दावणगेरे", "बल्लारी", "तुमकुर"],
+  केरल: ["तिरुवनंतपुरम", "कोच्चि", "कोझिकोड", "त्रिशूर", "कन्नूर", "कोल्लम", "पलक्कड़", "अलप्पुझा"],
+  "मध्य प्रदेश": ["भोपाल", "इंदौर", "ग्वालियर", "जबलपुर", "उज्जैन", "सागर", "देवास", "सतना"],
+  महाराष्ट्र: ["मुंबई", "पुणे", "नाशिक", "नागपुर", "औरंगाबाद", "सोलापुर", "अमरावती", "कोल्हापुर"],
+  मणिपुर: ["इंफाल", "तौबल", "बिष्णुपुर", "चुराचांदपुर", "उखरुल", "सेनापति", "तमेंगलोंग", "कांगपोकपी"],
+  मेघालय: ["शिलांग", "तुरा", "जोवाई", "नोंगस्टोइन", "बागमारा", "विलियमनगर", "रीभोई", "खलीहरिंग"],
+  मिजोरम: ["आइजोल", "लुंगलेई", "चंफाई", "कोलासिब", "सेरछिप", "लावंगतलाई", "सैहा", "मामित"],
+  नगालैंड: ["कोहिमा", "दीमापुर", "मोकोकचुंग", "तुएनसांग", "वोखा", "जुन्हेबोटो", "फेक", "लोंगलेंग"],
+  ओडिशा: ["भुवनेश्वर", "कटक", "राउरकेला", "ब्रह्मपुर", "संबलपुर", "पुरी", "बालासोर", "बारगढ़"],
+  पंजाब: ["चंडीगढ़", "लुधियाना", "अमृतसर", "जालंधर", "पटियाला", "बठिंडा", "मोहाली", "फिरोजपुर"],
+  राजस्थान: ["जयपुर", "जोधपुर", "उदयपुर", "कोटा", "अजमेर", "बीकानेर", "भरतपुर", "अलवर"],
+  सिक्किम: ["गंगटोक", "नामची", "ग्यालसिंग", "मंगन", "जोरेथांग", "सिंगतम", "रंगपो", "पेलिंग"],
+  तमिलनाडु: ["चेन्नई", "कोयम्बटूर", "मदुरै", "सालेम", "तिरुचिरापल्ली", "तिरुनेलवेली", "वेल्लोर", "इरोड"],
+  तेलंगाना: ["हैदराबाद", "वारंगल", "निजामाबाद", "खम्मम", "करीमनगर", "रामगुंडम", "महबूबनगर", "नालगोंडा"],
+  त्रिपुरा: ["अगरतला", "धर्मनगर", "उदयपुर", "कैलाशहर", "बेलोनिया", "खोवाई", "अंबासा", "सब्रूम"],
+  "उत्तर प्रदेश": ["लखनऊ", "कानपुर", "आगरा", "वाराणसी", "मेरठ", "इलाहाबाद", "बरेली", "अलीगढ़"],
+  उत्तराखंड: ["देहरादून", "हरिद्वार", "रुड़की", "हल्द्वानी", "रामनगर", "काशीपुर", "रोहतक", "पिथौरागढ़"],
+  "पश्चिम बंगाल": ["कोलकाता", "हावड़ा", "दुर्गापुर", "आसनसोल", "सिलीगुड़ी", "बर्धमान", "मालदा", "कूच बिहार"],
+}
 
 export const occupationTypes = [
   { label: "किसान", value: "farmer" },
@@ -148,7 +179,6 @@ export const businessTypes = [
   { label: "अन्य", value: "other" },
 ]
 
-
 export const countries = [
   { label: "संयुक्त अरब अमीरात (UAE)", value: "UAE" },
   { label: "सऊदी अरब", value: "Saudi Arabia" },
@@ -166,30 +196,103 @@ export const countries = [
   { label: "अन्य", value: "Other" },
 ]
 
-export const statesAndDistricts: Record<string, string[]> = {
-  महाराष्ट्र: ["मुंबई", "पुणे", "नाशिक", "नागपुर", "औरंगाबाद", "सोलापुर", "अमरावती", "कोल्हापुर"],
-  "उत्तर प्रदेश": [
-    "Agra", "Aligarh", "Allahabad (Prayagraj)", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Azamgarh",
-    "Badaun", "Bahraich", "Ballia", "Balrampur", "Banda", "Barabanki", "Bareilly", "Basti", "Bhadohi", "Bijnor",
-    "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", "Etawah", "Ayodhya", "Farrukhabad",
-    "Fatehpur", "Firozabad", "Gautam Buddha Nagar", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur",
-    "Hapur", "Hardoi", "Hathras", "Jalaun", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar",
-    "Kasganj", "Kaushambi", "Kheri", "Kushinagar", "Lalitpur", "Lucknow", "Maharajganj", "Mahoba", "Mainpuri",
-    "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Raebareli",
-    "Rampur", "Saharanpur", "Sambhal", "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shravasti",
-    "Siddharthnagar", "Sitapur", "Sonbhadra", "Sultanpur", "Unnao", "Varanasi"
-  ],
-  तमिलनाडु: ["चेन्नई", "कोयम्बटूर", "मदुरै", "सालेम", "तिरुचिरापल्ली", "तिरुनेलवेली"],
-  कर्नाटक: ["बेंगलुरु", "मैसूर", "हुबली", "मंगलुरु", "बेलगावी", "दावणगेरे"],
-  "पश्चिम बंगाल": ["कोलकाता", "हावड़ा", "दुर्गापुर", "आसनसोल", "सिलीगुड़ी"],
-  गुजरात: ["अहमदाबाद", "सूरत", "वडोदरा", "राजकोट", "भावनगर", "जामनगर"],
-  राजस्थान: ["जयपुर", "जोधपुर", "उदयपुर", "कोटा", "अजमेर", "बीकानेर"],
-  "मध्य प्रदेश": [
-    "Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal",
-    "Burhanpur", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior",
-    "Harda", "Hoshangabad", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Mandla", "Mandsaur",
-    "Mauganj", "Morena", "Narmadapuram", "Narsinghpur", "Neemuch", "Niwari", "Panna", "Raisen", "Rajgarh",
-    "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri",
-    "Sidhi", "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"
-  ],
-};
+export const relationOptions = [
+  { label: "पिता", value: "father" },
+  { label: "माता", value: "mother" },
+  { label: "पति", value: "husband" },
+  { label: "पत्नी", value: "wife" },
+  { label: "पुत्र", value: "son" },
+  { label: "पुत्री", value: "daughter" },
+  { label: "भाई", value: "brother" },
+  { label: "बहन", value: "sister" },
+  { label: "दादा", value: "grandfather" },
+  { label: "दादी", value: "grandmother" },
+  { label: "पोता", value: "grandson" },
+  { label: "पोती", value: "granddaughter" },
+  { label: "अन्य", value: "other" },
+]
+
+export const educationLevels = [
+  { label: "अशिक्षित", value: "illiterate" },
+  { label: "प्राथमिक (1-5)", value: "primary" },
+  { label: "माध्यमिक (6-8)", value: "middle" },
+  { label: "हाई स्कूल (9-10)", value: "high_school" },
+  { label: "इंटरमीडिएट (11-12)", value: "intermediate" },
+  { label: "स्नातक", value: "graduate" },
+  { label: "स्नातकोत्तर", value: "post_graduate" },
+  { label: "डॉक्टरेट", value: "doctorate" },
+  { label: "डिप्लोमा", value: "diploma" },
+  { label: "अन्य", value: "other" },
+]
+
+export const bloodGroups = [
+  { label: "A+", value: "A+" },
+  { label: "A-", value: "A-" },
+  { label: "B+", value: "B+" },
+  { label: "B-", value: "B-" },
+  { label: "AB+", value: "AB+" },
+  { label: "AB-", value: "AB-" },
+  { label: "O+", value: "O+" },
+  { label: "O-", value: "O-" },
+  { label: "अज्ञात", value: "unknown" },
+]
+
+export const maritalStatusOptions = [
+  { label: "अविवाहित", value: "single" },
+  { label: "विवाहित", value: "married" },
+  { label: "विधवा/विधुर", value: "widowed" },
+  { label: "तलाकशुदा", value: "divorced" },
+  { label: "अलग", value: "separated" },
+]
+
+export const houseTypes = [
+  { label: "कच्चा मकान", value: "kutcha" },
+  { label: "पक्का मकान", value: "pucca" },
+  { label: "अर्ध-पक्का", value: "semi_pucca" },
+  { label: "झुग्गी", value: "slum" },
+  { label: "अपार्टमेंट", value: "apartment" },
+]
+
+export const houseOwnershipOptions = [
+  { label: "स्वयं का", value: "owned" },
+  { label: "किराए का", value: "rented" },
+  { label: "सरकारी", value: "government" },
+  { label: "अन्य", value: "other" },
+]
+
+export const waterSources = [
+  { label: "नल का पानी", value: "tap" },
+  { label: "हैंडपंप", value: "handpump" },
+  { label: "कुआं", value: "well" },
+  { label: "बोरवेल", value: "borewell" },
+  { label: "नदी/तालाब", value: "river_pond" },
+  { label: "अन्य", value: "other" },
+]
+
+export const cookingFuels = [
+  { label: "LPG", value: "lpg" },
+  { label: "लकड़ी", value: "wood" },
+  { label: "कोयला", value: "coal" },
+  { label: "गोबर", value: "dung" },
+  { label: "केरोसिन", value: "kerosene" },
+  { label: "अन्य", value: "other" },
+]
+
+export const vehicleTypes = [
+  { label: "कोई नहीं", value: "NONE" },
+  { label: "साइकिल", value: "BICYCLE" },
+  { label: "मोटरसाइकिल", value: "MOTORCYCLE" },
+  { label: "कार", value: "CAR" },
+  { label: "ट्रक", value: "TRUCK" },
+  { label: "अन्य", value: "OTHER" },
+]
+
+export const welfareSchemeOptions = [
+  { label: "प्रधानमंत्री आवास योजना", value: "pm_awas" },
+  { label: "मनरेगा", value: "mgnrega" },
+  { label: "राशन कार्ड", value: "ration_card" },
+  { label: "आयुष्मान भारत", value: "ayushman_bharat" },
+  { label: "किसान सम्मान निधि", value: "kisan_samman" },
+  { label: "बेटी बचाओ बेटी पढ़ाओ", value: "beti_bachao" },
+  { label: "अन्य", value: "other" },
+]

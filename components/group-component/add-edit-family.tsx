@@ -17,9 +17,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 import { Badge } from "@/components/ui/badge/badge"
 import type { FamilyData, FamilyMember, FamilyFormProps } from "./family-form/types"
 import { initialMember, statesAndDistricts } from "./family-form/constants"
-import { calculateAge, validateForm, transformMembersForAPI } from "./family-form/utils"
+import { calculateAge, validateForm, transformMembersForAPI, transformAPIDataToMembers } from "./family-form/utils"
 import { MemberForm } from "./family-form/member-form"
 import { SelectInput } from "./family-form/employment-info-section"
+import { toast } from "@/hooks/use-toast"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const { data: session, status } = useSession()
@@ -34,25 +36,14 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const { mutation: updateMutation } = useUpdateFamily()
   const [districts, setDistricts] = useState<string[]>([])
 
+  const [errorDialog, setErrorDialog] = useState<{ open: boolean; title: string; message: string }>({
+    open: false,
+    title: "",
+    message: "",
+  })
 
   // Initialize family data
   const [familyData, setFamilyData] = useState<FamilyData>(() => {
-    if (mode === "edit" && familyDetails) {
-      return {
-        mukhiyaName: familyDetails.mukhiyaName || "",
-        currentAddress: familyDetails.currentAddress || "",
-        permanentAddress: familyDetails.permanentAddress || "",
-        status: familyDetails.status || "draft",
-        economicStatus: familyDetails.economicStatus || "",
-        longitude: familyDetails.longitude,
-        latitude: familyDetails.latitude,
-        anyComment: familyDetails.anyComment || "",
-        familyDistrict: familyDetails.familyDistrict || "",
-        familyState: familyDetails.familyState || "",
-        familyPincode: familyDetails.familyPincode || "",
-        members: familyDetails.Person || [],
-      }
-    }
     return {
       mukhiyaName: "",
       currentAddress: "",
@@ -70,23 +61,28 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   })
 
   useEffect(() => {
-    if (mode === "edit" && familyDetails) {
+    if (mode === "edit" && familyDetails && !isFetching) {
+      const transformedMembers = familyDetails.Person ? transformAPIDataToMembers(familyDetails.Person) : []
+
       setFamilyData({
         mukhiyaName: familyDetails.mukhiyaName || "",
         currentAddress: familyDetails.currentAddress || "",
         permanentAddress: familyDetails.permanentAddress || "",
         status: familyDetails.status || "draft",
         economicStatus: familyDetails.economicStatus || "",
-        longitude: familyDetails.longitude,
-        latitude: familyDetails.latitude,
+        longitude: familyDetails.longitude || null,
+        latitude: familyDetails.latitude || null,
         anyComment: familyDetails.anyComment || "",
         familyDistrict: familyDetails.familyDistrict || "",
         familyState: familyDetails.familyState || "",
         familyPincode: familyDetails.familyPincode || "",
-        members: familyDetails.Person || [],
+        members:
+          transformedMembers.length > 0
+            ? transformedMembers
+            : [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
       })
     }
-  }, [mode, familyDetails])
+  }, [mode, familyDetails, isFetching])
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -218,41 +214,25 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
     setErrors(validationErrors)
 
     if (Object.keys(validationErrors).length > 0) {
-      alert("कृपया फॉर्मेट त्रुटियों को ठीक करें")
+      setErrorDialog({
+        open: true,
+        title: "फॉर्म में त्रुटियां",
+        message: "कृपया बुनियादी जानकारी भरें।",
+      })
       return
     }
 
     setSavingDraft(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      alert("परिवार का डेटा ड्राफ्ट के रूप में सहेजा गया!")
-      router.push(`/admin/village/${villageId}`)
-    } catch (error) {
-      alert("ड्राफ्ट सहेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।")
-    } finally {
-      setSavingDraft(false)
-    }
-  }
-
-  const handleSubmit = async () => {
-    const validationErrors = validateForm(familyData, false)
-    setErrors(validationErrors)
-
-    if (Object.keys(validationErrors).length > 0) {
-      alert("कृपया सभी त्रुटियों को ठीक करें")
-      return
-    }
-
-    setLoading(true)
-    try {
       const mukhiya = familyData.members.find((m) => m.isMukhiya)
       const mukhiyaName = mukhiya ? `${mukhiya.firstName} ${mukhiya.lastName}` : ""
       const transformedMembers = transformMembersForAPI(familyData.members)
+
       const submitData = {
         currentAddress: familyData.currentAddress,
         permanentAddress: familyData.permanentAddress,
         economicStatus: familyData.economicStatus,
-        status: familyData.status,
+        status: "draft",
         villageId,
         chakolaId,
         mukhiyaName,
@@ -266,17 +246,90 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       }
 
       if (mode === "edit") {
-        updateMutation.mutate({ familyId, submitData })
-        alert("परिवार सफलतापूर्वक संशोधित करें हो गया!")
-        // router.back()
+        await updateMutation.mutateAsync({ familyId, submitData })
       } else {
-        mutation.mutate(submitData)
-        alert("परिवार सफलतापूर्वक पंजीकृत हो गया!")
-        // router.back()
+        await mutation.mutateAsync(submitData)
       }
 
-    } catch (error) {
-      alert("पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।")
+      toast({
+        title: "ड्राफ्ट सहेजा गया",
+        description: "परिवार का डेटा ड्राफ्ट के रूप में सहेजा गया।",
+        variant: "default",
+      })
+
+      router.push(`/admin/village/${villageId}`)
+    } catch (error: any) {
+      console.error("Draft Save Error:", error)
+      setErrorDialog({
+        open: true,
+        title: "ड्राफ्ट सहेजने में त्रुटि",
+        message: error?.response?.data?.message || error?.message || "ड्राफ्ट सहेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।",
+      })
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
+  const handleSubmit = async () => {
+    const validationErrors = validateForm(familyData, false)
+    setErrors(validationErrors)
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrorDialog({
+        open: true,
+        title: "फॉर्म में त्रुटियां",
+        message: "कृपया सभी आवश्यक फील्ड भरें और त्रुटियों को ठीक करें।",
+      })
+      return
+    }
+
+    setLoading(true)
+    try {
+      const mukhiya = familyData.members.find((m) => m.isMukhiya)
+      const mukhiyaName = mukhiya ? `${mukhiya.firstName} ${mukhiya.lastName}` : ""
+      const transformedMembers = transformMembersForAPI(familyData.members)
+
+      const submitData = {
+        currentAddress: familyData.currentAddress,
+        permanentAddress: familyData.permanentAddress,
+        economicStatus: familyData.economicStatus,
+        status: "active",
+        villageId,
+        chakolaId,
+        mukhiyaName,
+        anyComment: familyData.anyComment,
+        familyDistrict: familyData.familyDistrict,
+        familyState: familyData.familyState,
+        familyPincode: familyData.familyPincode,
+        longitude: familyData.longitude,
+        latitude: familyData.latitude,
+        members: transformedMembers,
+      }
+
+      if (mode === "edit") {
+        await updateMutation.mutateAsync({ familyId, submitData })
+        toast({
+          title: "सफलता!",
+          description: "परिवार की जानकारी सफलतापूर्वक अपडेट हो गई।",
+          variant: "default",
+        })
+      } else {
+        await mutation.mutateAsync(submitData)
+        toast({
+          title: "सफलता!",
+          description: "परिवार सफलतापूर्वक पंजीकृत हो गया।",
+          variant: "default",
+        })
+      }
+
+      router.push(`/admin/village/${villageId}`)
+    } catch (error: any) {
+      console.error("API Error:", error)
+      setErrorDialog({
+        open: true,
+        title: "त्रुटि हुई",
+        message: error?.response?.data?.message || error?.message || "कुछ गलत हुआ। कृपया पुनः प्रयास करें।",
+      })
     } finally {
       setLoading(false)
     }
@@ -416,7 +469,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                   value={familyData.familyState}
                   onChange={(e) => {
                     setFamilyData((prev) => ({ ...prev, familyState: e }))
-                    let districtList = statesAndDistricts[e]
+                    const districtList = statesAndDistricts[e]
                     setDistricts(districtList)
                   }}
                   placeholder="राज्य का नाम"
@@ -562,6 +615,20 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
             )}
           </Button>
         </div>
+        {/* Error Dialog */}
+        <Dialog open={errorDialog.open} onOpenChange={(open) => setErrorDialog((prev) => ({ ...prev, open }))}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="hindi-text text-red-600">{errorDialog.title}</DialogTitle>
+              <DialogDescription className="hindi-text text-gray-600">{errorDialog.message}</DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end">
+              <Button onClick={() => setErrorDialog((prev) => ({ ...prev, open: false }))} className="hindi-text">
+                समझ गया
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )
