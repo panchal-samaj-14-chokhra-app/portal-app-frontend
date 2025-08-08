@@ -372,7 +372,7 @@ export default function FamilyDetailPage() {
                               { label: "स्वास्थ्य समस्या", value: member.hasMajorHealthIssues ? "हां" : "नहीं" },
                               member?.chronicDisease && { label: "पुरानी बीमारी", value: member.chronicDisease },
                               { label: "टीकाकरण", value: member.isVaccinated ? "पूरा" : "अधूरा" },
-                              { label: "स्वास्थ्य बीमा", value: member.hasHealthInsurance ? "हां" : "नहीं" },
+                              { label: "स���वास्थ्य बीमा", value: member.hasHealthInsurance ? "हां" : "नहीं" },
                               { label: "कल्याण योजनाएं", value: Array.isArray(member.welfareSchemes) && member.welfareSchemes.length > 0 ? member.welfareSchemes.join(", ") : "कोई नहीं" },
                             ]} />
                           </TabsContent>

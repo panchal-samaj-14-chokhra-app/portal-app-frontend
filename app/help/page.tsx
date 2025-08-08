@@ -23,10 +23,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 export default function HelpPage() {
   const contactInfo = {
-    adminName: "मुकेश पंचाल",
-    email: "admin@panchalsamaj.org",
-    phone: "+91-9876543210",
-    address: "123, Village Services Office, Main Road, District Name, State, India",
+    adminName: "पंकज लोहार",
+    email: "panchalsamaj14@gmail.com",
+    phone: "+91-86968 51900",
+    address: "Simalwara Dungarpur Raj."
   }
 
   const faqData = [
@@ -37,7 +37,7 @@ export default function HelpPage() {
     },
     {
       question: "नया परिवार कैसे पंजीकृत करें?",
-      answer: "डैशबोर्ड से 'परिवार पंजीकरण' सेक्शन में जाएं, 'नया परिवार जोड़ें' बटन पर क्लिक करें और सभी आवश्यक जानकारी भरें।",
+      answer: "डैशबोर्ड से 'परिवार पंजीकरण' सेक्शन में जाएं, '���या परिवार जोड़ें' बटन पर क्लिक करें और सभी आवश्यक जानकारी भरें।",
     },
     {
       question: "सदस्य की जानकारी कैसे अपडेट करें?",
