@@ -14,12 +14,7 @@ export const initialMember: FamilyMember = {
   bloodGroup: "",
   mobileNumber: "",
   email: "",
-  permanentAddress: "",
-  currentAddress: "",
-  state: "",
-  district: "",
-  pincode: "",
-  village: "",
+
   isCurrentAddressInIndia: true,
   currentCountry: "भारत",
   isStudent: false,

@@ -14,12 +14,7 @@ export interface FamilyMember {
   email: string
 
   // Legacy address fields (kept for backward compatibility where still used)
-  permanentAddress: string
-  currentAddress: string
-  state: string
-  district: string
-  pincode: string
-  village: string
+  
   isCurrentAddressInIndia: boolean
   currentCountry: string
 
