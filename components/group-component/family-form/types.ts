@@ -1,15 +1,38 @@
+import type { FamilyMember } from "./family-member" // Assuming FamilyMember is declared in another file
+
 export interface FamilyData {
-  // Existing properties
-  permanentAddress?: string
-  currentAddress?: string
+  // Identity and status
+  mukhiyaName: string
+  status: string
+  economicStatus: string
 
-  // New address fields (Prisma model updates)
-  permanentFamilyDistrict?: string
-  permanentFamilyState?: string
-  permanentFamilyPincode?: string
-  currentFamilyDistrict?: string
-  currentFamilyState?: string
-  currentFamilyPincode?: string
+  // Geolocation
+  longitude?: number | null
+  latitude?: number | null
 
-  // Additional properties can be added here
+  // Comments
+  anyComment: string
+
+  // Legacy family-level address fields (kept for backward compatibility where used)
+  familyDistrict: string
+  familyState: string
+  familyPincode: string
+
+  // Existing address text fields
+  permanentAddress: string
+  currentAddress: string
+
+  // New address model fields (Prisma)
+  permanentFamilyDistrict: string
+  permanentFamilyState: string
+  permanentFamilyPincode: string
+  permanentFamilyVillage: string
+
+  currentFamilyDistrict: string
+  currentFamilyState: string
+  currentFamilyPincode: string
+  currentFamilyVillage: string
+
+  // Members
+  members: FamilyMember[]
 }
