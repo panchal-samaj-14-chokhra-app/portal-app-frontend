@@ -1,27 +1,66 @@
 "use client"
 
 import { useSession, signOut } from "next-auth/react"
-import { useRouter, useParams, useSearchParams } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
-import { Users, Home, Plus, Search, LogOut, Eye, Edit, Trash2, UserCheck, MapPin, ArrowLeft } from "lucide-react"
+import {
+  Users,
+  Home,
+  Plus,
+  Search,
+  LogOut,
+  Eye,
+  Edit,
+  Trash2,
+  UserCheck,
+  MapPin,
+  ArrowLeft,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
 import { Badge } from "@/components/ui/badge/badge"
 import { Input } from "@/components/ui/input/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table/table"
 import { useDeleteFamilyUsingID, useVillageDetails } from "@/data-hooks/mutation-query/useQueryAndMutation"
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog/dialog"
 
 export default function VillageDetailPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
-  const villageId = params.villageId
+  const villageId = params.villageId as string
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const { data: villageData, isLoading, error } = useVillageDetails(villageId);
-  const { mutate: deleteFamily, } = useDeleteFamilyUsingID();
+
+  // Delete flow state
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteModal, setDeleteModal] = useState<{
+    loading: boolean
+    success: boolean
+    error: boolean
+    message: string
+  }>({
+    loading: false,
+    success: false,
+    error: false,
+    message: "",
+  })
+
+  const { data: villageData, isLoading } = useVillageDetails(villageId)
+  const { mutate: deleteFamily } = useDeleteFamilyUsingID()
+
   const families = useMemo(() => {
     return villageData?.families
   }, [villageData?.families])
@@ -29,8 +68,8 @@ export default function VillageDetailPage() {
   const chokhlaID = useMemo(() => {
     return villageData?.choklaId
   }, [villageData])
-  const userType = useMemo(() => session?.user?.role, [session?.user?.role])
 
+  const userType = useMemo(() => session?.user?.role, [session?.user?.role])
 
   useEffect(() => {
     if (status === "loading") return
@@ -56,16 +95,16 @@ export default function VillageDetailPage() {
 
   const handleAddFamily = () => {
     if (userType !== "VILLAGE_MEMBER") {
-      router.back();
-      return;
+      router.back()
+      return
     }
     router.push(`/admin/village/${villageId}/add-family?chakolaId=${chokhlaID}`)
   }
 
-  const filteredFamilies = families?.filter((family: { mukhiyaName: string; familyId: string; status: string }) => {
+  const filteredFamilies = families?.filter((family: { mukhiyaName: string; id: string; status: string }) => {
     const matchesSearch =
       family.mukhiyaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      family.familyId.toLowerCase().includes(searchTerm.toLowerCase())
+      family.id.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || family.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -83,44 +122,79 @@ export default function VillageDetailPage() {
     }
   }
 
+  // Delete logic with loading, success, and error modals
   const handleDeleteFamily = async (familyId: string) => {
-    return await deleteFamily(familyId);
-  };
+    setDeletingId(familyId)
+    setIsDeleting(true)
+    setDeleteModal({ loading: true, success: false, error: false, message: "" })
+
+    deleteFamily(familyId, {
+      onSuccess: (data: any) => {
+        if (data?.success) {
+          setDeleteModal({
+            loading: false,
+            success: true,
+            error: false,
+            message: data?.message || "Family deleted successfully",
+          })
+          // Refresh to get updated list
+          if (typeof router.refresh === "function") {
+            router.refresh()
+          }
+        } else {
+          setDeleteModal({
+            loading: false,
+            success: false,
+            error: true,
+            message: data?.message || "परिवार हटाने में समस्या हुई",
+          })
+        }
+      },
+      onError: (err: any) => {
+        setDeleteModal({
+          loading: false,
+          success: false,
+          error: true,
+          message: err?.message || "परिवार हटाने में समस्या हुई",
+        })
+      },
+      onSettled: () => {
+        setIsDeleting(false)
+        setDeletingId(null)
+      },
+    })
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
       {/* Header */}
       <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 min-w-0">
               <Image
                 src="/images/main-logo.png"
                 alt="Panchal Samaj Logo"
                 width={50}
                 height={50}
-                className="rounded-full shadow-lg"
+                className="rounded-full shadow-lg flex-shrink-0"
               />
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">{villageData?.name}</h1>
-                <p className="text-orange-100 text-sm">स्वागत है, {session.user?.name}</p>
+              <div className="min-w-0">
+                <h1 className="text-xl md:text-2xl font-bold text-white truncate">{villageData?.name}</h1>
+                <p className="text-orange-100 text-sm truncate">स्वागत है, {session.user?.name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {userType !== "VILLAGE_MEMBER" ? (
-                <Button
-                  onClick={handleAddFamily}
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
+                <Button onClick={handleAddFamily} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  वापस जॉए
+                  <span className="hidden xs:inline">वापस जॉए</span>
+                  <span className="xs:hidden">वापस</span>
                 </Button>
               ) : (
-                <Button
-                  onClick={handleAddFamily}
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
+                <Button onClick={handleAddFamily} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                   <Plus className="w-4 h-4 mr-2" />
-                  नया परिवार
+                  <span>नया परिवार</span>
                 </Button>
               )}
 
@@ -130,13 +204,12 @@ export default function VillageDetailPage() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                लॉगआउट
+                <span className="hidden sm:inline">लॉगआउट</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
-
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -157,7 +230,11 @@ export default function VillageDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-600 text-sm font-medium">कुल सदस्य</p>
-                  <p className="text-2xl font-bold text-green-700">{villageData?.genderCount.MALE + villageData?.genderCount.FEMALE + villageData?.genderCount.OTHER}</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {(villageData?.genderCount?.MALE || 0) +
+                      (villageData?.genderCount?.FEMALE || 0) +
+                      (villageData?.genderCount?.OTHER || 0)}
+                  </p>
                 </div>
                 <Users className="w-8 h-8 text-green-600" />
               </div>
@@ -169,7 +246,7 @@ export default function VillageDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-600 text-sm font-medium">पुरुष</p>
-                  <p className="text-2xl font-bold text-purple-700">{villageData?.genderCount.MALE || 0}</p>
+                  <p className="text-2xl font-bold text-purple-700">{villageData?.genderCount?.MALE || 0}</p>
                 </div>
                 <Users className="w-8 h-8 text-purple-600" />
               </div>
@@ -181,7 +258,7 @@ export default function VillageDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-pink-600 text-sm font-medium">महिला</p>
-                  <p className="text-2xl font-bold text-pink-700">{villageData?.genderCount.FEMALE || 0}</p>
+                  <p className="text-2xl font-bold text-pink-700">{villageData?.genderCount?.FEMALE || 0}</p>
                 </div>
                 <Users className="w-8 h-8 text-pink-600" />
               </div>
@@ -193,7 +270,7 @@ export default function VillageDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-pink-600 text-sm font-medium">अन्य</p>
-                  <p className="text-2xl font-bold text-pink-700">{villageData?.genderCount.OTHER || 0}</p>
+                  <p className="text-2xl font-bold text-pink-700">{villageData?.genderCount?.OTHER || 0}</p>
                 </div>
                 <Users className="w-8 h-8 text-pink-600" />
               </div>
@@ -210,7 +287,7 @@ export default function VillageDetailPage() {
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="मुखिया का नाम या परिवार ID खोजें..."
                   value={searchTerm}
@@ -218,7 +295,7 @@ export default function VillageDetailPage() {
                   className="pl-10"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   variant={statusFilter === "all" ? "default" : "outline"}
                   onClick={() => setStatusFilter("all")}
@@ -274,113 +351,133 @@ export default function VillageDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredFamilies?.map((family) => (
-                    <TableRow key={family.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">{family.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <UserCheck className="w-4 h-4 text-orange-600" />
-                          {family.mukhiyaName}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          {family.genderCount.MALE + family.genderCount.FEMALE + family.genderCount.OTHER}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
-                            पु: {family.genderCount.MALE}
-                          </Badge>
-                          <Badge variant="outline" className="bg-pink-50 text-pink-700 text-xs">
-                            म: {family.genderCount.FEMALE}
-                          </Badge>
-                          <Badge variant="outline" className="bg-pink-50 text-pink-700 text-xs">
-                            अ: {family.genderCount.OTHER}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate" title={family.currentAddress}>
-                        {family.currentAddress}
-                      </TableCell>
-                      <TableCell>{family.contactNumber || "N/A"}</TableCell>
-                      <TableCell>{family.economicStatus}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => router.push(`/admin/village/${villageId}/family/${family.id}?choklaId=${villageData.choklaId}`)}
-                            className="bg-transparent"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => router.push(`/admin/village/${villageId}/family/${family.id}/edit?choklaId=${villageData.choklaId}`)}
+                  {filteredFamilies?.map((family: any) => {
+                    const totalMembers =
+                      (family?.genderCount?.MALE || 0) +
+                      (family?.genderCount?.FEMALE || 0) +
+                      (family?.genderCount?.OTHER || 0)
+                    const isRowDeleting = isDeleting && deletingId === family.id
 
-                            className="bg-transparent"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteFamily(family.id)}
-                            className="bg-transparent text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                    return (
+                      <TableRow key={family.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{family.id}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="w-4 h-4 text-orange-600" />
+                            <span className="truncate">{family.mukhiyaName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            {totalMembers}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
+                              पु: {family?.genderCount?.MALE || 0}
+                            </Badge>
+                            <Badge variant="outline" className="bg-pink-50 text-pink-700 text-xs">
+                              म: {family?.genderCount?.FEMALE || 0}
+                            </Badge>
+                            <Badge variant="outline" className="bg-pink-50 text-pink-700 text-xs">
+                              अ: {family?.genderCount?.OTHER || 0}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate" title={family.currentAddress}>
+                          {family.currentAddress}
+                        </TableCell>
+                        <TableCell>{family.contactNumber || "N/A"}</TableCell>
+                        <TableCell>{getStatusBadge(family.economicStatus)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                router.push(
+                                  `/admin/village/${villageId}/family/${family.id}?choklaId=${villageData.choklaId}`,
+                                )
+                              }
+                              className="bg-transparent"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                router.push(
+                                  `/admin/village/${villageId}/family/${family.id}/edit?choklaId=${villageData.choklaId}`,
+                                )
+                              }
+                              className="bg-transparent"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteFamily(family.id)}
+                              disabled={isRowDeleting}
+                              className={`bg-transparent ${
+                                isRowDeleting
+                                  ? "opacity-70 cursor-not-allowed"
+                                  : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                              }`}
+                            >
+                              {isRowDeleting ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>
 
-            {
-              userType === 'VILLAGE_MEMBER' ?
-                filteredFamilies?.length === 0 && (
-                  <div className="text-center py-8">
-                    <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई परिवार नहीं मिला</h3>
-                    <p className="text-gray-600 mb-4">खोज मापदंड के अनुसार कोई परिवार नहीं मिला</p>
-                    <Button
-                      onClick={handleAddFamily}
-                      className="bg-orange-500 hover:bg-orange-600"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      पहला परिवार जोड़ें
-                    </Button>
-                  </div>
-                ) : (
-                  <div>No member</div>
-                )}
+            {userType === "VILLAGE_MEMBER" ? (
+              filteredFamilies?.length === 0 && (
+                <div className="text-center py-8">
+                  <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई परिवार नहीं मिला</h3>
+                  <p className="text-gray-600 mb-4">खोज मापदंड के अनुसार कोई परिवार नहीं मिला</p>
+                  <Button onClick={handleAddFamily} className="bg-orange-500 hover:bg-orange-600">
+                    <Plus className="w-4 h-4 mr-2" />
+                    पहला परिवार जोड़ें
+                  </Button>
+                </div>
+              )
+            ) : (
+              <div className="py-4 text-sm text-gray-600">No member</div>
+            )}
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {userType === "VILLAGE_MEMBER" && (<Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center text-orange-700">
-                <Plus className="w-5 h-5 mr-2" />
-                नया परिवार जोड़ें
-              </CardTitle>
-              <CardDescription>नए परिवार का पंजीकरण करें</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                className="w-full bg-orange-500 hover:bg-orange-600"
-                onClick={handleAddFamily}
-              >
-                परिवार पंजीकरण शुरू करें
-              </Button>
-            </CardContent>
-          </Card>)}
+          {userType === "VILLAGE_MEMBER" && (
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center text-orange-700">
+                  <Plus className="w-5 h-5 mr-2" />
+                  नया परिवार जोड़ें
+                </CardTitle>
+                <CardDescription>नए परिवार का पंजीकरण करें</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full bg-orange-500 hover:bg-orange-600" onClick={handleAddFamily}>
+                  परिवार पंजीकरण शुरू करें
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
@@ -392,31 +489,70 @@ export default function VillageDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                <p><strong>गांव ID:</strong> {villageData?.id}</p>
-                <p><strong>नाम:</strong> {villageData?.name}</p>
-                <p><strong>चौकला:</strong> {villageData?.chakolaName}</p>
-                <p><strong>गांव सदस्य का नाम:</strong> {villageData?.villageMemberName}</p>
-                <p><strong>मोबाइल नंबर:</strong> {villageData?.mobileNumber}</p>
-                <p><strong>आयु:</strong> {villageData?.age}</p>
-                <p><strong>ईमेल:</strong> {villageData?.email}</p>
-                <p><strong>तहसील:</strong> {villageData?.tehsil}</p>
-                <p><strong>जिला:</strong> {villageData?.district}</p>
-                <p><strong>राज्य:</strong> {villageData?.state}</p>
-                <p><strong>क्या गांव में स्कूल है?:</strong> {villageData?.isVillageHaveSchool ? 'हाँ' : 'नहीं'}</p>
-                <p><strong>क्या प्राथमिक स्वास्थ्य केंद्र है?:</strong> {villageData?.isVillageHavePrimaryHealthCare ? 'हाँ' : 'नहीं'}</p>
-                <p><strong>क्या कम्युनिटी हॉल है?:</strong> {villageData?.isVillageHaveCommunityHall ? 'हाँ' : 'नहीं'}</p>
-                <p><strong>अक्षांश (Latitude):</strong> {villageData?.latitude}</p>
-                <p><strong>देशांतर (Longitude):</strong> {villageData?.longitude}</p>
-                <p><strong>चौकला ID:</strong> {villageData?.choklaId}</p>
-                <p><strong>निर्माण तिथि:</strong> {new Date(villageData?.createdDate).toLocaleDateString()}</p>
-                <p><strong>अद्यतन तिथि:</strong> {new Date(villageData?.updatedDate).toLocaleDateString()}</p>
+                <p>
+                  <strong>गांव ID:</strong> {villageData?.id}
+                </p>
+                <p>
+                  <strong>नाम:</strong> {villageData?.name}
+                </p>
+                <p>
+                  <strong>चौकला:</strong> {villageData?.chakolaName}
+                </p>
+                <p>
+                  <strong>गांव सदस्य का नाम:</strong> {villageData?.villageMemberName}
+                </p>
+                <p>
+                  <strong>मोबाइल नंबर:</strong> {villageData?.mobileNumber}
+                </p>
+                <p>
+                  <strong>आयु:</strong> {villageData?.age}
+                </p>
+                <p>
+                  <strong>ईमेल:</strong> {villageData?.email}
+                </p>
+                <p>
+                  <strong>तहसील:</strong> {villageData?.tehsil}
+                </p>
+                <p>
+                  <strong>जिला:</strong> {villageData?.district}
+                </p>
+                <p>
+                  <strong>राज्य:</strong> {villageData?.state}
+                </p>
+                <p>
+                  <strong>क्या गांव में स्कूल है?:</strong> {villageData?.isVillageHaveSchool ? "हाँ" : "नहीं"}
+                </p>
+                <p>
+                  <strong>क्या प्राथमिक स्वास्थ्य केंद्र है?:</strong>{" "}
+                  {villageData?.isVillageHavePrimaryHealthCare ? "हाँ" : "नहीं"}
+                </p>
+                <p>
+                  <strong>क्या कम्युनिटी हॉल है?:</strong> {villageData?.isVillageHaveCommunityHall ? "हाँ" : "नहीं"}
+                </p>
+                <p>
+                  <strong>अक्षांश (Latitude):</strong> {villageData?.latitude}
+                </p>
+                <p>
+                  <strong>देशांतर (Longitude):</strong> {villageData?.longitude}
+                </p>
+                <p>
+                  <strong>चौकला ID:</strong> {villageData?.choklaId}
+                </p>
+                <p>
+                  <strong>निर्माण तिथि:</strong>{" "}
+                  {villageData?.createdDate ? new Date(villageData.createdDate).toLocaleDateString() : "-"}
+                </p>
+                <p>
+                  <strong>अद्यतन तिथि:</strong>{" "}
+                  {villageData?.updatedDate ? new Date(villageData.updatedDate).toLocaleDateString() : "-"}
+                </p>
               </div>
             </CardContent>
-
           </Card>
+
           <Card className="hover:shadow-lg transition-shadow">
             <CardTitle className="flex items-center text-blue-700">गांव का नक्शा (Google Map)</CardTitle>
-            <CardContent >
+            <CardContent>
               {villageData?.latitude && villageData?.longitude ? (
                 <iframe
                   title="Google Map"
@@ -432,9 +568,65 @@ export default function VillageDetailPage() {
               )}
             </CardContent>
           </Card>
-
         </div>
       </main>
+
+      {/* Loading Modal */}
+      <Dialog open={deleteModal.loading} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-orange-600" />
+              परिवार हटाया जा रहा है
+            </DialogTitle>
+            <DialogDescription>कृपया प्रतीक्षा करें...</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Modal */}
+      <Dialog
+        open={deleteModal.success}
+        onOpenChange={(open) => {
+          if (!open) setDeleteModal((s) => ({ ...s, success: false }))
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="w-5 h-5" />
+              सफलतापूर्वक हटाया गया
+            </DialogTitle>
+            <DialogDescription className="text-gray-700">{deleteModal.message}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setDeleteModal((s) => ({ ...s, success: false }))}>ठीक है</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Modal */}
+      <Dialog
+        open={deleteModal.error}
+        onOpenChange={(open) => {
+          if (!open) setDeleteModal((s) => ({ ...s, error: false }))
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <XCircle className="w-5 h-5" />
+              हटाने में त्रुटि
+            </DialogTitle>
+            <DialogDescription className="text-gray-700">{deleteModal.message}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteModal((s) => ({ ...s, error: false }))}>
+              बंद करें
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
