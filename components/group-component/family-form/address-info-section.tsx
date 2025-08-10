@@ -11,7 +11,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import type { MemberFormProps } from "./types"
 import { statesAndDistricts } from "./constants"
 
-export function AddressInfoSection({ member, index, errors, onUpdateMember, familyData }: MemberFormProps) {
+export function AddressInfoSection({
+  member,
+  index,
+  errors,
+  onUpdateMember,
+  onCopyFamilyAddress,
+  familyData,
+}: MemberFormProps) {
   const errorPrefix = `member_${index}_`
 
   // District lists depend on selected state for each section
@@ -37,8 +44,90 @@ export function AddressInfoSection({ member, index, errors, onUpdateMember, fami
   // Build state options once
   const stateOptions = useMemo(() => Object.keys(statesAndDistricts), [])
 
-  // Copy family permanent address -> member permanent fields
+  // Autofill effect: when member changes (e.g., after async load), fill person* fields if empty.
+  useEffect(() => {
+    const updates: Array<{ key: keyof typeof member; value: any }> = []
+
+    // Helper to set value if target is empty and source has a value
+    const setIfEmpty = (key: keyof typeof member, source?: any) => {
+      const targetVal = member[key]
+      if ((targetVal === undefined || targetVal === null || targetVal === "") && source) {
+        updates.push({ key, value: source })
+      }
+    }
+
+    // Prefer existing person* fields; else fallback to legacy member.* fields
+    setIfEmpty("personPermanentAddress", member.permanentAddress)
+    setIfEmpty("personPermanentState", member.state)
+    setIfEmpty("personPermanentDistrict", member.district)
+    setIfEmpty("personPermanentPincode", member.pincode)
+    setIfEmpty("personPermanentVillage", member.village)
+
+    setIfEmpty("personCurrentAddress", member.currentAddress)
+    // If you previously stored only one state/district/pincode for member, reuse that for current as a fallback
+    setIfEmpty("personCurrentState", member.state)
+    setIfEmpty("personCurrentDistrict", member.district)
+    setIfEmpty("personCurrentPincode", member.pincode)
+    setIfEmpty("personCurrentVillage", member.village)
+
+    // If still empty, fallback to family-level fields for sensible defaults
+    setIfEmpty("personPermanentAddress", familyData.permanentAddress)
+    setIfEmpty("personPermanentState", familyData.permanentFamilyState)
+    setIfEmpty("personPermanentDistrict", familyData.permanentFamilyDistrict)
+    setIfEmpty("personPermanentPincode", familyData.permanentFamilyPincode)
+    setIfEmpty("personPermanentVillage", familyData.permanentFamilyVillage)
+
+    setIfEmpty("personCurrentAddress", familyData.currentAddress)
+    setIfEmpty("personCurrentState", familyData.currentFamilyState)
+    setIfEmpty("personCurrentDistrict", familyData.currentFamilyDistrict)
+    setIfEmpty("personCurrentPincode", familyData.currentFamilyPincode)
+    setIfEmpty("personCurrentVillage", familyData.currentFamilyVillage)
+
+    if (updates.length > 0) {
+      // Apply updates via parent handler
+      updates.forEach(({ key, value }) => onUpdateMember(member.id, key as any, value))
+    }
+    // Only depend on member.id and the values we read from. Avoid depending on onUpdateMember reference.
+  }, [
+    member.id,
+    // legacy member fallbacks
+    member.permanentAddress,
+    member.state,
+    member.district,
+    member.pincode,
+    member.village,
+    member.currentAddress,
+    // person* targets (if already filled, effect will not set them again)
+    member.personPermanentAddress,
+    member.personPermanentState,
+    member.personPermanentDistrict,
+    member.personPermanentPincode,
+    member.personPermanentVillage,
+    member.personCurrentAddress,
+    member.personCurrentState,
+    member.personCurrentDistrict,
+    member.personCurrentPincode,
+    member.personCurrentVillage,
+    // family-level fallbacks
+    familyData.permanentAddress,
+    familyData.permanentFamilyState,
+    familyData.permanentFamilyDistrict,
+    familyData.permanentFamilyPincode,
+    familyData.permanentFamilyVillage,
+    familyData.currentAddress,
+    familyData.currentFamilyState,
+    familyData.currentFamilyDistrict,
+    familyData.currentFamilyPincode,
+    familyData.currentFamilyVillage,
+  ])
+
+  // Copy family permanent address -> member permanent fields (and legacy helper for compatibility)
   const copyFamilyPermanentToMemberPermanent = () => {
+    // optional legacy copy for existing behavior
+    if (onCopyFamilyAddress) {
+      onCopyFamilyAddress(member.id)
+    }
+    // new person* fields
     onUpdateMember(member.id, "personPermanentAddress", familyData.permanentAddress || "")
     onUpdateMember(member.id, "personPermanentState", familyData.permanentFamilyState || "")
     onUpdateMember(member.id, "personPermanentDistrict", familyData.permanentFamilyDistrict || "")
@@ -113,7 +202,6 @@ export function AddressInfoSection({ member, index, errors, onUpdateMember, fami
                     value={member.personPermanentState || ""}
                     onValueChange={(value) => {
                       onUpdateMember(member.id, "personPermanentState", value)
-                      // reset dependent fields
                       onUpdateMember(member.id, "personPermanentDistrict", "")
                     }}
                   >
