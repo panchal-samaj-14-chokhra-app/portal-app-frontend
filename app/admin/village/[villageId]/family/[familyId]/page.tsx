@@ -268,23 +268,6 @@ export default function FamilyDetailPage() {
                     <span className="hindi-text">संपादित करें</span>
                   </Button>
 
-                  <Button
-                    onClick={() => setConfirmOpen(true)}
-                    variant="destructive"
-                    className="bg-red-600/90 hover:bg-red-600 text-white"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        <span className="hindi-text">हटा रहे हैं...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        <span className="hindi-text">परिवार हटाएं</span>
-                      </>
-                    )}
-                  </Button>
                 </>
               )}
               <Button
