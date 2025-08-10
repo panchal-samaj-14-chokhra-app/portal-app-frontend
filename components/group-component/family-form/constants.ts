@@ -14,7 +14,6 @@ export const initialMember: FamilyMember = {
   bloodGroup: "",
   mobileNumber: "",
   email: "",
-
   isCurrentAddressInIndia: true,
   currentCountry: "भारत",
   isStudent: false,

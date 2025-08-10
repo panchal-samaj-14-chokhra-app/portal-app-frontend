@@ -526,13 +526,13 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                   <div className="md:col-span-1">
                     <Label htmlFor="permanentFamilyVillage" className="hindi-text text-sm font-medium">
-                      ग्राम का नाम
+                     गांव/शहर
                     </Label>
                     <Input
                       id="permanentFamilyVillage"
                       value={familyData.permanentFamilyVillage}
                       onChange={(e) => setFamilyData((prev) => ({ ...prev, permanentFamilyVillage: e.target.value }))}
-                      placeholder="ग्राम का नाम"
+                      placeholder="गांव/शहर"
                       className="mt-1 text-sm"
                     />
                   </div>
@@ -626,13 +626,13 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
                   <div className="md:col-span-1">
                     <Label htmlFor="currentFamilyVillage" className="hindi-text text-sm font-medium">
-                      ग्राम का नाम
+                      गांव/शहर
                     </Label>
                     <Input
                       id="currentFamilyVillage"
                       value={familyData.currentFamilyVillage}
                       onChange={(e) => setFamilyData((prev) => ({ ...prev, currentFamilyVillage: e.target.value }))}
-                      placeholder="ग्राम का नाम"
+                      placeholder="गांव/शहर"
                       className="mt-1 text-sm"
                     />
                   </div>
