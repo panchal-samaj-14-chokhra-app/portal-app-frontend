@@ -5,7 +5,18 @@ import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useCreateFamily, useGetFamilyDetails, useUpdateFamily } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import Image from "next/image"
-import { ArrowLeft, Plus, Save, User, Home, AlertCircle, FileText, Copy, UserCheck } from "lucide-react"
+import {
+  ArrowLeft,
+  Plus,
+  Save,
+  User,
+  Home,
+  AlertCircle,
+  FileText,
+  Copy,
+  UserCheck,
+  MapPinIcon as MapPinHouse,
+} from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
 import { Input } from "@/components/ui/input/input"
@@ -34,7 +45,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || "")
   const { mutation } = useCreateFamily()
   const { mutation: updateMutation } = useUpdateFamily()
-  const [districts, setDistricts] = useState<string[]>([])
+
+  // District options for each section
+  const [permanentDistrictOptions, setPermanentDistrictOptions] = useState<string[]>([])
+  const [currentDistrictOptions, setCurrentDistrictOptions] = useState<string[]>([])
+  const [dataVersion, setDataVersion] = useState(0)
 
   const [errorDialog, setErrorDialog] = useState<{ open: boolean; title: string; message: string }>({
     open: false,
@@ -53,35 +68,65 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       longitude: null,
       latitude: null,
       anyComment: "",
-      familyDistrict: "",
-      familyState: "",
-      familyPincode: "",
+      // New address fields
+      permanentFamilyDistrict: "",
+      permanentFamilyState: "",
+      permanentFamilyPincode: "",
+      currentFamilyDistrict: "",
+      currentFamilyState: "",
+      currentFamilyPincode: "",
+      // Members
       members: [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
     }
   })
 
+  // Populate when familyDetails are loaded or change
   useEffect(() => {
-    if (mode === "edit" && familyDetails && !isFetching) {
-      const transformedMembers = familyDetails.Person ? transformAPIDataToMembers(familyDetails.Person) : []
+    if (mode !== "edit") return
+    if (!familyDetails || isFetching) return
 
-      setFamilyData({
-        mukhiyaName: familyDetails.mukhiyaName || "",
-        currentAddress: familyDetails.currentAddress || "",
-        permanentAddress: familyDetails.permanentAddress || "",
-        status: familyDetails.status || "draft",
-        economicStatus: familyDetails.economicStatus || "",
-        longitude: familyDetails.longitude || null,
-        latitude: familyDetails.latitude || null,
-        anyComment: familyDetails.anyComment || "",
-        familyDistrict: familyDetails.familyDistrict || "",
-        familyState: familyDetails.familyState || "",
-        familyPincode: familyDetails.familyPincode || "",
-        members:
-          transformedMembers.length > 0
-            ? transformedMembers
-            : [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
-      })
+    const transformedMembers = Array.isArray(familyDetails.Person)
+      ? transformAPIDataToMembers(familyDetails.Person)
+      : []
+
+    const nextState: FamilyData = {
+      mukhiyaName: familyDetails.mukhiyaName || "",
+      currentAddress: familyDetails.currentAddress || "",
+      permanentAddress: familyDetails.permanentAddress || "",
+      status: familyDetails.status || "draft",
+      economicStatus: familyDetails.economicStatus || "",
+      longitude: familyDetails.longitude ?? null,
+      latitude: familyDetails.latitude ?? null,
+      anyComment: familyDetails.anyComment || "",
+      // Prefer new fields; fallback to any legacy fields if present
+      permanentFamilyDistrict: familyDetails.permanentFamilyDistrict || familyDetails.familyDistrict || "",
+      permanentFamilyState: familyDetails.permanentFamilyState || familyDetails.familyState || "",
+      permanentFamilyPincode: familyDetails.permanentFamilyPincode || familyDetails.familyPincode || "",
+      currentFamilyDistrict: familyDetails.currentFamilyDistrict || familyDetails.familyDistrict || "",
+      currentFamilyState: familyDetails.currentFamilyState || familyDetails.familyState || "",
+      currentFamilyPincode: familyDetails.currentFamilyPincode || familyDetails.familyPincode || "",
+      members:
+        transformedMembers.length > 0
+          ? transformedMembers
+          : [{ ...initialMember, isMukhiya: true, id: `member-${Date.now()}` }],
     }
+
+    // Set district options based on selected states
+    if (nextState.permanentFamilyState && statesAndDistricts[nextState.permanentFamilyState]) {
+      setPermanentDistrictOptions(statesAndDistricts[nextState.permanentFamilyState])
+    } else {
+      setPermanentDistrictOptions([])
+    }
+
+    if (nextState.currentFamilyState && statesAndDistricts[nextState.currentFamilyState]) {
+      setCurrentDistrictOptions(statesAndDistricts[nextState.currentFamilyState])
+    } else {
+      setCurrentDistrictOptions([])
+    }
+
+    setFamilyData(nextState)
+    // Force MemberForm refresh to update internal controlled inputs
+    setDataVersion((v) => v + 1)
   }, [mode, familyDetails, isFetching])
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -195,18 +240,27 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   }
 
   const copyFamilyAddressToMember = (memberId: string) => {
+    // Copy both permanent and current addresses; for single state/district/pincode on member, use current values
     updateMember(memberId, "permanentAddress", familyData.permanentAddress)
     updateMember(memberId, "currentAddress", familyData.currentAddress)
-    updateMember(memberId, "state", familyData.familyState)
-    updateMember(memberId, "district", familyData.familyDistrict)
-    updateMember(memberId, "pincode", familyData.familyPincode)
+    updateMember(memberId, "state", familyData.currentFamilyState || familyData.permanentFamilyState || "")
+    updateMember(memberId, "district", familyData.currentFamilyDistrict || familyData.permanentFamilyDistrict || "")
+    updateMember(memberId, "pincode", familyData.currentFamilyPincode || familyData.permanentFamilyPincode || "")
   }
 
   const copyPermanentToCurrent = () => {
     setFamilyData((prev) => ({
       ...prev,
       currentAddress: prev.permanentAddress,
+      currentFamilyState: prev.permanentFamilyState,
+      currentFamilyDistrict: prev.permanentFamilyDistrict,
+      currentFamilyPincode: prev.permanentFamilyPincode,
     }))
+
+    // Also sync the district options for current based on permanent state
+    if (familyData.permanentFamilyState && statesAndDistricts[familyData.permanentFamilyState]) {
+      setCurrentDistrictOptions(statesAndDistricts[familyData.permanentFamilyState])
+    }
   }
 
   const handleSaveAsDraft = async () => {
@@ -216,7 +270,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
     if (Object.keys(validationErrors).length > 0) {
       setErrorDialog({
         open: true,
-        title: "फॉर्म में त्रुटियां",
+        title: "ฟॉर्म में त्रुटियां",
         message: "कृपया बुनियादी जानकारी भरें।",
       })
       return
@@ -230,16 +284,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
       const submitData = {
         currentAddress: familyData.currentAddress,
+        currentFamilyState: familyData.currentFamilyState,
+        currentFamilyDistrict: familyData.currentFamilyDistrict,
+        currentFamilyPincode: familyData.currentFamilyPincode,
         permanentAddress: familyData.permanentAddress,
+        permanentFamilyState: familyData.permanentFamilyState,
+        permanentFamilyDistrict: familyData.permanentFamilyDistrict,
+        permanentFamilyPincode: familyData.permanentFamilyPincode,
         economicStatus: familyData.economicStatus,
         status: "draft",
         villageId,
         chakolaId,
         mukhiyaName,
         anyComment: familyData.anyComment,
-        familyDistrict: familyData.familyDistrict,
-        familyState: familyData.familyState,
-        familyPincode: familyData.familyPincode,
         longitude: familyData.longitude,
         latitude: familyData.latitude,
         members: transformedMembers,
@@ -291,16 +348,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
       const submitData = {
         currentAddress: familyData.currentAddress,
+        currentFamilyState: familyData.currentFamilyState,
+        currentFamilyDistrict: familyData.currentFamilyDistrict,
+        currentFamilyPincode: familyData.currentFamilyPincode,
         permanentAddress: familyData.permanentAddress,
+        permanentFamilyState: familyData.permanentFamilyState,
+        permanentFamilyDistrict: familyData.permanentFamilyDistrict,
+        permanentFamilyPincode: familyData.permanentFamilyPincode,
         economicStatus: familyData.economicStatus,
         status: "active",
         villageId,
         chakolaId,
         mukhiyaName,
         anyComment: familyData.anyComment,
-        familyDistrict: familyData.familyDistrict,
-        familyState: familyData.familyState,
-        familyPincode: familyData.familyPincode,
         longitude: familyData.longitude,
         latitude: familyData.latitude,
         members: transformedMembers,
@@ -374,14 +434,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
         {/* Error Alerts */}
-        {(errors.mukhiya || errors.mobile || errors.economicStatus || errors.familyPincode) && (
+        {(errors.mukhiya ||
+          errors.mobile ||
+          errors.economicStatus ||
+          errors.permanentFamilyPincode ||
+          errors.currentFamilyPincode) && (
           <Alert className="mb-4 sm:mb-6 border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
             <AlertDescription className="text-red-800 text-sm">
               {errors.mukhiya && <div className="hindi-text">{errors.mukhiya}</div>}
               {errors.mobile && <div className="hindi-text">{errors.mobile}</div>}
               {errors.economicStatus && <div className="hindi-text">{errors.economicStatus}</div>}
-              {errors.familyPincode && <div className="hindi-text">{errors.familyPincode}</div>}
+              {errors.permanentFamilyPincode && <div className="hindi-text">{errors.permanentFamilyPincode}</div>}
+              {errors.currentFamilyPincode && <div className="hindi-text">{errors.currentFamilyPincode}</div>}
             </AlertDescription>
           </Alert>
         )}
@@ -393,52 +458,175 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
               <Home className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
               परिवार की जानकारी
             </CardTitle>
-            <CardDescription className="hindi-text text-sm">परिवार स्तर की बुनियादी जानकारी</CardDescription>
+            <CardDescription className="hindi-text text-sm">कृपया स्थायी और वर्तमान पता विवरण भरें</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="permanentAddress" className="hindi-text text-sm font-medium">
-                  स्थायी पता *
-                </Label>
-                <Textarea
-                  id="permanentAddress"
-                  value={familyData.permanentAddress}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, permanentAddress: e.target.value }))}
-                  placeholder="स्थायी पता दर्ज करें"
-                  className="mt-1 min-h-[80px] text-sm"
-                  rows={3}
-                />
+          <CardContent className="space-y-6 p-4 sm:p-6 pt-0">
+            {/* Permanent Address */}
+            <div className="rounded-lg border bg-white">
+              <div className="flex items-center gap-2 p-3 sm:p-4 border-b bg-orange-50/60">
+                <MapPinHouse className="w-4 h-4 text-orange-600" />
+                <h3 className="hindi-text font-semibold text-sm sm:text-base text-orange-700">
+                  स्थायी पता (Permanent Address)
+                </h3>
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="currentAddress" className="hindi-text text-sm font-medium">
-                    वर्तमान पता *
+              <div className="p-3 sm:p-4 space-y-4">
+                <div>
+                  <Label htmlFor="permanentAddress" className="hindi-text text-sm font-medium">
+                    स्थायी पता *
                   </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={copyPermanentToCurrent}
-                    className="text-xs bg-transparent"
-                  >
-                    <Copy className="w-3 h-3 mr-1" />
-                    <span className="hindi-text">स्थायी पता कॉपी करें</span>
-                  </Button>
+                  <Textarea
+                    id="permanentAddress"
+                    value={familyData.permanentAddress || ""}
+                    onChange={(e) => setFamilyData((prev) => ({ ...prev, permanentAddress: e.target.value }))}
+                    placeholder="स्थायी पता दर्ज करें"
+                    className="mt-1 min-h-[72px] text-sm"
+                    rows={3}
+                  />
                 </div>
-                <Textarea
-                  id="currentAddress"
-                  value={familyData.currentAddress}
-                  onChange={(e) => {
-                    setFamilyData((prev) => ({ ...prev, currentAddress: e.target.value }))
-                  }}
-                  placeholder="वर्तमान पता दर्ज करें"
-                  className="mt-1 min-h-[80px] text-sm"
-                  rows={3}
-                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <SelectInput
+                      id="permanentFamilyState"
+                      value={familyData.permanentFamilyState || ""}
+                      onChange={(value) => {
+                        setFamilyData((prev) => ({
+                          ...prev,
+                          permanentFamilyState: value,
+                          // clear district if state changes
+                          permanentFamilyDistrict: "",
+                        }))
+                        const opts = statesAndDistricts[value] || []
+                        setPermanentDistrictOptions(opts)
+                      }}
+                      placeholder="राज्य का नाम"
+                      options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
+                      label="राज्य का नाम"
+                    />
+                  </div>
+
+                  <div>
+                    <SelectInput
+                      id="permanentFamilyDistrict"
+                      value={familyData.permanentFamilyDistrict || ""}
+                      onChange={(value) => {
+                        setFamilyData((prev) => ({ ...prev, permanentFamilyDistrict: value }))
+                      }}
+                      placeholder="जिला का नाम"
+                      label="जिला का नाम"
+                      options={permanentDistrictOptions.map((d) => ({ label: d, value: d }))}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="permanentFamilyPincode" className="hindi-text text-sm font-medium">
+                      पिनकोड
+                    </Label>
+                    <Input
+                      id="permanentFamilyPincode"
+                      value={familyData.permanentFamilyPincode || ""}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                        setFamilyData((prev) => ({ ...prev, permanentFamilyPincode: value }))
+                      }}
+                      placeholder="पिनकोड"
+                      inputMode="numeric"
+                      maxLength={6}
+                      className="mt-1 text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
+            {/* Current Address */}
+            <div className="rounded-lg border bg-white">
+              <div className="flex items-center justify-between gap-2 p-3 sm:p-4 border-b bg-orange-50/60">
+                <div className="flex items-center gap-2">
+                  <MapPinHouse className="w-4 h-4 text-orange-600" />
+                  <h3 className="hindi-text font-semibold text-sm sm:text-base text-orange-700">
+                    वर्तमान पता (Current Address)
+                  </h3>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={copyPermanentToCurrent}
+                  className="text-xs bg-transparent"
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  <span className="hindi-text">स्थायी से कॉपी करें</span>
+                </Button>
+              </div>
+              <div className="p-3 sm:p-4 space-y-4">
+                <div>
+                  <Label htmlFor="currentAddress" className="hindi-text text-sm font-medium">
+                    वर्तमान पता *
+                  </Label>
+                  <Textarea
+                    id="currentAddress"
+                    value={familyData.currentAddress || ""}
+                    onChange={(e) => setFamilyData((prev) => ({ ...prev, currentAddress: e.target.value }))}
+                    placeholder="वर्तमान पता दर्ज करें"
+                    className="mt-1 min-h-[72px] text-sm"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <SelectInput
+                      id="currentFamilyState"
+                      value={familyData.currentFamilyState || ""}
+                      onChange={(value) => {
+                        setFamilyData((prev) => ({
+                          ...prev,
+                          currentFamilyState: value,
+                          currentFamilyDistrict: "",
+                        }))
+                        const opts = statesAndDistricts[value] || []
+                        setCurrentDistrictOptions(opts)
+                      }}
+                      placeholder="राज्य का नाम"
+                      options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
+                      label="राज्य का नाम"
+                    />
+                  </div>
+
+                  <div>
+                    <SelectInput
+                      id="currentFamilyDistrict"
+                      value={familyData.currentFamilyDistrict || ""}
+                      onChange={(value) => setFamilyData((prev) => ({ ...prev, currentFamilyDistrict: value }))}
+                      placeholder="जिला का नाम"
+                      label="जिला का नाम"
+                      options={currentDistrictOptions.map((d) => ({ label: d, value: d }))}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="currentFamilyPincode" className="hindi-text text-sm font-medium">
+                      पिनकोड
+                    </Label>
+                    <Input
+                      id="currentFamilyPincode"
+                      value={familyData.currentFamilyPincode || ""}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                        setFamilyData((prev) => ({ ...prev, currentFamilyPincode: value }))
+                      }}
+                      placeholder="पिनकोड"
+                      inputMode="numeric"
+                      maxLength={6}
+                      className="mt-1 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Economic Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="economicStatus" className="hindi-text text-sm font-medium">
@@ -458,53 +646,6 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                     <SelectItem value="upper">उच्च वर्गीय</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.economicStatus && (
-                  <p className="text-red-500 text-xs mt-1 hindi-text">{errors.economicStatus}</p>
-                )}
-              </div>
-
-              <div>
-                <SelectInput
-                  id="familyState"
-                  value={familyData.familyState}
-                  onChange={(e) => {
-                    setFamilyData((prev) => ({ ...prev, familyState: e }))
-                    const districtList = statesAndDistricts[e]
-                    setDistricts(districtList)
-                  }}
-                  placeholder="राज्य का नाम"
-                  options={Object.keys(statesAndDistricts).map((state) => ({ label: state, value: state }))}
-                  label="राज्य का नाम"
-                />
-              </div>
-
-              <div>
-                <SelectInput
-                  id="familyDistrict"
-                  value={familyData.familyDistrict}
-                  onChange={(e) => setFamilyData((prev) => ({ ...prev, familyDistrict: e }))}
-                  placeholder="जिला का नाम"
-                  label="जिला का नाम"
-                  options={districts.map((district: string) => ({ label: district, value: district }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="familyPincode" className="hindi-text text-sm font-medium">
-                  पिनकोड
-                </Label>
-                <Input
-                  id="familyPincode"
-                  value={familyData.familyPincode}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, "").slice(0, 6)
-                    setFamilyData((prev) => ({ ...prev, familyPincode: value }))
-                  }}
-                  placeholder="पिनकोड"
-                  maxLength={6}
-                  className={`mt-1 text-sm ${errors.familyPincode ? "border-red-500" : ""}`}
-                />
-                {errors.familyPincode && <p className="text-red-500 text-xs mt-1 hindi-text">{errors.familyPincode}</p>}
               </div>
             </div>
           </CardContent>
@@ -543,7 +684,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
             <Accordion type="single" collapsible className="space-y-3 sm:space-y-4">
               {familyData.members.map((member, index) => (
                 <MemberForm
-                  key={member.id}
+                  key={`${member.id}-${dataVersion}`}
                   member={member}
                   index={index}
                   errors={errors}
@@ -562,7 +703,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
               </Label>
               <Textarea
                 id="anyComment"
-                value={familyData.anyComment}
+                value={familyData.anyComment || ""}
                 onChange={(e) => setFamilyData((prev) => ({ ...prev, anyComment: e.target.value }))}
                 placeholder="कोई अतिरिक्त जानकारी या टिप्पणी"
                 className="mt-1 min-h-[80px] text-sm"
@@ -615,6 +756,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
             )}
           </Button>
         </div>
+
         {/* Error Dialog */}
         <Dialog open={errorDialog.open} onOpenChange={(open) => setErrorDialog((prev) => ({ ...prev, open }))}>
           <DialogContent className="sm:max-w-md">
