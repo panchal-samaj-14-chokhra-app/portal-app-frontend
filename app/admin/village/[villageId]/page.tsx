@@ -34,18 +34,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useQueryClient } from "@tanstack/react-query"
 
 export default function VillageDetailPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
   const villageId = params.villageId as string
+
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
-  // Delete flow state
+  // Deletion flow state
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmTarget, setConfirmTarget] = useState<{ id: string; name?: string } | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [deleteModal, setDeleteModal] = useState<{
     loading: boolean
     success: boolean
@@ -58,7 +71,9 @@ export default function VillageDetailPage() {
     message: "",
   })
 
-  const { data: villageData, isLoading } = useVillageDetails(villageId)
+  const queryClient = useQueryClient()
+
+  const { data: villageData, isLoading, error } = useVillageDetails(villageId)
   const { mutate: deleteFamily } = useDeleteFamilyUsingID()
 
   const families = useMemo(() => {
@@ -122,25 +137,52 @@ export default function VillageDetailPage() {
     }
   }
 
+  // Ask for confirmation before deletion
+  const requestDeleteFamily = (familyId: string, familyName?: string) => {
+    setConfirmTarget({ id: familyId, name: familyName })
+    setConfirmOpen(true)
+  }
+
   // Delete logic with loading, success, and error modals
-  const handleDeleteFamily = async (familyId: string) => {
+  const handleDeleteFamily = async () => {
+    if (!confirmTarget?.id) return
+    const familyId = confirmTarget.id
+
+    // Close confirmation and start loading
+    setConfirmOpen(false)
     setDeletingId(familyId)
-    setIsDeleting(true)
     setDeleteModal({ loading: true, success: false, error: false, message: "" })
 
     deleteFamily(familyId, {
-      onSuccess: (data: any) => {
+      onSuccess: async (data: any) => {
         if (data?.success) {
+          // Invalidate queries to refresh the families/village table
+          try {
+            await queryClient.invalidateQueries({
+              predicate: (q) => {
+                const k = q.queryKey as any[]
+                return (
+                  k?.includes("village") ||
+                  k?.includes("villageDetails") ||
+                  k?.includes("families") ||
+                  (Array.isArray(k) && k.some((p) => p === villageId))
+                )
+              },
+            })
+          } catch (e) {
+            // ignore
+          }
+          // Additionally refresh the route cache as a fallback
+          if (typeof router.refresh === "function") {
+            router.refresh()
+          }
+
           setDeleteModal({
             loading: false,
             success: true,
             error: false,
             message: data?.message || "Family deleted successfully",
           })
-          // Refresh to get updated list
-          if (typeof router.refresh === "function") {
-            router.refresh()
-          }
         } else {
           setDeleteModal({
             loading: false,
@@ -159,7 +201,6 @@ export default function VillageDetailPage() {
         })
       },
       onSettled: () => {
-        setIsDeleting(false)
         setDeletingId(null)
       },
     })
@@ -171,13 +212,13 @@ export default function VillageDetailPage() {
       <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 min-w-0">
+            <div className="flex items-center space-x-4">
               <Image
                 src="/images/main-logo.png"
                 alt="Panchal Samaj Logo"
                 width={50}
                 height={50}
-                className="rounded-full shadow-lg flex-shrink-0"
+                className="rounded-full shadow-lg"
               />
               <div className="min-w-0">
                 <h1 className="text-xl md:text-2xl font-bold text-white truncate">{villageData?.name}</h1>
@@ -188,13 +229,12 @@ export default function VillageDetailPage() {
               {userType !== "VILLAGE_MEMBER" ? (
                 <Button onClick={handleAddFamily} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  <span className="hidden xs:inline">वापस जॉए</span>
-                  <span className="xs:hidden">वापस</span>
+                  वापस जॉए
                 </Button>
               ) : (
                 <Button onClick={handleAddFamily} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                   <Plus className="w-4 h-4 mr-2" />
-                  <span>नया परिवार</span>
+                  नया परिवार
                 </Button>
               )}
 
@@ -204,7 +244,7 @@ export default function VillageDetailPage() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">लॉगआउट</span>
+                लॉगआउट
               </Button>
             </div>
           </div>
@@ -287,7 +327,7 @@ export default function VillageDetailPage() {
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="मुखिया का नाम या परिवार ID खोजें..."
                   value={searchTerm}
@@ -356,7 +396,7 @@ export default function VillageDetailPage() {
                       (family?.genderCount?.MALE || 0) +
                       (family?.genderCount?.FEMALE || 0) +
                       (family?.genderCount?.OTHER || 0)
-                    const isRowDeleting = isDeleting && deletingId === family.id
+                    const isRowDeleting = deletingId === family.id && deleteModal.loading
 
                     return (
                       <TableRow key={family.id} className="hover:bg-gray-50">
@@ -364,7 +404,7 @@ export default function VillageDetailPage() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <UserCheck className="w-4 h-4 text-orange-600" />
-                            <span className="truncate">{family.mukhiyaName}</span>
+                            {family.mukhiyaName}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -389,7 +429,7 @@ export default function VillageDetailPage() {
                           {family.currentAddress}
                         </TableCell>
                         <TableCell>{family.contactNumber || "N/A"}</TableCell>
-                        <TableCell>{getStatusBadge(family.economicStatus)}</TableCell>
+                        <TableCell>{family.economicStatus}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button
@@ -419,7 +459,7 @@ export default function VillageDetailPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleDeleteFamily(family.id)}
+                              onClick={() => requestDeleteFamily(family.id, family.mukhiyaName)}
                               disabled={isRowDeleting}
                               className={`bg-transparent ${
                                 isRowDeleting
@@ -455,7 +495,7 @@ export default function VillageDetailPage() {
                 </div>
               )
             ) : (
-              <div className="py-4 text-sm text-gray-600">No member</div>
+              <div>No member</div>
             )}
           </CardContent>
         </Card>
@@ -540,11 +580,11 @@ export default function VillageDetailPage() {
                 </p>
                 <p>
                   <strong>निर्माण तिथि:</strong>{" "}
-                  {villageData?.createdDate ? new Date(villageData.createdDate).toLocaleDateString() : "-"}
+                  {villageData?.createdDate ? new Date(villageData?.createdDate).toLocaleDateString() : "-"}
                 </p>
                 <p>
                   <strong>अद्यतन तिथि:</strong>{" "}
-                  {villageData?.updatedDate ? new Date(villageData.updatedDate).toLocaleDateString() : "-"}
+                  {villageData?.updatedDate ? new Date(villageData?.updatedDate).toLocaleDateString() : "-"}
                 </p>
               </div>
             </CardContent>
@@ -570,6 +610,29 @@ export default function VillageDetailPage() {
           </Card>
         </div>
       </main>
+
+      {/* Confirmation Modal */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-[420px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>क्या आप वाकई इस परिवार को हटाना चाहते हैं?</AlertDialogTitle>
+            <AlertDialogDescription>
+              यह कार्रवाई पूर्ववत नहीं की जा सकती।{" "}
+              <span className="font-medium">
+                {confirmTarget?.name ? `(${confirmTarget.name}) ` : ""}
+                {confirmTarget?.id ? `ID: ${confirmTarget.id}` : ""}
+              </span>{" "}
+              को हटाने पर सभी संबंधित डेटा भी हट सकता है।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>रद्द करें</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteFamily}>
+              हां, हटाएं
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Loading Modal */}
       <Dialog open={deleteModal.loading} onOpenChange={() => {}}>
