@@ -23,6 +23,10 @@ import { SelectInput } from "./family-form/employment-info-section"
 import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
+function sanitizeMembers(members: any[]) {
+  return members.map(({ permanentAddress, currentAddress, state, district, pincode, ...rest }: any) => rest)
+}
+
 type SaveMode = "draft" | "submit"
 
 export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
@@ -182,7 +186,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
   const buildSubmitData = useMemo(() => {
     return (statusToUse: "draft" | "active") => {
-      const transformedMembers = transformMembersForAPI(familyData.members)
+      const transformedMembers = sanitizeMembers(transformMembersForAPI(familyData.members))
 
       return {
         currentAddress: familyData.currentAddress,
