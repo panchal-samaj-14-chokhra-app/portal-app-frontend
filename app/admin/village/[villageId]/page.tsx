@@ -461,11 +461,10 @@ export default function VillageDetailPage() {
                               variant="outline"
                               onClick={() => requestDeleteFamily(family.id, family.mukhiyaName)}
                               disabled={isRowDeleting}
-                              className={`bg-transparent ${
-                                isRowDeleting
-                                  ? "opacity-70 cursor-not-allowed"
-                                  : "text-red-600 hover:text-red-700 hover:bg-red-50"
-                              }`}
+                              className={`bg-transparent ${isRowDeleting
+                                ? "opacity-70 cursor-not-allowed"
+                                : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                                }`}
                             >
                               {isRowDeleting ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -591,7 +590,13 @@ export default function VillageDetailPage() {
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow">
-            <CardTitle className="flex items-center text-blue-700">गांव का नक्शा (Google Map)</CardTitle>
+            <CardHeader>
+              <CardTitle className="flex items-center text-blue-700">
+                <MapPin className="w-5 h-5 mr-2" />
+                गांव का नक्शा (Google Map)
+              </CardTitle>
+
+            </CardHeader>
             <CardContent>
               {villageData?.latitude && villageData?.longitude ? (
                 <iframe
@@ -635,7 +640,7 @@ export default function VillageDetailPage() {
       </AlertDialog>
 
       {/* Loading Modal */}
-      <Dialog open={deleteModal.loading} onOpenChange={() => {}}>
+      <Dialog open={deleteModal.loading} onOpenChange={() => { }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
