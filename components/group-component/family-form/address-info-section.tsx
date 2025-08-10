@@ -1,220 +1,315 @@
 "use client"
 
-import { MapPin, Copy, Globe } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { MapPin, Copy } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
 import type { MemberFormProps } from "./types"
 import { statesAndDistricts } from "./constants"
-import { useState, useEffect } from "react"
 
-export function AddressInfoSection({ member, index, errors, onUpdateMember, onCopyFamilyAddress }: MemberFormProps) {
+export function AddressInfoSection({ member, index, errors, onUpdateMember, familyData }: MemberFormProps) {
   const errorPrefix = `member_${index}_`
-  const [districts, setDistricts] = useState<string[]>([])
+
+  // District lists depend on selected state for each section
+  const [permDistricts, setPermDistricts] = useState<string[]>([])
+  const [currDistricts, setCurrDistricts] = useState<string[]>([])
 
   useEffect(() => {
-    if (member.state && statesAndDistricts[member.state]) {
-      setDistricts(statesAndDistricts[member.state])
+    if (member.personPermanentState && statesAndDistricts[member.personPermanentState]) {
+      setPermDistricts(statesAndDistricts[member.personPermanentState])
     } else {
-      setDistricts([])
+      setPermDistricts([])
     }
-  }, [member.state])
+  }, [member.personPermanentState])
 
+  useEffect(() => {
+    if (member.personCurrentState && statesAndDistricts[member.personCurrentState]) {
+      setCurrDistricts(statesAndDistricts[member.personCurrentState])
+    } else {
+      setCurrDistricts([])
+    }
+  }, [member.personCurrentState])
+
+  // Build state options once
+  const stateOptions = useMemo(() => Object.keys(statesAndDistricts), [])
+
+  // Copy family permanent address -> member permanent fields
+  const copyFamilyPermanentToMemberPermanent = () => {
+    onUpdateMember(member.id, "personPermanentAddress", familyData.permanentAddress || "")
+    onUpdateMember(member.id, "personPermanentState", familyData.permanentFamilyState || "")
+    onUpdateMember(member.id, "personPermanentDistrict", familyData.permanentFamilyDistrict || "")
+    onUpdateMember(member.id, "personPermanentVillage", familyData.permanentFamilyVillage || "")
+    onUpdateMember(
+      member.id,
+      "personPermanentPincode",
+      (familyData.permanentFamilyPincode || "").toString().replace(/\D/g, "").slice(0, 6),
+    )
+  }
+
+  // Copy member permanent -> member current fields
   const copyPermanentToCurrent = () => {
-    onUpdateMember(member.id, "currentAddress", member.permanentAddress)
+    onUpdateMember(member.id, "personCurrentAddress", member.personPermanentAddress || "")
+    onUpdateMember(member.id, "personCurrentState", member.personPermanentState || "")
+    onUpdateMember(member.id, "personCurrentDistrict", member.personPermanentDistrict || "")
+    onUpdateMember(member.id, "personCurrentVillage", member.personPermanentVillage || "")
+    onUpdateMember(
+      member.id,
+      "personCurrentPincode",
+      (member.personPermanentPincode || "").toString().replace(/\D/g, "").slice(0, 6),
+    )
   }
 
   return (
     <Card className="border-l-4 border-l-purple-500">
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-5 h-5 text-purple-600" />
-          <h4 className="font-semibold text-gray-800 hindi-text text-base sm:text-lg">पता की जानकारी</h4>
+          <MapPin className="w-5 h-5 text-purple-600 flex-shrink-0" />
+          <h4 className="font-semibold text-gray-800 hindi-text text-base sm:text-lg">{"पता की जानकारी"}</h4>
         </div>
 
         <div className="space-y-6">
-          {/* Address Fields */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label htmlFor={`permanentAddress-${member.id}`} className="hindi-text text-sm font-medium">
-                  स्थायी पता
-                </Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onCopyFamilyAddress(member.id)}
-                  className="text-xs bg-transparent"
-                >
-                  <Copy className="w-3 h-3 mr-1" />
-                  <span className="hindi-text">परिवार का पता कॉपी करें</span>
-                </Button>
-              </div>
-              <Textarea
-                id={`permanentAddress-${member.id}`}
-                value={member.permanentAddress}
-                onChange={(e) => onUpdateMember(member.id, "permanentAddress", e.target.value)}
-                placeholder="स्थायी पता दर्ज करें"
-                className="min-h-[80px] text-sm"
-                rows={3}
-              />
+          {/* Permanent Address Section */}
+          <div className="rounded-lg border bg-white">
+            <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 bg-purple-50 rounded-t-lg">
+              <h5 className="font-medium text-purple-800 hindi-text text-sm sm:text-base">
+                {"स्थायी पता (Permanent Address)"}
+              </h5>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyFamilyPermanentToMemberPermanent}
+                className="text-xs bg-transparent"
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                <span className="hindi-text">{"परिवार का पता कॉपी करें"}</span>
+              </Button>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label htmlFor={`currentAddress-${member.id}`} className="hindi-text text-sm font-medium">
-                  वर्तमान पता
-                </Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={copyPermanentToCurrent}
-                  className="text-xs bg-transparent"
-                >
-                  <Copy className="w-3 h-3 mr-1" />
-                  <span className="hindi-text">स्थायी पता कॉपी करें</span>
-                </Button>
-              </div>
-              <Textarea
-                id={`currentAddress-${member.id}`}
-                value={member.currentAddress}
-                onChange={(e) => onUpdateMember(member.id, "currentAddress", e.target.value)}
-                placeholder="वर्तमान पता दर्ज करें"
-                className="min-h-[80px] text-sm"
-                rows={3}
-              />
-            </div>
-          </div>
-
-          {/* Location Details */}
-          <div className="bg-purple-50 p-4 rounded-lg space-y-4">
-            <h5 className="font-medium text-purple-800 hindi-text">स्थान विवरण</h5>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-3 sm:p-4 space-y-4">
               <div>
-                <Label htmlFor={`state-${member.id}`} className="hindi-text text-sm font-medium">
-                  राज्य
+                <Label htmlFor={`personPermanentAddress-${member.id}`} className="hindi-text text-sm font-medium">
+                  {"स्थायी पता"}
                 </Label>
-                <Select
-                  value={member.state}
-                  onValueChange={(value) => {
-                    onUpdateMember(member.id, "state", value)
-                    onUpdateMember(member.id, "district", "") // Clear district when state changes
-                  }}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="राज्य चुनें" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(statesAndDistricts).map((state) => (
-                      <SelectItem key={state} value={state}>
-                        {state}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor={`district-${member.id}`} className="hindi-text text-sm font-medium">
-                  जिला
-                </Label>
-                <Select
-                  value={member.district}
-                  onValueChange={(value) => onUpdateMember(member.id, "district", value)}
-                  disabled={!member.state || districts.length === 0}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="जिला चुनें" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {districts.map((district) => (
-                      <SelectItem key={district} value={district}>
-                        {district}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor={`pincode-${member.id}`} className="hindi-text text-sm font-medium">
-                  पिनकोड
-                </Label>
-                <Input
-                  id={`pincode-${member.id}`}
-                  value={member.pincode}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, "").slice(0, 6)
-                    onUpdateMember(member.id, "pincode", value)
-                  }}
-                  placeholder="पिनकोड"
-                  maxLength={6}
-                  className={`mt-1 text-sm ${errors[`${errorPrefix}pincode`] ? "border-red-500" : ""}`}
+                <Textarea
+                  id={`personPermanentAddress-${member.id}`}
+                  value={member.personPermanentAddress || ""}
+                  onChange={(e) => onUpdateMember(member.id, "personPermanentAddress", e.target.value)}
+                  placeholder="स्थायी पता दर्ज करें"
+                  className="min-h-[80px] text-sm"
+                  rows={3}
                 />
-                {errors[`${errorPrefix}pincode`] && (
-                  <p className="text-red-500 text-xs mt-1 hindi-text">{errors[`${errorPrefix}pincode`]}</p>
-                )}
               </div>
 
-              <div>
-                <Label htmlFor={`village-${member.id}`} className="hindi-text text-sm font-medium">
-                  गांव/शहर
-                </Label>
-                <Input
-                  id={`village-${member.id}`}
-                  value={member.village}
-                  onChange={(e) => onUpdateMember(member.id, "village", e.target.value)}
-                  placeholder="गांव/शहर का नाम"
-                  className="mt-1 text-sm"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor={`personPermanentState-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"राज्य"}
+                  </Label>
+                  <Select
+                    value={member.personPermanentState || ""}
+                    onValueChange={(value) => {
+                      onUpdateMember(member.id, "personPermanentState", value)
+                      // reset dependent fields
+                      onUpdateMember(member.id, "personPermanentDistrict", "")
+                    }}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="राज्य चुनें" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stateOptions.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor={`personPermanentDistrict-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"जिला"}
+                  </Label>
+                  <Select
+                    value={member.personPermanentDistrict || ""}
+                    onValueChange={(value) => onUpdateMember(member.id, "personPermanentDistrict", value)}
+                    disabled={!member.personPermanentState || permDistricts.length === 0}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="जिला चुनें" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {permDistricts.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor={`personPermanentVillage-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"गांव/शहर"}
+                  </Label>
+                  <Input
+                    id={`personPermanentVillage-${member.id}`}
+                    value={member.personPermanentVillage || ""}
+                    onChange={(e) => onUpdateMember(member.id, "personPermanentVillage", e.target.value)}
+                    placeholder="गांव/शहर का नाम"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`personPermanentPincode-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"पिनकोड"}
+                  </Label>
+                  <Input
+                    id={`personPermanentPincode-${member.id}`}
+                    value={member.personPermanentPincode || ""}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                      onUpdateMember(member.id, "personPermanentPincode", value)
+                    }}
+                    placeholder="पिनकोड"
+                    maxLength={6}
+                    className={`mt-1 text-sm ${errors[`${errorPrefix}personPermanentPincode`] ? "border-red-500" : ""}`}
+                  />
+                  {errors[`${errorPrefix}personPermanentPincode`] && (
+                    <p className="text-red-500 text-xs mt-1 hindi-text">
+                      {errors[`${errorPrefix}personPermanentPincode`]}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Current Address Location */}
-          <div className="bg-indigo-50 p-4 rounded-lg space-y-4">
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-indigo-600" />
-              <h5 className="font-medium text-indigo-800 hindi-text">वर्तमान पता स्थान</h5>
+          {/* Current Address Section */}
+          <div className="rounded-lg border bg-white">
+            <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 bg-indigo-50 rounded-t-lg">
+              <h5 className="font-medium text-indigo-800 hindi-text text-sm sm:text-base">
+                {"वर्तमान पता (Current Address)"}
+              </h5>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyPermanentToCurrent}
+                className="text-xs bg-transparent"
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                <span className="hindi-text">{"स्थायी पता कॉपी करें"}</span>
+              </Button>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id={`isCurrentAddressInIndia-${member.id}`}
-                checked={member.isCurrentAddressInIndia}
-                onCheckedChange={(checked) => {
-                  onUpdateMember(member.id, "isCurrentAddressInIndia", checked)
-                  if (checked) {
-                    onUpdateMember(member.id, "currentCountry", "भारत")
-                  }
-                }}
-              />
-              <Label htmlFor={`isCurrentAddressInIndia-${member.id}`} className="hindi-text text-sm cursor-pointer">
-                वर्तमान पता भारत में है
-              </Label>
-            </div>
-
-            {!member.isCurrentAddressInIndia && (
+            <div className="p-3 sm:p-4 space-y-4">
               <div>
-                <Label htmlFor={`currentCountry-${member.id}`} className="hindi-text text-sm font-medium">
-                  वर्तमान देश
+                <Label htmlFor={`personCurrentAddress-${member.id}`} className="hindi-text text-sm font-medium">
+                  {"वर्तमान पता"}
                 </Label>
-                <Input
-                  id={`currentCountry-${member.id}`}
-                  value={member.currentCountry}
-                  onChange={(e) => onUpdateMember(member.id, "currentCountry", e.target.value)}
-                  placeholder="देश का नाम दर्ज करें"
-                  className="mt-1 text-sm"
+                <Textarea
+                  id={`personCurrentAddress-${member.id}`}
+                  value={member.personCurrentAddress || ""}
+                  onChange={(e) => onUpdateMember(member.id, "personCurrentAddress", e.target.value)}
+                  placeholder="वर्तमान पता दर्ज करें"
+                  className="min-h-[80px] text-sm"
+                  rows={3}
                 />
               </div>
-            )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor={`personCurrentState-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"राज्य"}
+                  </Label>
+                  <Select
+                    value={member.personCurrentState || ""}
+                    onValueChange={(value) => {
+                      onUpdateMember(member.id, "personCurrentState", value)
+                      onUpdateMember(member.id, "personCurrentDistrict", "")
+                    }}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="राज्य चुनें" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stateOptions.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor={`personCurrentDistrict-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"जिला"}
+                  </Label>
+                  <Select
+                    value={member.personCurrentDistrict || ""}
+                    onValueChange={(value) => onUpdateMember(member.id, "personCurrentDistrict", value)}
+                    disabled={!member.personCurrentState || currDistricts.length === 0}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="जिला चुनें" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currDistricts.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor={`personCurrentVillage-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"गांव/शहर"}
+                  </Label>
+                  <Input
+                    id={`personCurrentVillage-${member.id}`}
+                    value={member.personCurrentVillage || ""}
+                    onChange={(e) => onUpdateMember(member.id, "personCurrentVillage", e.target.value)}
+                    placeholder="गांव/शहर का नाम"
+                    className="mt-1 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`personCurrentPincode-${member.id}`} className="hindi-text text-sm font-medium">
+                    {"पिनकोड"}
+                  </Label>
+                  <Input
+                    id={`personCurrentPincode-${member.id}`}
+                    value={member.personCurrentPincode || ""}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                      onUpdateMember(member.id, "personCurrentPincode", value)
+                    }}
+                    placeholder="पिनकोड"
+                    maxLength={6}
+                    className={`mt-1 text-sm ${errors[`${errorPrefix}personCurrentPincode`] ? "border-red-500" : ""}`}
+                  />
+                  {errors[`${errorPrefix}personCurrentPincode`] && (
+                    <p className="text-red-500 text-xs mt-1 hindi-text">
+                      {errors[`${errorPrefix}personCurrentPincode`]}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>
