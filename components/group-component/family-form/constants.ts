@@ -410,7 +410,7 @@ export const bloodGroups = [
 export const maritalStatusOptions = [
   { label: "अविवाहित", value: "single" },
   { label: "विवाहित", value: "married" },
-  { label: "विधवा/विधु���", value: "widowed" },
+  { label: "विधवा/विधु", value: "widowed" },
   { label: "तलाकशुदा", value: "divorced" },
   { label: "अलग", value: "separated" },
 ]
