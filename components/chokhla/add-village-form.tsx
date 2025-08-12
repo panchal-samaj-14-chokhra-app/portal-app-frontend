@@ -37,9 +37,9 @@ export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating,
   const districtOptions =
     selectedState && statesAndDistricts[selectedState]
       ? statesAndDistricts[selectedState].map((district) => ({
-          label: district,
-          value: district,
-        }))
+        label: district,
+        value: district,
+      }))
       : []
 
   const handleStateChange = (value: string) => {
@@ -233,24 +233,6 @@ export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating,
                     )}
                   />
                   <FormField
-                    name="longitude"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-green-700 font-medium text-sm">देशांतर</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            step="any"
-                            className="border-green-300 focus:border-green-500 text-sm"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
                     name="latitude"
                     control={form.control}
                     render={({ field }) => (
@@ -268,6 +250,25 @@ export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating,
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    name="longitude"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-700 font-medium text-sm">देशांतर</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            step="any"
+                            className="border-green-300 focus:border-green-500 text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+
                 </div>
               </div>
 
