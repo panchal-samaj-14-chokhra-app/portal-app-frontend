@@ -306,7 +306,20 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   }
 
   const copyFamilyAddressToMember = (memberId: string) => {
-    // legacy copies
+    // Copy family addresses to member - only when button is clicked
+    updateMember(memberId, "personPermanentAddress" as any, familyData.permanentAddress as any)
+    updateMember(memberId, "personPermanentState" as any, familyData.permanentFamilyState as any)
+    updateMember(memberId, "personPermanentDistrict" as any, familyData.permanentFamilyDistrict as any)
+    updateMember(memberId, "personPermanentPincode" as any, familyData.permanentFamilyPincode as any)
+    updateMember(memberId, "personPermanentVillage" as any, familyData.permanentFamilyVillage as any)
+
+    updateMember(memberId, "personCurrentAddress" as any, familyData.currentAddress as any)
+    updateMember(memberId, "personCurrentState" as any, familyData.currentFamilyState as any)
+    updateMember(memberId, "personCurrentDistrict" as any, familyData.currentFamilyDistrict as any)
+    updateMember(memberId, "personCurrentPincode" as any, familyData.currentFamilyPincode as any)
+    updateMember(memberId, "personCurrentVillage" as any, familyData.currentFamilyVillage as any)
+
+    // Legacy field copies for backward compatibility
     updateMember(memberId, "permanentAddress" as any, familyData.permanentAddress as any)
     updateMember(memberId, "currentAddress" as any, familyData.currentAddress as any)
     updateMember(
@@ -325,12 +338,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       (familyData.currentFamilyPincode || familyData.permanentFamilyPincode || "") as any,
     )
 
-    // person-level copies if present in member type
-    updateMember(memberId, "personPermanentAddress" as any, familyData.permanentAddress as any)
-    updateMember(memberId, "personPermanentState" as any, familyData.permanentFamilyState as any)
-    updateMember(memberId, "personPermanentDistrict" as any, familyData.permanentFamilyDistrict as any)
-    updateMember(memberId, "personPermanentPincode" as any, familyData.permanentFamilyPincode as any)
-    updateMember(memberId, "personPermanentVillage" as any, familyData.permanentFamilyVillage as any)
+    toast({
+      title: "पता कॉपी किया गया",
+      description: "परिवार का पता सदस्य के पते में कॉपी कर दिया गया है।",
+      variant: "default",
+    })
   }
 
   const copyPermanentToCurrent = () => {
