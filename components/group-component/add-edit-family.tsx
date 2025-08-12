@@ -306,37 +306,48 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   }
 
   const copyFamilyAddressToMember = (memberId: string) => {
-    // Copy family addresses to member - only when button is clicked
-    updateMember(memberId, "personPermanentAddress" as any, familyData.permanentAddress as any)
-    updateMember(memberId, "personPermanentState" as any, familyData.permanentFamilyState as any)
-    updateMember(memberId, "personPermanentDistrict" as any, familyData.permanentFamilyDistrict as any)
-    updateMember(memberId, "personPermanentPincode" as any, familyData.permanentFamilyPincode as any)
-    updateMember(memberId, "personPermanentVillage" as any, familyData.permanentFamilyVillage as any)
+    // Copy family permanent address to member permanent address
+    updateMember(memberId, "personPermanentAddress" as any, familyData.permanentAddress || "")
+    updateMember(memberId, "personPermanentState" as any, familyData.permanentFamilyState || "")
+    updateMember(memberId, "personPermanentDistrict" as any, familyData.permanentFamilyDistrict || "")
+    updateMember(memberId, "personPermanentPincode" as any, familyData.permanentFamilyPincode || "")
+    updateMember(memberId, "personPermanentVillage" as any, familyData.permanentFamilyVillage || "")
 
-    updateMember(memberId, "personCurrentAddress" as any, familyData.currentAddress as any)
-    updateMember(memberId, "personCurrentState" as any, familyData.currentFamilyState as any)
-    updateMember(memberId, "personCurrentDistrict" as any, familyData.currentFamilyDistrict as any)
-    updateMember(memberId, "personCurrentPincode" as any, familyData.currentFamilyPincode as any)
-    updateMember(memberId, "personCurrentVillage" as any, familyData.currentFamilyVillage as any)
+    // Copy family current address to member current address
+    updateMember(memberId, "personCurrentAddress" as any, familyData.currentAddress || "")
+    updateMember(memberId, "personCurrentState" as any, familyData.currentFamilyState || "")
+    updateMember(memberId, "personCurrentDistrict" as any, familyData.currentFamilyDistrict || "")
+    updateMember(memberId, "personCurrentPincode" as any, familyData.currentFamilyPincode || "")
+    updateMember(memberId, "personCurrentVillage" as any, familyData.currentFamilyVillage || "")
 
-    // Legacy field copies for backward compatibility
-    updateMember(memberId, "permanentAddress" as any, familyData.permanentAddress as any)
-    updateMember(memberId, "currentAddress" as any, familyData.currentAddress as any)
-    updateMember(
-      memberId,
-      "state" as any,
-      (familyData.currentFamilyState || familyData.permanentFamilyState || "") as any,
-    )
-    updateMember(
-      memberId,
-      "district" as any,
-      (familyData.currentFamilyDistrict || familyData.permanentFamilyDistrict || "") as any,
-    )
-    updateMember(
-      memberId,
-      "pincode" as any,
-      (familyData.currentFamilyPincode || familyData.permanentFamilyPincode || "") as any,
-    )
+    // Legacy field copies for backward compatibility (only if new fields are empty)
+    if (!familyData.permanentAddress) {
+      updateMember(memberId, "permanentAddress" as any, familyData.permanentAddress as any)
+    }
+    if (!familyData.currentAddress) {
+      updateMember(memberId, "currentAddress" as any, familyData.currentAddress as any)
+    }
+    if (!familyData.currentFamilyState && !familyData.permanentFamilyState) {
+      updateMember(
+        memberId,
+        "state" as any,
+        (familyData.currentFamilyState || familyData.permanentFamilyState || "") as any,
+      )
+    }
+    if (!familyData.currentFamilyDistrict && !familyData.permanentFamilyDistrict) {
+      updateMember(
+        memberId,
+        "district" as any,
+        (familyData.currentFamilyDistrict || familyData.permanentFamilyDistrict || "") as any,
+      )
+    }
+    if (!familyData.currentFamilyPincode && !familyData.permanentFamilyPincode) {
+      updateMember(
+        memberId,
+        "pincode" as any,
+        (familyData.currentFamilyPincode || familyData.permanentFamilyPincode || "") as any,
+      )
+    }
 
     toast({
       title: "पता कॉपी किया गया",
