@@ -16,7 +16,8 @@ const authOptions: AuthOptions = {
                 if (!credentials?.email || !credentials?.password) {
                     return null;
                 }
-                const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/login`, {
+                console.log(process.env.NEXT_PUBLIC_API_URL, "serverside call");
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

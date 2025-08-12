@@ -475,10 +475,10 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-orange-700 hindi-text text-sm sm:text-base">लोड हो रहा है...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 hindi-text">जानकारी लोड हो रही है...</p>
         </div>
       </div>
     )
@@ -528,17 +528,17 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           errors.economicStatus ||
           errors.permanentFamilyPincode ||
           errors.currentFamilyPincode) && (
-          <Alert className="mb-4 sm:mb-6 border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
-            <AlertDescription className="text-red-800 text-sm">
-              {errors.mukhiya && <div className="hindi-text">{errors.mukhiya}</div>}
-              {errors.mobile && <div className="hindi-text">{errors.mobile}</div>}
-              {errors.economicStatus && <div className="hindi-text">{errors.economicStatus}</div>}
-              {errors.permanentFamilyPincode && <div className="hindi-text">{errors.permanentFamilyPincode}</div>}
-              {errors.currentFamilyPincode && <div className="hindi-text">{errors.currentFamilyPincode}</div>}
-            </AlertDescription>
-          </Alert>
-        )}
+            <Alert className="mb-4 sm:mb-6 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+              <AlertDescription className="text-red-800 text-sm">
+                {errors.mukhiya && <div className="hindi-text">{errors.mukhiya}</div>}
+                {errors.mobile && <div className="hindi-text">{errors.mobile}</div>}
+                {errors.economicStatus && <div className="hindi-text">{errors.economicStatus}</div>}
+                {errors.permanentFamilyPincode && <div className="hindi-text">{errors.permanentFamilyPincode}</div>}
+                {errors.currentFamilyPincode && <div className="hindi-text">{errors.currentFamilyPincode}</div>}
+              </AlertDescription>
+            </Alert>
+          )}
 
         {/* Family Level Information */}
         <Card className="mb-4 sm:mb-6">
@@ -900,7 +900,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
         </Dialog>
 
         {/* Saving Dialog */}
-        <Dialog open={isSaving || savingDraft || loading} onOpenChange={() => {}}>
+        <Dialog open={isSaving || savingDraft || loading} onOpenChange={() => { }}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle className="hindi-text">सहेजा जा रहा है...</DialogTitle>

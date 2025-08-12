@@ -53,7 +53,24 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: M
                 className="mt-1 text-sm"
               />
             </div>
-
+            <div>
+              <Label htmlFor={`gender-${member.id}`} className="hindi-text text-sm font-medium">
+                लिंग <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={member.gender}
+                onValueChange={(value: "MALE" | "FEMALE" | "OTHER") => onUpdateMember(member.id, "gender", value)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="लिंग चुनें" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MALE">पुरुष</SelectItem>
+                  <SelectItem value="FEMALE">महिला</SelectItem>
+                  <SelectItem value="OTHER">अन्य</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label htmlFor={`gotra-${member.id}`} className="hindi-text text-sm font-medium">
                 गोत्र
@@ -66,6 +83,20 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: M
                 className="mt-1 text-sm"
               />
             </div>
+            {member?.gender === 'FEMALE' && (
+              <div>
+                <Label htmlFor={`femaleGotra-${member.id}`} className="hindi-text text-sm font-medium">
+                  द्वितीय गोत्र
+                </Label>
+                <Input
+                  id={`femaleGotra-${member.id}`}
+                  value={member.femaleGotra}
+                  onChange={(e) => onUpdateMember(member.id, "femaleGotra", e.target.value)}
+                  placeholder="द्वितीय गोत्र दर्ज करें (यदि कोई हो)"
+                  className="mt-1 text-sm"
+                />
+              </div>
+            )}
           </div>
 
           {/* Date of Birth and Age */}
@@ -94,24 +125,7 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: M
               <div className="mt-1 p-2 bg-gray-50 rounded-md text-sm text-gray-700">{member.age} वर्ष</div>
             </div>
 
-            <div>
-              <Label htmlFor={`gender-${member.id}`} className="hindi-text text-sm font-medium">
-                लिंग <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={member.gender}
-                onValueChange={(value: "MALE" | "FEMALE" | "OTHER") => onUpdateMember(member.id, "gender", value)}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="लिंग चुनें" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MALE">पुरुष</SelectItem>
-                  <SelectItem value="FEMALE">महिला</SelectItem>
-                  <SelectItem value="OTHER">अन्य</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
 
             <div>
               <Label htmlFor={`relation-${member.id}`} className="hindi-text text-sm font-medium">

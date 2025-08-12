@@ -138,6 +138,33 @@ export function DigitalAccessSection({ member, index, errors, onUpdateMember }: 
                 भविष्य में सामूहिक विवाह में रुचि है
               </Label>
             </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`isInterestedInFinancialAssistance-${member.id}`}
+                checked={member.isInterestedInFinancialAssistance}
+                onCheckedChange={(checked) => onUpdateMember(member.id, "isInterestedInFinancialAssistance", checked)}
+              />
+              <Label
+                htmlFor={`isInterestedInFinancialAssistance-${member.id}`}
+                className="hindi-text text-sm cursor-pointer"
+              >
+                समाज से आर्थिक सहायता के लिए चाहिए
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`govBenefitInterestfromsamaj-${member.id}`}
+                checked={member.govBenefitInterestfromsamaj}
+                onCheckedChange={(checked) => onUpdateMember(member.id, "govBenefitInterestfromsamaj", checked)}
+              />
+              <Label
+                htmlFor={`govBenefitInterestfromsamaj-${member.id}`}
+                className="hindi-text text-sm cursor-pointer"
+              >
+                समाज से सरकारी सेवाओं के लाभ के लिए सहायता की आवश्यकता है
+              </Label>
+            </div>
           </div>
 
           {/* Status Badges */}

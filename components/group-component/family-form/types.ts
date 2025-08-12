@@ -8,13 +8,14 @@ export interface FamilyMember {
   relation: string
   maritalStatus: string
   gotra: string
+  femaleGotra?: string
   disability: boolean
   bloodGroup: string
   mobileNumber: string
   email: string
 
   // Legacy address fields (kept for backward compatibility where still used)
-  
+
   isCurrentAddressInIndia: boolean
   currentCountry: string
 
@@ -53,7 +54,8 @@ export interface FamilyMember {
   boardOrUniversity?: string
   yearOfPassing?: number
   fieldOfStudy?: string
-
+  educaionalState?: string
+  educationalDistrict?: string
   // Employment details
   isEmployed: boolean
   isSeekingJob?: boolean
@@ -118,6 +120,8 @@ export interface FamilyMember {
   isMukhiya: boolean
   welfareSchemes: string[]
   isInterestedInFutureSamuhikVivah: boolean
+  isInterestedInFinancialAssistance: boolean
+  govBenefitInterestfromsamaj: boolean
   vehicleType: "NONE" | "BICYCLE" | "MOTORCYCLE" | "CAR" | "TRUCK" | "OTHER"
 }
 
