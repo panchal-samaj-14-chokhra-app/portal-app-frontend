@@ -1,5 +1,5 @@
 export interface FamilyMember {
-  id: string
+
   firstName: string
   lastName: string
   dateOfBirth: string
@@ -164,6 +164,4 @@ export interface MemberFormProps {
   index: number
   errors: Record<string, string>
   onUpdateMember: (memberId: string, field: keyof FamilyMember, value: any) => void
-  onCopyFamilyAddress: (memberId: string) => void
-  familyData: FamilyData
 }

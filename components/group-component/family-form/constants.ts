@@ -1,7 +1,6 @@
 import type { FamilyMember } from "./types"
 
 export const initialMember: FamilyMember = {
-  id: "",
   firstName: "",
   lastName: "",
   dateOfBirth: "",
@@ -110,6 +109,7 @@ export const initialMember: FamilyMember = {
   govBenefitInterestfromsamaj: false,
   educaionalState: "",
   educationalDistrict: "",
+
 }
 
 export const statesAndDistricts: Record<string, string[]> = {

@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails } from '../requests/village-family';
+import { createMember } from '../requests/village-family';
+import { removeMember as removeMemberRequest } from '../requests/village-family';
 
 export const useCreateFamily = (onSuccess: any, onError: { (): void; (arg0: Error): void; }) => {
   const mutation = useMutation({
@@ -118,6 +120,26 @@ export const useCreateChokhla = () => {
   });
 }
 
+
+export const useCreateMember = () => {
+  return useMutation({
+    mutationFn: (payload: any) => createMember(payload),
+
+  });
+};
+
+
+export const useGetMemberDetails = (memberId: string) => {
+  return useQuery({
+    queryKey: ["memberDetails", memberId],
+    queryFn: () => fetchMemberDetails(memberId),
+  });
+};
+export const useDeleteMember = (): ReturnType<typeof useMutation> => {
+  return useMutation({
+    mutationFn: (id: any) => removeMemberRequest(id),
+  });
+};
 
 export const useGetAllUserList = () => {
   return useQuery({

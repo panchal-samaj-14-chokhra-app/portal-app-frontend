@@ -45,6 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useQueryClient } from "@tanstack/react-query"
+import AddFamilyDialog from "@/components/add-family-component/addfamily"
 
 export default function VillageDetailPage() {
   const { data: session, status } = useSession()
@@ -54,6 +55,8 @@ export default function VillageDetailPage() {
 
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  // State for AddFamilyDialog
+  const [addFamilyOpen, setAddFamilyOpen] = useState(false)
 
   // Deletion flow state
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -109,11 +112,8 @@ export default function VillageDetailPage() {
   }
 
   const handleAddFamily = () => {
-    if (userType !== "VILLAGE_MEMBER") {
-      router.back()
-      return
-    }
-    router.push(`/admin/village/${villageId}/add-family?chakolaId=${chokhlaID}`)
+    setAddFamilyOpen(true)
+    // router.push(`/admin/village/${villageId}/add-family?chakolaId=${chokhlaID}`)
   }
 
   const filteredFamilies = families?.filter((family: { mukhiyaName: string; id: string; status: string }) => {
@@ -695,6 +695,15 @@ export default function VillageDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Family Form Modal */}
+      <AddFamilyDialog
+        isOpen={addFamilyOpen}
+        onClose={() => setAddFamilyOpen(false)}
+
+        chakolaId={chokhlaID}
+        villageId={villageId}
+      />
     </div>
   )
 }

@@ -16,8 +16,6 @@ export function AddressInfoSection({
   index,
   errors,
   onUpdateMember,
-  onCopyFamilyAddress,
-  familyData,
 }: MemberFormProps) {
   const errorPrefix = `member_${index}_`
 
@@ -44,22 +42,10 @@ export function AddressInfoSection({
   // Build state options once
   const stateOptions = useMemo(() => Object.keys(statesAndDistricts), [])
 
-  // Copy family permanent address -> member permanent fields (and legacy helper for compatibility)
+  // Copy family permanent address -> member permanent fields (disabled, no familyData)
   const copyFamilyPermanentToMemberPermanent = () => {
-    // optional legacy copy for existing behavior
-    if (onCopyFamilyAddress) {
-      onCopyFamilyAddress(member.id)
-    }
-    // new person* fields
-    onUpdateMember(member.id, "personPermanentAddress", familyData.permanentAddress || "")
-    onUpdateMember(member.id, "personPermanentState", familyData.permanentFamilyState || "")
-    onUpdateMember(member.id, "personPermanentDistrict", familyData.permanentFamilyDistrict || "")
-    onUpdateMember(member.id, "personPermanentVillage", familyData.permanentFamilyVillage || "")
-    onUpdateMember(
-      member.id,
-      "personPermanentPincode",
-      (familyData.permanentFamilyPincode || "").toString().replace(/\D/g, "").slice(0, 6),
-    )
+    // No-op: familyData is not available in this context anymore
+    // Optionally, show a toast or warning if needed
   }
 
   // Copy member permanent -> member current fields
@@ -90,16 +76,7 @@ export function AddressInfoSection({
               <h5 className="font-medium text-purple-800 hindi-text text-sm sm:text-base">
                 {"स्थायी पता (Permanent Address)"}
               </h5>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={copyFamilyPermanentToMemberPermanent}
-                className="text-xs bg-transparent"
-              >
-                <Copy className="w-3 h-3 mr-1" />
-                <span className="hindi-text">{"परिवार का पता कॉपी करें"}</span>
-              </Button>
+
             </div>
             <div className="p-3 sm:p-4 space-y-4">
               <div>

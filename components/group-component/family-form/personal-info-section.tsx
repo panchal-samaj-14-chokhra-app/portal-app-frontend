@@ -261,16 +261,7 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: M
               </Label>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id={`isMukhiya-${member.id}`}
-                checked={member.isMukhiya}
-                onCheckedChange={(checked) => onUpdateMember(member.id, "isMukhiya", checked)}
-              />
-              <Label htmlFor={`isMukhiya-${member.id}`} className="hindi-text text-sm cursor-pointer font-medium">
-                मुखिया है
-              </Label>
-            </div>
+
           </div>
         </div>
       </CardContent>

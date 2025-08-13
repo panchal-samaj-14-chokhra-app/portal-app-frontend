@@ -73,3 +73,20 @@ export const getAlluserList = async () => {
   const { data } = await request.get('/api/auth/users')
   return data;
 }
+
+
+export const createMember = async (payload) => {
+  const { data } = await request.post('/person/create', payload);
+  return { data };
+}
+
+
+export const fetchMemberDetails = async (memberId: string) => {
+  const { data } = await request.get(`/person/${memberId}`);
+  return data;
+};
+
+export const removeMember = async (id: any) => {
+  const { data } = await request.delete(`/person/${id}`);
+  return { data };
+}
