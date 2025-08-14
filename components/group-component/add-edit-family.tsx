@@ -25,6 +25,7 @@ import type { FamilyData, FamilyMember, FamilyFormProps } from "./family-form/ty
 import { initialMember } from "./family-form/constants"
 
 import { MemberForm } from "./family-form/member-form"
+import { calculateAge } from "./family-form/utils"
 
 export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const queryClient = useQueryClient()
@@ -321,7 +322,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                   <div className="space-y-2">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                       <FileText className="h-5 w-5 text-purple-600" />
-                      टिप्पणी (Comments)
+                      समाज हित के लिए सुझाव (Suggestions for the welfare of the community)
                     </h3>
                     <p className="text-gray-700 bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400 ml-7">
                       {familyDetails.anyComment}
@@ -364,12 +365,24 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                           रिश्ता (Relation)
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          लिंग (Gender)
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          वैवाहिक स्थिति (Marital Status)
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          गोत्र (Gotra)
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          दिव्यांग (Disability)
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           कार्य (Actions)
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {familyDetails.Person.map((person: any, index: number) => (
+                      {familyDetails.Person.map((person: any) => (
                         <tr key={person.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -386,12 +399,26 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-gray-900">{person.age} वर्ष</span>
+                            <span className="text-sm text-gray-900">{calculateAge(person.dateOfBirth)} वर्ष</span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Badge variant="outline" className="text-sm">
                               {person.relation}
                             </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{person.gender}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{person.maritalStatus}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{person.gotra}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">
+                              {person.disability ? 'हाँ' : 'नहीं'}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex gap-2">
@@ -420,6 +447,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                     </tbody>
                   </table>
                 </div>
+
               ) : (
                 <div className="text-center py-8">
                   <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -437,19 +465,19 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           errors.economicStatus ||
           errors.permanentFamilyPincode ||
           errors.currentFamilyPincode) && (
-          <Alert className="mb-6 border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-red-800">
-              <div className="space-y-1">
-                {errors.mukhiya && <div>{errors.mukhiya}</div>}
-                {errors.mobile && <div>{errors.mobile}</div>}
-                {errors.economicStatus && <div>{errors.economicStatus}</div>}
-                {errors.permanentFamilyPincode && <div>{errors.permanentFamilyPincode}</div>}
-                {errors.currentFamilyPincode && <div>{errors.currentFamilyPincode}</div>}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-red-800">
+                <div className="space-y-1">
+                  {errors.mukhiya && <div>{errors.mukhiya}</div>}
+                  {errors.mobile && <div>{errors.mobile}</div>}
+                  {errors.economicStatus && <div>{errors.economicStatus}</div>}
+                  {errors.permanentFamilyPincode && <div>{errors.permanentFamilyPincode}</div>}
+                  {errors.currentFamilyPincode && <div>{errors.currentFamilyPincode}</div>}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
         {/* Add Member Button */}
         <div className="mb-6">

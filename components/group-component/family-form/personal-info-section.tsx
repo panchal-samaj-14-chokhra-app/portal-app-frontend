@@ -93,7 +93,7 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: M
                   id={`femaleGotra-${member.id}`}
                   value={member.femaleGotra}
                   onChange={(e) => onUpdateMember(member.id, "femaleGotra", e.target.value)}
-                  placeholder="द्वितीय गोत्र दर्ज करें (यदि कोई हो)"
+                  placeholder="द्वितीय गोत्र दर्ज करें विवाह के पहले पिता के परिवार से"
                   className="mt-1 text-sm"
                 />
               </div>
@@ -130,11 +130,11 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: M
 
             <div>
               <Label htmlFor={`relation-${member.id}`} className="hindi-text text-sm font-medium">
-                रिश्ता <span className="text-red-500">*</span>
+                मुखिया के साथ संबंध <span className="text-red-500">*</span>
               </Label>
               <Select value={member.relation} onValueChange={(value) => onUpdateMember(member.id, "relation", value)}>
                 <SelectTrigger className={`mt-1 ${errors[`${errorPrefix}relation`] ? "border-red-500" : ""}`}>
-                  <SelectValue placeholder="रिश्ता चुनें" />
+                  <SelectValue placeholder="संबंध चुनें" />
                 </SelectTrigger>
                 <SelectContent>
                   {relationOptions.map((option) => (

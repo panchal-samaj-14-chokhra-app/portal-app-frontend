@@ -400,9 +400,9 @@ export const relationOptions = [
 export const educationLevels = [
   { label: "अशिक्षित", value: "illiterate" },
   { label: "प्राथमिक (1-5)", value: "primary" },
-  { label: "माध्यमिक (6-8)", value: "middle" },
-  { label: "हाई स्कूल (9-10)", value: "high_school" },
-  { label: "इंटरमीडिएट (11-12)", value: "intermediate" },
+  { label: "उच्च प्राथमिक (6-8)", value: "middle" },
+  { label: "माध्यमिक (9-10)", value: "high_school" },
+  { label: "उच्च माध्यमिक (11-12)", value: "intermediate" },
   { label: "स्नातक", value: "graduate" },
   { label: "स्नातकोत्तर", value: "post_graduate" },
   { label: "डॉक्टरेट", value: "doctorate" },
@@ -443,6 +443,9 @@ export const houseOwnershipOptions = [
   { label: "किराए का", value: "rented" },
   { label: "सरकारी", value: "government" },
   { label: "अन्य", value: "other" },
+  { label: "पिता का", value: "pita_ka" },
+  { label: "माता का", value: "mata_ka" },
+  { label: "पति का", value: "pati_ka" }
 ]
 
 export const waterSources = [
