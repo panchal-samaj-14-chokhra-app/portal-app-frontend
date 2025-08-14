@@ -606,8 +606,9 @@ export default function VillageDetailPage() {
                   style={{ border: 0 }}
                   loading="lazy"
                   allowFullScreen
-                  src={`https://maps.google.com/maps?q=${26.85},${75.82}&z=14&output=embed`}
-                ></iframe>
+                  src={`https://maps.google.com/maps?q=${villageData.latitude},${villageData.longitude}&z=14&output=embed`}
+                />
+
               ) : (
                 <p>स्थान उपलब्ध नहीं है (Location not available)</p>
               )}
