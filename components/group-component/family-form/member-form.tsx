@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useCreateMember } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useCreateMember, useUpdatePerson } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useParams, useSearchParams } from "next/navigation"
 import { UserCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,7 @@ import { LivingStatusSection } from "./living-status-section"
 import { HealthInfoSection } from "./health-info-section"
 import { DigitalAccessSection } from "./digital-access-section"
 import { initialMember } from "../family-form/constants"
-
+import { useRouter } from 'next/navigation';
 
 interface ExtendedMemberFormProps extends Omit<MemberFormProps, 'member' | 'onUpdateMember' | 'familyData'> {
   onRemoveMember: (memberId: string) => void;
@@ -25,12 +25,14 @@ interface ExtendedMemberFormProps extends Omit<MemberFormProps, 'member' | 'onUp
 }
 
 export function MemberForm(props: ExtendedMemberFormProps) {
-  const { index, errors, } = props;
+  const { index, errors, fetchedData } = props;
   const [member, setMember] = useState(() => ({
     ...initialMember,
+    ...fetchedData
   }));
 
-
+  const router = useRouter();
+  const { mutate: updatePerson } = useUpdatePerson();
 
 
   const memberName =
@@ -48,26 +50,49 @@ export function MemberForm(props: ExtendedMemberFormProps) {
     setMember((prev: any) => ({ ...prev, [field]: value }));
   };
 
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     const payload = {
       ...member,
       villageId,
-      familyId
+      familyId,
     };
-    createMember(payload, {
-      onSuccess: () => {
-        setLoading(false);
-        window.location.reload(); // Reload to reflect changes
-        // Optionally show a success message or reset form
-      },
-      onError: () => {
-        setLoading(false);
-        // Optionally show an error message
-      },
-    });
+
+    if (member.id) {
+      // Update existing member
+      updatePerson(
+        { id: member.id, payload },
+        {
+          onSuccess: () => {
+            setLoading(false);
+            router.back(); // Refresh or redirect as needed
+          },
+          onError: () => {
+            setLoading(false);
+            // Handle update error
+          },
+        }
+      );
+    } else {
+      // Create new member
+      createMember(payload, {
+        onSuccess: () => {
+          setLoading(false);
+          //  window.location.reload(); // or router() if you want to keep SPA behavior
+        },
+        onError: () => {
+          setLoading(false);
+          // Handle creation error
+        },
+      });
+    }
   };
+
+
 
   // --- End of function logic, now return JSX ---
   return (

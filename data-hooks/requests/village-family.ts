@@ -90,3 +90,9 @@ export const removeMember = async (id: any) => {
   const { data } = await request.delete(`/person/${id}`);
   return { data };
 }
+
+export const updatePerson = async ({ id, payload }: { id: string; payload: any }) => {
+  const { data } =
+    await request.put(`/person/update/${id}`, payload);
+  return { data };
+};

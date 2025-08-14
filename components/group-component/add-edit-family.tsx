@@ -567,25 +567,25 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
           errors.economicStatus ||
           errors.permanentFamilyPincode ||
           errors.currentFamilyPincode) && (
-          <Alert className="mb-8 border-red-200 bg-gradient-to-r from-red-50 to-red-100 shadow-lg">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <AlertDescription className="text-red-800 text-base font-medium">
-              <div className="space-y-2">
-                {errors.mukhiya && <div className="hindi-text flex items-center gap-2">• {errors.mukhiya}</div>}
-                {errors.mobile && <div className="hindi-text flex items-center gap-2">• {errors.mobile}</div>}
-                {errors.economicStatus && (
-                  <div className="hindi-text flex items-center gap-2">• {errors.economicStatus}</div>
-                )}
-                {errors.permanentFamilyPincode && (
-                  <div className="hindi-text flex items-center gap-2">• {errors.permanentFamilyPincode}</div>
-                )}
-                {errors.currentFamilyPincode && (
-                  <div className="hindi-text flex items-center gap-2">• {errors.currentFamilyPincode}</div>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+            <Alert className="mb-8 border-red-200 bg-gradient-to-r from-red-50 to-red-100 shadow-lg">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <AlertDescription className="text-red-800 text-base font-medium">
+                <div className="space-y-2">
+                  {errors.mukhiya && <div className="hindi-text flex items-center gap-2">• {errors.mukhiya}</div>}
+                  {errors.mobile && <div className="hindi-text flex items-center gap-2">• {errors.mobile}</div>}
+                  {errors.economicStatus && (
+                    <div className="hindi-text flex items-center gap-2">• {errors.economicStatus}</div>
+                  )}
+                  {errors.permanentFamilyPincode && (
+                    <div className="hindi-text flex items-center gap-2">• {errors.permanentFamilyPincode}</div>
+                  )}
+                  {errors.currentFamilyPincode && (
+                    <div className="hindi-text flex items-center gap-2">• {errors.currentFamilyPincode}</div>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
         {/* Enhanced Add Member Button */}
         <div className="mb-8 text-center">
@@ -625,19 +625,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                     <Users className="h-12 w-12 text-purple-500" />
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 hindi-text mb-2">कोई सदस्य नहीं जोड़ा गया</h3>
+
                 <p className="text-gray-600 mb-6 max-w-md mx-auto">
                   परिवार के सदस्यों की जानकारी जोड़ने के लिए ऊपर दिए गए "सदस्य जोड़ें" बटन पर क्लिक करें।
                 </p>
-                <Button
-                  type="button"
-                  onClick={addMember}
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hindi-text"
-                >
-                  <Users className="w-5 h-5 mr-2" />
-                  पहला सदस्य जोड़ें
-                </Button>
+
               </div>
             ) : (
               <div className="space-y-8">

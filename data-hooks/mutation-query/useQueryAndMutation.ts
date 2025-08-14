@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
 
@@ -138,6 +138,12 @@ export const useGetMemberDetails = (memberId: string) => {
 export const useDeleteMember = (): ReturnType<typeof useMutation> => {
   return useMutation({
     mutationFn: (id: any) => removeMemberRequest(id),
+  });
+};
+
+export const useUpdatePerson = (): ReturnType<typeof useMutation> => {
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => updatePerson({ id, payload }),
   });
 };
 
