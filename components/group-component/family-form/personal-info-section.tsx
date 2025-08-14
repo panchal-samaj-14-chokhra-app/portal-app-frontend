@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { MemberFormProps } from "./types"
 import { relationOptions, bloodGroups, maritalStatusOptions } from "./constants"
+import { calculateAge } from "./utils"
 
 export function PersonalInfoSection({ member, index, errors, onUpdateMember }: MemberFormProps) {
   const errorPrefix = `member_${index}_`
@@ -122,7 +123,7 @@ export function PersonalInfoSection({ member, index, errors, onUpdateMember }: M
 
             <div>
               <Label className="hindi-text text-sm font-medium">आयु</Label>
-              <div className="mt-1 p-2 bg-gray-50 rounded-md text-sm text-gray-700">{member.age} वर्ष</div>
+              <div className="mt-1 p-2 bg-gray-50 rounded-md text-sm text-gray-700">{calculateAge(member.dateOfBirth)} वर्ष</div>
             </div>
 
 
