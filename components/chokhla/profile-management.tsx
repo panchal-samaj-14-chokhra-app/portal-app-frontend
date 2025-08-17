@@ -68,7 +68,7 @@ export function ProfileManagement({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle className="text-xl sm:text-2xl font-bold text-orange-800 flex items-center gap-2">
             <User className="w-5 h-5 sm:w-6 sm:h-6" />
-            चोखरा प्रोफ़ाइल
+            चौकला प्रोफ़ाइल
           </CardTitle>
           {!editProfile ? (
             <Button
@@ -105,7 +105,7 @@ export function ProfileManagement({
           <form className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-orange-700">चोखरा का नाम</label>
+                <label className="block text-sm font-semibold text-orange-700">चौकला का नाम</label>
                 <Input
                   type="text"
                   name="name"

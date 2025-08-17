@@ -25,7 +25,7 @@ import ErrorModal from "@/components/superadmin/error-modal"
 
 const TABS = [
   { key: "village", label: "गांव प्रबंधन", shortLabel: "गांव" },
-  { key: "chokhla", label: "चोखरा प्रबंधन", shortLabel: "चोखरा" },
+  { key: "chokhla", label: "चौकला प्रबंधन", shortLabel: "चौकला" },
   { key: "statics", label: "आँकड़े", shortLabel: "आँकड़े" },
   { key: "user", label: "यूज़र प्रबंधन", shortLabel: "यूज़र" },
   { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल", shortLabel: "प्रोफ़ाइल" },
@@ -76,7 +76,7 @@ function SuperAdmin() {
         setIsSubmitting(false)
       },
       onError: (error: any) => {
-        setErrorMessage(error?.message || "चोखरा जोड़ने में त्रुटि हुई")
+        setErrorMessage(error?.message || "चौकला जोड़ने में त्रुटि हुई")
         setShowErrorModal(true)
         setIsSubmitting(false)
       },

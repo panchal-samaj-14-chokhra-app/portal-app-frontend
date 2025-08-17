@@ -394,8 +394,7 @@ export const relationOptions = [
   { label: "दादी", value: "grandmother" },
   { label: "पोता", value: "grandson" },
   { label: "पोती", value: "granddaughter" },
-  { label: "पुत्रवधू", value: "other" },
-  { label: "अन्य", value: "putravadhu" },
+  { label: "अन्य", value: "other" },
 ]
 
 export const educationLevels = [

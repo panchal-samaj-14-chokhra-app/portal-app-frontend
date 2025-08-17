@@ -28,14 +28,14 @@ export default function ChokhlaManagement({ chokhlas, isLoading, onAddChokhla }:
     return (
       <Card className="w-full bg-white/80 backdrop-blur-sm shadow-lg">
         <CardHeader className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-2 lg:space-y-0">
-          <CardTitle className="text-lg lg:text-xl">चोखरा सूची</CardTitle>
+          <CardTitle className="text-lg lg:text-xl">चौकला सूची</CardTitle>
           <Button
             variant="outline"
             onClick={onAddChokhla}
             className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-none hover:from-orange-600 hover:to-orange-700 w-full lg:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
-            चोखरा जोड़ें
+            चौकला जोड़ें
           </Button>
         </CardHeader>
         <CardContent>
@@ -51,14 +51,14 @@ export default function ChokhlaManagement({ chokhlas, isLoading, onAddChokhla }:
   return (
     <Card className="w-full bg-white/80 backdrop-blur-sm shadow-lg">
       <CardHeader className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-2 lg:space-y-0">
-        <CardTitle className="text-lg lg:text-xl">चोखरा सूची</CardTitle>
+        <CardTitle className="text-lg lg:text-xl">चौकला सूची</CardTitle>
         <Button
           variant="outline"
           onClick={onAddChokhla}
           className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-none hover:from-orange-600 hover:to-orange-700 w-full lg:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
-          चोखरा जोड़ें
+          चौकला जोड़ें
         </Button>
       </CardHeader>
       <CardContent>
@@ -129,7 +129,7 @@ export default function ChokhlaManagement({ chokhlas, isLoading, onAddChokhla }:
                 ) : (
                   <tr>
                     <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                      कोई चोखरा नहीं मिला
+                      कोई चौकला नहीं मिला
                     </td>
                   </tr>
                 )}
