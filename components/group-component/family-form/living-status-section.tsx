@@ -152,7 +152,7 @@ export function LivingStatusSection({ member, index, errors, onUpdateMember }: M
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor={`landOwned-${member.id}`} className="hindi-text text-sm font-medium">
-                  भूमि (एकड़ में)
+                 कृषि भूमि (एकड़ में)
                 </Label>
                 <div className="relative mt-1">
                   <Input
@@ -233,7 +233,7 @@ export function LivingStatusSection({ member, index, errors, onUpdateMember }: M
             )}
             {member.landOwned > 0 && (
               <Badge variant="outline" className="border-green-500 text-green-700">
-                भूमि स्वामी ({member.landOwned} एकड़)
+               कृषि भूमि स्वामी ({member.landOwned} एकड़)
               </Badge>
             )}
             {member.vehicleType !== "NONE" && (

@@ -19,7 +19,7 @@ export default function StatisticsView() {
               <div className="flex items-center gap-3">
                 <Users className="w-8 h-8 text-blue-600" />
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">कुल चौकला</p>
+                  <p className="text-sm text-blue-600 font-medium">कुल चोखरा</p>
                   <p className="text-2xl font-bold text-blue-800">0</p>
                 </div>
               </div>

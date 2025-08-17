@@ -44,7 +44,7 @@ export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProp
 
           <div className="space-y-3 text-sm">
             <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="font-medium text-gray-700 mb-1">चौकला ID:</p>
+              <p className="font-medium text-gray-700 mb-1">चोखरा ID:</p>
               <p className="text-gray-900 break-all text-xs sm:text-sm font-mono bg-white p-2 rounded border">
                 {data.chokhlaId}
               </p>

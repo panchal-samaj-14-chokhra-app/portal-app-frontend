@@ -113,7 +113,7 @@ export function MemberForm(props: ExtendedMemberFormProps) {
   // --- End of function logic, now return JSX ---
   return (
     <>
-      <form className="border rounded-lg overflow-hidden p-4 bg-white" onSubmit={handleSubmit}>
+      <form className="overflow-hidden bg-white" onSubmit={handleSubmit}>
         <div className="flex items-center justify-between w-full mr-4">
           <div className="flex items-center gap-2">
             <span className="font-medium hindi-text text-sm sm:text-base">{memberName}</span>
