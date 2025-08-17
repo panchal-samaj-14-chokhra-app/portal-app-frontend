@@ -157,7 +157,9 @@ function Chokhla() {
           />
         )
       case "statics":
-        return <StatisticsView />
+        return <StatisticsView 
+        chokhla={chokhla}
+         />
       case "reports":
         return <ReportsView />
       case "profile":

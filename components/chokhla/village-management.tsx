@@ -56,6 +56,9 @@ export function VillageManagement({
               <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
                 <tr>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                    क्रम संख्या
+                  </th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                     गांव का नाम
                   </th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
@@ -95,10 +98,12 @@ export function VillageManagement({
                   villages.map((village: any, idx: number) => (
                     <tr
                       key={village.id}
-                      className={`transition-colors duration-200 ${
-                        idx % 2 === 0 ? "bg-orange-50 hover:bg-orange-100" : "bg-white hover:bg-orange-50"
-                      }`}
+                      className={`transition-colors duration-200 ${idx % 2 === 0 ? "bg-orange-50 hover:bg-orange-100" : "bg-white hover:bg-orange-50"
+                        }`}
                     >
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap">
+                        <div className="font-semibold text-orange-900 text-sm">{idx + 1}</div>
+                      </td>
                       <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap">
                         <div className="font-semibold text-orange-900 text-sm">{village.name}</div>
                       </td>
