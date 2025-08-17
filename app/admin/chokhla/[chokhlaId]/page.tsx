@@ -198,7 +198,7 @@ function Chokhla() {
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-sm sm:text-xl lg:text-2xl font-bold text-white truncate">पंचाल समाज 14 चोखरा</h1>
-                <p className="text-orange-100 text-xs hidden sm:block">चौकला प्रबंधन पैनल</p>
+                <p className="text-orange-100 text-xs hidden sm:block">चोखरा प्रबंधन पैनल</p>
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">

@@ -59,7 +59,7 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
   const validateForm = () => {
     const newErrors: any = {}
 
-    if (!formData.name) newErrors.name = "चौकला का नाम आवश्यक है"
+    if (!formData.name) newErrors.name = "चोखरा का नाम आवश्यक है"
     if (!formData.adhyaksh) newErrors.adhyaksh = "अध्यक्ष का नाम आवश्यक है"
     if (!formData.contactNumber) {
       newErrors.contactNumber = "संपर्क नंबर आवश्यक है"
@@ -139,7 +139,7 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden p-2 sm:p-4 lg:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl sm:text-2xl font-bold text-orange-800 text-center">नया चौकला जोड़ें</DialogTitle>
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-orange-800 text-center">नया चोखरा जोड़ें</DialogTitle>
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto px-1">
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -148,7 +148,7 @@ export default function AddChokhlaForm({ isOpen, onClose, onSubmit, isSubmitting
               <h3 className="text-base sm:text-lg font-semibold text-orange-800 mb-3 sm:mb-4">बुनियादी जानकारी</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-orange-700 mb-1">चौकला का नाम *</label>
+                  <label className="block text-sm font-medium text-orange-700 mb-1">चोखरा का नाम *</label>
                   <Input
                     name="name"
                     value={formData.name}

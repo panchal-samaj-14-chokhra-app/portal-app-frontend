@@ -227,7 +227,7 @@ export default function VillageDetailPage() {
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
               {userType !== "VILLAGE_MEMBER" ? (
-                <Button onClick={handleAddFamily} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                <Button onClick={() => router.back()} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   वापस जॉए
                 </Button>
@@ -350,20 +350,7 @@ export default function VillageDetailPage() {
                 >
                   सत्यापित
                 </Button>
-                <Button
-                  variant={statusFilter === "pending" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("pending")}
-                  size="sm"
-                >
-                  लंबित
-                </Button>
-                <Button
-                  variant={statusFilter === "draft" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("draft")}
-                  size="sm"
-                >
-                  मसौदा
-                </Button>
+
               </div>
             </div>
           </CardContent>
@@ -432,6 +419,7 @@ export default function VillageDetailPage() {
                         <TableCell>{family.economicStatus}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+
                             <Button
                               size="sm"
                               variant="outline"
@@ -444,34 +432,42 @@ export default function VillageDetailPage() {
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                router.push(
-                                  `/admin/village/${villageId}/family/${family.id}/edit?choklaId=${villageData.choklaId}`,
-                                )
-                              }
-                              className="bg-transparent"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => requestDeleteFamily(family.id, family.mukhiyaName)}
-                              disabled={isRowDeleting}
-                              className={`bg-transparent ${isRowDeleting
-                                ? "opacity-70 cursor-not-allowed"
-                                : "text-red-600 hover:text-red-700 hover:bg-red-50"
-                                }`}
-                            >
-                              {isRowDeleting ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                            </Button>
+
+                            {
+                              userType === "VILLAGE_MEMBER" && (<Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  router.push(
+                                    `/admin/village/${villageId}/family/${family.id}/edit?choklaId=${villageData.choklaId}`,
+                                  )
+                                }
+                                className="bg-transparent"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>)
+                            }
+
+                            {userType === "VILLAGE_MEMBER" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => requestDeleteFamily(family.id, family.mukhiyaName)}
+                                disabled={isRowDeleting}
+                                className={`bg-transparent ${isRowDeleting
+                                  ? "opacity-70 cursor-not-allowed"
+                                  : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  }`}
+                              >
+                                {isRowDeleting ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </Button>)
+                            }
+
+
                           </div>
                         </TableCell>
                       </TableRow>
@@ -494,7 +490,7 @@ export default function VillageDetailPage() {
                 </div>
               )
             ) : (
-              <div>No member</div>
+              <div></div>
             )}
           </CardContent>
         </Card>
@@ -535,7 +531,7 @@ export default function VillageDetailPage() {
                   <strong>नाम:</strong> {villageData?.name}
                 </p>
                 <p>
-                  <strong>चौकला:</strong> {villageData?.chakolaName}
+                  <strong>चोखरा:</strong> {villageData?.chakolaName}
                 </p>
                 <p>
                   <strong>गांव सदस्य का नाम:</strong> {villageData?.villageMemberName}
@@ -575,7 +571,7 @@ export default function VillageDetailPage() {
                   <strong>देशांतर (Longitude):</strong> {villageData?.longitude}
                 </p>
                 <p>
-                  <strong>चौकला ID:</strong> {villageData?.choklaId}
+                  <strong>चोखरा ID:</strong> {villageData?.choklaId}
                 </p>
                 <p>
                   <strong>निर्माण तिथि:</strong>{" "}

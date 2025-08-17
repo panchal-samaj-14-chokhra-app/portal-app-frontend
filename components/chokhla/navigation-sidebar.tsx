@@ -8,7 +8,7 @@ const TABS = [
   { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
   { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
   { key: "reports", label: "रिपोर्ट्स", icon: FileText, shortLabel: "रिपोर्ट" },
-  { key: "profile", label: "चौकला प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
+  { key: "profile", label: "चोखरा प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
 ]
 
 interface NavigationSidebarProps {

@@ -517,9 +517,9 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="">
                 {familyData.members.map((member, idx) => (
-                  <div key={member.id} className="border border-gray-200 rounded-lg p-6">
+                  <div key={member.id} className=" border-gray-200 rounded-lg ">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-semibold text-sm">

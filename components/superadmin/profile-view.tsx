@@ -37,7 +37,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
                 <span className="ml-2 text-orange-800">{userData?.user?.role}</span>
               </div>
               <div>
-                <span className="font-medium text-orange-700">Chokla ID:</span>
+                <span className="font-medium text-orange-700">Chokhra ID:</span>
                 <span className="ml-2 text-orange-800">{userData?.user?.choklaId}</span>
               </div>
               <div>

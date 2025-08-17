@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import * as XLSX from "xlsx"
+import { calculateAge } from "@/components/group-component/family-form/utils"
 
 // TypeScript interfaces for type safety
 interface FamilyMember {
@@ -469,7 +470,7 @@ export default function FamilyDetailPage() {
       "शिक्षा स्तर": translateEducationLevel(member.educationLevel),
       व्यवसाय: translateOccupationType(member.occupationType),
       "मासिक आय": member.monthlyIncome ? `₹${member.monthlyIncome}` : "",
-      "भूमि (एकड़)": member.landOwned || "",
+      "कृषि भूमि (एकड़)": member.landOwned || "",
       पशुधन: member.livestock || "",
       "घर का प्रकार": translateHouseType(member.houseType),
       "घर का स्वामित्व": translateHouseOwnership(member.houseOwnership),
@@ -759,9 +760,10 @@ export default function FamilyDetailPage() {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {member.age && (
+                          {member.dateOfBirth && (
                             <Badge variant="outline" className="bg-gray-50">
-                              {member.age} वर्ष
+                              {calculateAge(member.dateOfBirth)}   वर्ष
+
                             </Badge>
                           )}
                           {member.gender && (
@@ -809,7 +811,7 @@ export default function FamilyDetailPage() {
                               items={[
                                 { label: "पूरा नाम", value: member.fullName },
                                 { label: "जन्म तिथि", value: formatDate(member.dateOfBirth) },
-                                { label: "उम्र", value: member.age?.toString() },
+                                { label: "उम्र", value: calculateAge(member.dateOfBirth) },
                                 {
                                   label: "लिंग",
                                   value:
@@ -939,7 +941,7 @@ export default function FamilyDetailPage() {
                                 { label: "स्थानांतरित होने के लिए तैयार", value: member.isOpenToRelocate ? "हां" : "नहीं" },
                                 { label: "प्रति सप्ताह काम के घंटे", value: member.workingHoursPerWeek?.toString() },
                                 { label: "अतिरिक्त कौशल", value: member.hasAdditionalSkills ? "हां" : "नहीं" },
-                                { label: "भूमि (एकड़)", value: member.landOwned?.toString() },
+                                { label: "कृषि भूमि (एकड़)", value: member.landOwned?.toString() },
                                 { label: "पशुधन", value: member.livestock },
                               ]}
                             />
