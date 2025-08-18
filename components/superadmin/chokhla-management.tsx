@@ -68,6 +68,10 @@ export default function ChokhlaManagement({ chokhlas, isLoading, onAddChokhla }:
               <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
                 <tr>
                   <th className="px-2 lg:px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                    क्रम संख्या
+                  </th>
+
+                  <th className="px-2 lg:px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
                     नाम
                   </th>
                   <th className="px-2 lg:px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
@@ -97,6 +101,9 @@ export default function ChokhlaManagement({ chokhlas, isLoading, onAddChokhla }:
                       key={chokhla.id}
                       className={idx % 2 === 0 ? "bg-orange-50 hover:bg-orange-100" : "bg-white hover:bg-orange-50"}
                     >
+                      <td className="px-2 lg:px-4 py-4 whitespace-nowrap font-medium text-orange-900 text-sm">
+                        {idx + 1}
+                      </td>
                       <td className="px-2 lg:px-4 py-4 whitespace-nowrap font-medium text-orange-900 text-sm">
                         {chokhla.name}
                       </td>
