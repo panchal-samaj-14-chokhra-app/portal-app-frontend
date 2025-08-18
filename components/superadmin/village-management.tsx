@@ -48,6 +48,9 @@ export default function VillageManagement({ villages, isLoading }: VillageManage
             <table className="w-full divide-y divide-orange-200">
               <thead className="bg-gradient-to-r from-orange-400 to-orange-500">
                 <tr>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                    क्रम संख्या
+                  </th>
                   <th className="px-2 lg:px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
                     नाम
                   </th>
@@ -72,6 +75,9 @@ export default function VillageManagement({ villages, isLoading }: VillageManage
                       key={village.id}
                       className={idx % 2 === 0 ? "bg-orange-50 hover:bg-orange-100" : "bg-white hover:bg-orange-50"}
                     >
+                      <td className="px-2 lg:px-6 py-4 whitespace-nowrap font-medium text-orange-900 text-sm">
+                        {idx + 1}
+                      </td>
                       <td className="px-2 lg:px-6 py-4 whitespace-nowrap font-medium text-orange-900 text-sm">
                         {village.name}
                       </td>
