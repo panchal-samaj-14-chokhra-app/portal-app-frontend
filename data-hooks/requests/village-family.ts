@@ -102,3 +102,9 @@ export const registerUser = async (payload) => {
   const { data } = await request.post(`/api/auth/register`, payload);
   return data;
 };
+
+
+export const updatePerson = async ({ id, payload }: { id: string; payload: any }) => {
+  const { data } = await request.put(`/person/update/${id}`, payload);
+  return data;
+}
