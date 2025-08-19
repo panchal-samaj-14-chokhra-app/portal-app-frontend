@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
 
@@ -146,6 +146,15 @@ export const useUpdatePerson = (): ReturnType<typeof useMutation> => {
     mutationFn: ({ id, payload }: { id: string; payload: any }) => updatePerson({ id, payload }),
   });
 };
+export const useToggleUserStatus = (): ReturnType<typeof useMutation> => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => toggleUserStatus(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    },
+  });
+};
 
 export const useGetAllUserList = () => {
   return useQuery({
@@ -153,3 +162,14 @@ export const useGetAllUserList = () => {
     queryFn: getAlluserList
   });
 };
+
+
+export const useRegisterUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: registerUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    },
+  })
+}

@@ -5,6 +5,8 @@ import {
   useAllChokhlas,
   useCreateChokhla,
   useGetAllUserList,
+  useToggleUserStatus,
+  useRegisterUser,
 } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
@@ -22,6 +24,7 @@ import ProfileView from "@/components/superadmin/profile-view"
 import AddChokhlaForm from "@/components/superadmin/add-chokhla-form"
 import SuccessModal from "@/components/superadmin/success-modal"
 import ErrorModal from "@/components/superadmin/error-modal"
+import AddUserForm from "@/components/superadmin/add-user-form"
 
 const SIDEBAR_TABS = [
   { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
@@ -43,6 +46,8 @@ interface CreatedData {
 function SuperAdmin() {
   const [activeTab, setActiveTab] = useState("village")
   const [openChokhlaModal, setOpenChokhlaModal] = useState(false)
+  const [openAddUserModal, setOpenAddUserModal] = useState(false)
+
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
@@ -54,8 +59,8 @@ function SuperAdmin() {
   const { data: chokhlas, isLoading: isChokhlasLoading } = useAllChokhlas()
   const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList()
   const { mutate: createChokhla } = useCreateChokhla()
-
-  const router = useRouter()
+  const { mutate: registerUser, isLoading: creatingUser, isError, error } = useRegisterUser()
+  const { mutate, isLoading: loading } = useToggleUserStatus();
   const { data: userData } = useSession()
 
   const handleChokhlaSubmit = (formData: any) => {
@@ -83,10 +88,52 @@ function SuperAdmin() {
     })
   }
 
+  const handleUserSubmit = (formData: any) => {
+    registerUser(formData, {
+      onSuccess: (data) => {
+        if (!data?.userId) {
+          setErrorMessage("सर्वर से उपयोगकर्ता जानकारी प्राप्त नहीं हुई");
+          setShowErrorModal(true);
+          return;
+        }
+
+        setCreatedData({
+          chokhlaId: formData.choklaId,
+          userId: data.userId,
+          password: formData.password,
+          email: formData.email,
+          fullName: formData.fullName,
+          role: formData.globalRole,
+        });
+
+        setOpenAddUserModal(false);
+        setShowSuccessModal(true);
+      },
+      onError: (error: any) => {
+        console.error("Registration error:", error);
+        setErrorMessage(error?.message || "उपयोगकर्ता पंजीकरण में त्रुटि हुई");
+        setShowErrorModal(true);
+      },
+    });
+  };
+
   const handleToggleActive = (userId: string, current: boolean) => {
-    console.log("Toggle user active status:", userId, current)
-    // Implement toggle functionality here
-  }
+    const action = current ? 'deactivate' : 'activate';
+
+    const confirmToggle = window.confirm(`Are you sure you want to ${action} this user?`);
+    if (!confirmToggle) return;
+
+    mutate(userId, {
+      onSuccess: (data) => {
+        window.alert(data?.message || `User successfully ${action}d.`);
+        // window.location.reload(); // reload only after alert is acknowledged
+      },
+      onError: (error: any) => {
+        const errorMessage = error?.response?.data?.error || error.message || 'Something went wrong';
+        window.alert(`Error: ${errorMessage}`);
+      }
+    });
+  };
 
   const handleLogout = () => signOut({ callbackUrl: "/login" })
 
@@ -107,9 +154,10 @@ function SuperAdmin() {
       case "user":
         return (
           <UserManagement
+            onAddUser={() => setOpenAddUserModal(true)}
             users={users || []}
             isLoading={usersLoading}
-            error={usersError ? "डेटा लोड करने में त्रुटि" : null}
+            error={(usersError || loading) ? "डेटा लोड करने में त्रुटि" : null}
             onToggleActive={handleToggleActive}
           />
         )
@@ -166,11 +214,10 @@ function SuperAdmin() {
                       key={tab.key}
                       variant={activeTab === tab.key ? "default" : "ghost"}
                       onClick={() => setActiveTab(tab.key)}
-                      className={`flex-shrink-0 min-w-[100px] lg:w-full justify-center lg:justify-start text-sm font-semibold transition-all duration-200 px-3 py-2 ${
-                        activeTab === tab.key
-                          ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
-                          : "text-orange-700 hover:bg-orange-100 hover:text-orange-800"
-                      }`}
+                      className={`flex-shrink-0 min-w-[100px] lg:w-full justify-center lg:justify-start text-sm font-semibold transition-all duration-200 px-3 py-2 ${activeTab === tab.key
+                        ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
+                        : "text-orange-700 hover:bg-orange-100 hover:text-orange-800"
+                        }`}
                     >
                       <Icon className="w-4 h-4 mr-2 lg:mr-3 flex-shrink-0" />
                       <span className="truncate">
@@ -195,6 +242,15 @@ function SuperAdmin() {
         onClose={() => setOpenChokhlaModal(false)}
         onSubmit={handleChokhlaSubmit}
         isSubmitting={isSubmitting}
+      />
+
+      <AddUserForm
+        isOpen={openAddUserModal}
+        onClose={() => setOpenAddUserModal(false)}
+        onSubmit={handleUserSubmit}
+        isSubmitting={creatingUser}
+        chokhlaList={chokhlas || []}
+        villages={villages?.data || []}
       />
 
       <SuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} data={createdData} />

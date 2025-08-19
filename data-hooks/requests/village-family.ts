@@ -91,8 +91,14 @@ export const removeMember = async (id: any) => {
   return { data };
 }
 
-export const updatePerson = async ({ id, payload }: { id: string; payload: any }) => {
-  const { data } =
-    await request.put(`/person/update/${id}`, payload);
-  return { data };
+// toggleUserStatus.ts
+export const toggleUserStatus = async (userId: string) => {
+  const { data } = await request.put(`/api/auth/${userId}/toggle-status`);
+  return data;
+};
+
+
+export const registerUser = async (payload) => {
+  const { data } = await request.post(`/api/auth/register`, payload);
+  return data;
 };
