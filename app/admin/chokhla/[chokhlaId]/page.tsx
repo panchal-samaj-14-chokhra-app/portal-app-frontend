@@ -6,9 +6,9 @@ import { useForm } from "react-hook-form"
 import { useParams, useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, ArrowLeft, Home, BarChart3, FileText, User, Menu, X } from "lucide-react"
+import { LogOut, ArrowLeft, Home, BarChart3, FileText, User, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   AlertDialog,
@@ -58,7 +58,7 @@ function Chokhla() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   // API hooks
@@ -137,6 +137,11 @@ function Chokhla() {
     router.push(`/admin/village/${villageId}?chakolaId=${chokhlaId}`)
   }
 
+  const handleTabChange = (tabKey: string) => {
+    setActiveTab(tabKey)
+    setMobileMenuOpen(false)
+  }
+
   const onSubmit = (data: any) => {
     const plainPassword = data.password
     createVillage(
@@ -164,7 +169,7 @@ function Chokhla() {
   }
 
   // Render tab content
-  const renderTabContent = () => {
+  const renderActiveTab = () => {
     switch (activeTab) {
       case "village":
         return (
@@ -204,146 +209,105 @@ function Chokhla() {
     }
   }
 
-  // Desktop Sidebar Component
-  const DesktopSidebar = () => (
-    <aside className="hidden lg:block w-64 flex-shrink-0">
-      <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-orange-200/50 h-fit sticky top-6">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-orange-800 mb-4">नेवीगेशन</h2>
-          <nav className="space-y-2">
-            {SIDEBAR_TABS.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <Button
-                  key={tab.key}
-                  variant={activeTab === tab.key ? "default" : "ghost"}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`w-full justify-start text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
-                      : "text-orange-700 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
-                >
-                  <Icon className="w-4 h-4 mr-3" />
-                  {tab.label}
-                </Button>
-              )
-            })}
-          </nav>
-        </div>
-      </Card>
-    </aside>
-  )
+  const getCurrentTabLabel = () => {
+    const currentTab = SIDEBAR_TABS.find((tab) => tab.key === activeTab)
+    return currentTab?.label || "चोखरा प्रबंधन"
+  }
 
-  // Mobile Sidebar Component
-  const MobileSidebar = () => (
-    <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="lg:hidden bg-white/10 border-white/20 text-white hover:bg-white/20"
-        >
-          <Menu className="w-4 h-4" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-80 p-0">
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+              {/* Mobile Menu Button */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden bg-white/10 border-white/20 text-white hover:bg-white/20 flex-shrink-0"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 bg-white p-0">
+                  <div className="flex flex-col h-full">
+                    <div className="p-6 border-b bg-gradient-to-r from-orange-500 to-orange-600">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Image
+                            src="/images/main-logo.png"
+                            alt="Panchal Samaj Logo"
+                            width={40}
+                            height={40}
+                            className="rounded-full shadow-lg"
+                          />
+                          <div>
+                            <h2 className="text-white font-bold text-lg">चोखरा प्रबंधन</h2>
+                            <p className="text-orange-100 text-sm">{chokhla?.name}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <nav className="flex-1 p-4">
+                      <div className="space-y-2">
+                        {SIDEBAR_TABS.map((tab) => {
+                          const Icon = tab.icon
+                          return (
+                            <Button
+                              key={tab.key}
+                              variant={activeTab === tab.key ? "default" : "ghost"}
+                              onClick={() => handleTabChange(tab.key)}
+                              className={`w-full justify-start text-left font-medium transition-all duration-200 ${
+                                activeTab === tab.key
+                                  ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
+                                  : "text-gray-700 hover:bg-orange-50 hover:text-orange-800"
+                              }`}
+                            >
+                              <Icon className="w-5 h-5 mr-3" />
+                              {tab.label}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </nav>
+                    <div className="p-4 border-t">
+                      <Button
+                        onClick={handleLogoutClick}
+                        variant="outline"
+                        className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
+                      >
+                        <LogOut className="w-4 h-4 mr-3" />
+                        लॉगआउट
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
               <Image
                 src="/images/main-logo.png"
                 alt="Panchal Samaj Logo"
                 width={40}
                 height={40}
-                className="rounded-full shadow-lg"
+                className="sm:w-[50px] sm:h-[50px] rounded-full shadow-lg flex-shrink-0"
               />
-              <div>
-                <h2 className="text-white font-semibold text-lg">चोखरा प्रबंधन</h2>
-                <p className="text-orange-100 text-sm">{chokhla?.name}</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(false)}
-              className="text-white hover:bg-white/20"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <nav className="space-y-2">
-            {SIDEBAR_TABS.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <Button
-                  key={tab.key}
-                  variant={activeTab === tab.key ? "default" : "ghost"}
-                  onClick={() => {
-                    setActiveTab(tab.key)
-                    setSidebarOpen(false)
-                  }}
-                  className={`w-full justify-start text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
-                      : "text-orange-700 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
-                >
-                  <Icon className="w-4 h-4 mr-3" />
-                  {tab.label}
-                </Button>
-              )
-            })}
-          </nav>
-
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <Button
-              onClick={handleLogoutClick}
-              variant="outline"
-              className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 bg-transparent"
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              लॉगआउट
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 lg:py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <MobileSidebar />
-              <Image
-                src="/images/main-logo.png"
-                alt="Panchal Samaj Logo"
-                width={50}
-                height={50}
-                className="rounded-full shadow-lg"
-              />
-              <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
-                  {chokhla?.name || "चोखरा प्रबंधन"}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">
+                  <span className="hidden md:inline">{chokhla?.name || "चोखरा प्रबंधन"}</span>
+                  <span className="md:hidden">{getCurrentTabLabel()}</span>
                 </h1>
-                <p className="text-orange-100 text-sm truncate">स्वागत है, {session?.user?.name}</p>
+                <p className="text-orange-100 text-xs sm:text-sm truncate">स्वागत है, {session?.user?.name}</p>
               </div>
             </div>
-
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {userType === "SUPER_ADMIN" && (
                 <Button
                   onClick={handleBack}
                   variant="outline"
-                  size="sm"
-                  className="hidden sm:flex bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 hidden md:flex text-sm"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   वापस जॉए
@@ -352,29 +316,49 @@ function Chokhla() {
               <Button
                 onClick={handleLogoutClick}
                 variant="outline"
-                size="sm"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hidden md:flex text-sm"
               >
-                <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">लॉगआउट</span>
+                <LogOut className="w-4 h-4 mr-2" />
+                लॉगआउट
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 lg:py-8">
-        <div className="flex gap-6">
-          <DesktopSidebar />
-
-          {/* Content Area */}
-          <div className="flex-1 min-w-0">
-            <div className="bg-white rounded-lg shadow-sm border border-orange-100 min-h-[600px]">
-              {renderTabContent()}
-            </div>
-          </div>
+      {/* Desktop Tab Navigation */}
+      <div className="hidden md:block bg-white border-b shadow-sm">
+        <div className="w-full px-4 lg:px-6">
+          <Card className="bg-white/90 backdrop-blur-sm shadow-none border-0 rounded-none">
+            <CardContent className="p-0">
+              <nav className="flex overflow-x-auto">
+                {SIDEBAR_TABS.map((tab) => {
+                  const Icon = tab.icon
+                  return (
+                    <Button
+                      key={tab.key}
+                      variant="ghost"
+                      onClick={() => handleTabChange(tab.key)}
+                      className={`flex-shrink-0 min-w-[140px] justify-center text-sm font-semibold transition-all duration-200 px-6 py-4 rounded-none border-b-2 ${
+                        activeTab === tab.key
+                          ? "border-orange-500 text-orange-600 bg-orange-50"
+                          : "border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {tab.label}
+                    </Button>
+                  )
+                })}
+              </nav>
+            </CardContent>
+          </Card>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+        <div className="w-full max-w-full">{renderActiveTab()}</div>
       </main>
 
       {/* Logout Confirmation Dialog */}
@@ -385,12 +369,14 @@ function Chokhla() {
               <LogOut className="w-5 h-5" />
               लॉगआउट की पुष्टि करें
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-600">
+            <AlertDialogDescription className="text-gray-700">
               क्या आप वाकई लॉगआउट करना चाहते हैं? आपको दोबारा लॉगिन करना होगा।
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleLogoutCancel}>रद्द करें</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleLogoutCancel} className="bg-gray-100 hover:bg-gray-200">
+              रद्द करें
+            </AlertDialogCancel>
             <AlertDialogAction onClick={handleLogoutConfirm} className="bg-red-600 hover:bg-red-700 text-white">
               हां, लॉगआउट करें
             </AlertDialogAction>
