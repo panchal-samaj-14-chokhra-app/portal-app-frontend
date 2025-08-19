@@ -14,6 +14,16 @@ import { LogOut, Home, Building2, BarChart3, Users, User, Menu } from "lucide-re
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // Import components
 import VillageManagement from "@/components/superadmin/village-management"
@@ -48,6 +58,7 @@ function SuperAdmin() {
   const [openChokhlaModal, setOpenChokhlaModal] = useState(false)
   const [openAddUserModal, setOpenAddUserModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
@@ -135,7 +146,18 @@ function SuperAdmin() {
     })
   }
 
-  const handleLogout = () => signOut({ callbackUrl: "/login" })
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false)
+    signOut({ callbackUrl: "/login" })
+  }
+
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirm(false)
+  }
 
   const handleTabChange = (tabKey: string) => {
     setActiveTab(tabKey)
@@ -239,7 +261,7 @@ function SuperAdmin() {
                     </nav>
                     <div className="p-4 border-t">
                       <Button
-                        onClick={handleLogout}
+                        onClick={handleLogoutClick}
                         variant="outline"
                         className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
                       >
@@ -268,7 +290,7 @@ function SuperAdmin() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <Button
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 variant="outline"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20 hidden md:flex text-sm"
               >
@@ -314,6 +336,29 @@ function SuperAdmin() {
       <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
         <div className="w-full max-w-full">{renderActiveTab()}</div>
       </main>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent className="sm:max-w-[420px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-orange-700">
+              <LogOut className="w-5 h-5" />
+              लॉगआउट की पुष्टि करें
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-700">
+              क्या आप वाकई लॉगआउट करना चाहते हैं? आपको दोबारा लॉगिन करना होगा।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleLogoutCancel} className="bg-gray-100 hover:bg-gray-200">
+              रद्द करें
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogoutConfirm} className="bg-red-600 hover:bg-red-700 text-white">
+              हां, लॉगआउट करें
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modals */}
       <AddChokhlaForm
