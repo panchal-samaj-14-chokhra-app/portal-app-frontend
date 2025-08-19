@@ -127,7 +127,6 @@ function SuperAdmin() {
     mutate(userId, {
       onSuccess: (data) => {
         window.alert(data?.message || `User successfully ${action}d.`)
-        // window.location.reload(); // reload only after alert is acknowledged
       },
       onError: (error: any) => {
         const errorMessage = error?.response?.data?.error || error.message || "Something went wrong"
@@ -140,7 +139,7 @@ function SuperAdmin() {
 
   const handleTabChange = (tabKey: string) => {
     setActiveTab(tabKey)
-    setMobileMenuOpen(false) // Close mobile menu when tab is selected
+    setMobileMenuOpen(false)
   }
 
   const renderActiveTab = () => {
@@ -183,16 +182,16 @@ function SuperAdmin() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
       {/* Header */}
       <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-6">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               {/* Mobile Menu Button */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    className="md:hidden bg-white/10 border-white/20 text-white hover:bg-white/20 flex-shrink-0"
                   >
                     <Menu className="w-5 h-5" />
                   </Button>
@@ -255,23 +254,23 @@ function SuperAdmin() {
               <Image
                 src="/images/main-logo.png"
                 alt="Panchal Samaj Logo"
-                width={50}
-                height={50}
-                className="rounded-full shadow-lg"
+                width={40}
+                height={40}
+                className="sm:w-[50px] sm:h-[50px] rounded-full shadow-lg flex-shrink-0"
               />
-              <div className="min-w-0">
-                <h1 className="text-xl md:text-2xl font-bold text-white truncate">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">
                   <span className="hidden md:inline">पंचाल समाज 14 चोखरा - सुपर एडमिन</span>
                   <span className="md:hidden">{getCurrentTabLabel()}</span>
                 </h1>
-                <p className="text-orange-100 text-sm truncate">स्वागत है, {userData?.user?.name}</p>
+                <p className="text-orange-100 text-xs sm:text-sm truncate">स्वागत है, {userData?.user?.name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hidden md:flex"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hidden md:flex text-sm"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 लॉगआउट
@@ -283,7 +282,7 @@ function SuperAdmin() {
 
       {/* Desktop Tab Navigation */}
       <div className="hidden md:block bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4">
+        <div className="w-full px-4 lg:px-6">
           <Card className="bg-white/90 backdrop-blur-sm shadow-none border-0 rounded-none">
             <CardContent className="p-0">
               <nav className="flex overflow-x-auto">
@@ -312,8 +311,8 @@ function SuperAdmin() {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="min-w-0">{renderActiveTab()}</div>
+      <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+        <div className="w-full max-w-full">{renderActiveTab()}</div>
       </main>
 
       {/* Modals */}
