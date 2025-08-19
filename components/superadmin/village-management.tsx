@@ -16,6 +16,7 @@ interface Village {
   tehsil: string
   district: string
   state: string
+  families: any[]
   chakolaName: string
   familyCount: number
   memberCount: number
@@ -199,7 +200,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                   <TableHead>गांव का नाम</TableHead>
                   <TableHead>गांव सदस्य</TableHead>
                   <TableHead>संपर्क</TableHead>
-                  <TableHead>चोखरा</TableHead>
+
                   <TableHead>स्थान</TableHead>
                   <TableHead className="text-center">परिवार</TableHead>
                   <TableHead className="text-center">सदस्य</TableHead>
@@ -226,11 +227,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                         </div>
                       </TableCell>
                       <TableCell>{village.mobileNumber}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          {village.chakolaName}
-                        </Badge>
-                      </TableCell>
+
                       <TableCell>
                         <div className="text-sm">
                           <div>{village.tehsil}</div>
@@ -241,7 +238,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline" className="bg-green-50 text-green-700">
-                          {village.familyCount || 0}
+                          {village.families.length || 0}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">

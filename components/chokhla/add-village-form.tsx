@@ -74,7 +74,7 @@ export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating,
     onOpenChange(false)
   }
 
-  if (userType !== "CHOKHLA_MEMBER" && userType !== "SUPER_ADMIN") {
+  if (userType !== "CHOKHLA_MEMBER") {
     return null
   }
 

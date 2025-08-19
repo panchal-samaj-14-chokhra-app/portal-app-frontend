@@ -35,7 +35,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, isLoading, error
     switch (role) {
       case "SUPER_ADMIN":
         return <Badge className="bg-red-100 text-red-700 border-red-200">सुपर एडमिन</Badge>
-      case "CHOKHLA_ADMIN":
+      case "CHOKHLA_MEMBER":
         return <Badge className="bg-blue-100 text-blue-700 border-blue-200">चोखरा एडमिन</Badge>
       case "VILLAGE_MEMBER":
         return <Badge className="bg-green-100 text-green-700 border-green-200">गांव सदस्य</Badge>
@@ -258,7 +258,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, isLoading, error
                   <TableHead>नाम</TableHead>
                   <TableHead>ईमेल</TableHead>
                   <TableHead>भूमिका</TableHead>
-                  <TableHead>गांव/चोखरा</TableHead>
                   <TableHead>स्थिति</TableHead>
                   <TableHead>पंजीकरण तिथि</TableHead>
                   <TableHead className="text-center">सक्रिय/निष्क्रिय</TableHead>
@@ -286,13 +285,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, isLoading, error
                         </div>
                       </TableCell>
                       <TableCell>{getRoleBadge(user.globalRole)}</TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <div className="text-sm">
                           {user.village && <div className="text-green-600">गांव: {user.village.name}</div>}
                           {user.chokhla && <div className="text-blue-600">चोखरा: {user.chokhla.name}</div>}
                           {!user.village && !user.chokhla && <span className="text-gray-500">-</span>}
                         </div>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>{getStatusBadge(user.isActive)}</TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {new Date(user.createdAt).toLocaleDateString("hi-IN")}

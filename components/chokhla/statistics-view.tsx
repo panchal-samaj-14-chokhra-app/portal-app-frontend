@@ -47,8 +47,8 @@ export function StatisticsView({ chokhla }: StatisticsViewProps) {
   const villages = chokhla?.villages || []
 
   const totalMembers = (stats.genders?.MALE || 0) + (stats.genders?.FEMALE || 0) + (stats.genders?.OTHER || 0)
-  const totalVillages = villages.length
-  const totalFamilies = villages.reduce((acc, village) => acc + (village._count?.families || 0), 0)
+  const totalVillages = chokhla?.stats?.villageCount || villages.length
+  const totalFamilies = chokhla?.stats?.familyCount || villages.reduce((sum, village) => sum + (village._count?.families || 0), 0)
   const villagesWithSchool = villages.filter((v) => v.isVillageHaveSchool).length
   const villagesWithHealthcare = villages.filter((v) => v.isVillageHavePrimaryHealthCare).length
   const villagesWithCommunityHall = villages.filter((v) => v.isVillageHaveCommunityHall).length

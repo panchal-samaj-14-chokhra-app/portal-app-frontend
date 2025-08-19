@@ -83,7 +83,7 @@ function SuperAdmin() {
         setCreatedData({
           chokhlaId: chokhla.id,
           userId: user.id,
-          password: user.passwordHash,
+          password: formData.password,
           email: user.email,
           fullName: user.fullName,
           role: user.globalRole,
@@ -246,11 +246,10 @@ function SuperAdmin() {
                               key={tab.key}
                               variant={activeTab === tab.key ? "default" : "ghost"}
                               onClick={() => handleTabChange(tab.key)}
-                              className={`w-full justify-start text-left font-medium transition-all duration-200 ${
-                                activeTab === tab.key
-                                  ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
-                                  : "text-gray-700 hover:bg-orange-50 hover:text-orange-800"
-                              }`}
+                              className={`w-full justify-start text-left font-medium transition-all duration-200 ${activeTab === tab.key
+                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
+                                : "text-gray-700 hover:bg-orange-50 hover:text-orange-800"
+                                }`}
                             >
                               <Icon className="w-5 h-5 mr-3" />
                               {tab.label}
@@ -315,11 +314,10 @@ function SuperAdmin() {
                       key={tab.key}
                       variant="ghost"
                       onClick={() => handleTabChange(tab.key)}
-                      className={`flex-shrink-0 min-w-[140px] justify-center text-sm font-semibold transition-all duration-200 px-6 py-4 rounded-none border-b-2 ${
-                        activeTab === tab.key
-                          ? "border-orange-500 text-orange-600 bg-orange-50"
-                          : "border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50"
-                      }`}
+                      className={`flex-shrink-0 min-w-[140px] justify-center text-sm font-semibold transition-all duration-200 px-6 py-4 rounded-none border-b-2 ${activeTab === tab.key
+                        ? "border-orange-500 text-orange-600 bg-orange-50"
+                        : "border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                        }`}
                     >
                       <Icon className="w-4 h-4 mr-2" />
                       {tab.label}

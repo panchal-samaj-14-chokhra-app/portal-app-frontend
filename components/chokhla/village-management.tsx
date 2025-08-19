@@ -159,7 +159,7 @@ export function VillageManagement({
               <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई गांव नहीं मिला</h3>
               <p className="text-gray-600 mb-4">अभी तक कोई गांव नहीं जोड़ा गया है।</p>
-              {(userType === "CHOKHLA_MEMBER" || userType === "SUPER_ADMIN") && (
+              {(userType === "CHOKHLA_MEMBER") && (
                 <Button
                   onClick={() => onOpenChange(true)}
                   className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
@@ -281,9 +281,8 @@ export function VillageManagement({
                       {villages.map((village, index) => (
                         <TableRow
                           key={village.id}
-                          className={`transition-colors duration-200 ${
-                            index % 2 === 0 ? "bg-orange-50 hover:bg-orange-100" : "bg-white hover:bg-orange-50"
-                          }`}
+                          className={`transition-colors duration-200 ${index % 2 === 0 ? "bg-orange-50 hover:bg-orange-100" : "bg-white hover:bg-orange-50"
+                            }`}
                         >
                           <TableCell className="px-4 py-4 whitespace-nowrap">
                             <Badge className="bg-orange-100 text-orange-700 border-orange-200">{index + 1}</Badge>
