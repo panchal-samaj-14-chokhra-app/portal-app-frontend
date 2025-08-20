@@ -1,15 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Eye, EyeOff, MapPin, Phone, Lock, Building, School, Heart } from "lucide-react"
 import type { UseFormReturn } from "react-hook-form"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { Plus, Eye, EyeOff, Loader2 } from "lucide-react"
+import { SelectInput } from "@/components/group-component/family-form/employment-info-section"
+import { statesAndDistricts } from "@/components/group-component/family-form/constants"
 
 interface AddVillageFormProps {
   open: boolean
@@ -17,438 +17,420 @@ interface AddVillageFormProps {
   form: UseFormReturn<any>
   onSubmit: (data: any) => void
   isCreating: boolean
-  userType?: string
-}
-
-const STATES = [
-  "गुजरात",
-  "राजस्थान",
-  "महाराष्ट्र",
-  "मध्य प्रदेश",
-  "उत्तर प्रदेश",
-  "बिहार",
-  "पश्चिम बंगाल",
-  "तमिलनाडु",
-  "कर्नाटक",
-  "आंध्र प्रदेश",
-]
-
-const DISTRICTS: Record<string, string[]> = {
-  गुजरात: ["अहमदाबाद", "सूरत", "वडोदरा", "राजकोट", "भावनगर", "जामनगर", "जूनागढ़", "गांधीनगर"],
-  राजस्थान: ["जयपुर", "जोधपुर", "उदयपुर", "कोटा", "बीकानेर", "अजमेर", "भरतपुर", "अलवर"],
-  महाराष्ट्र: ["मुंबई", "पुणे", "नागपुर", "नाशिक", "औरंगाबाद", "सोलापुर", "अमरावती", "कोल्हापुर"],
-  "मध्य प्रदेश": ["भोपाल", "इंदौर", "ग्वालियर", "जबलपुर", "उज्जैन", "सागर", "देवास", "रतलाम"],
-  "उत्तर प्रदेश": ["लखनऊ", "कानपुर", "आगरा", "वाराणसी", "मेरठ", "इलाहाबाद", "बरेली", "अलीगढ़"],
-  बिहार: ["पटना", "गया", "भागलपुर", "मुजफ्फरपुर", "दरभंगा", "बिहार शरीफ", "आरा", "पूर्णिया"],
-  "पश्चिम बंगाल": ["कोलकाता", "हावड़ा", "दुर्गापुर", "आसनसोल", "सिलीगुड़ी", "बर्धमान", "मालदा", "खड़गपुर"],
-  तमिलनाडु: ["चेन्नई", "कोयंबटूर", "मदुरै", "तिरुचिरापल्ली", "सेलम", "तिरुनेलवेली", "इरोड", "वेल्लोर"],
-  कर्नाटक: ["बेंगलुरु", "मैसूर", "हुबली", "मंगलुरु", "बेलगावी", "गुलबर्गा", "दावणगेरे", "बीजापुर"],
-  "आंध्र प्रदेश": ["विशाखापत्तनम", "विजयवाड़ा", "गुंटूर", "नेल्लोर", "कुर्नूल", "राजमहेंद्रवरम", "तिरुपति", "काकीनाडा"],
+  userType: string | undefined
 }
 
 export function AddVillageForm({ open, onOpenChange, form, onSubmit, isCreating, userType }: AddVillageFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showRepeatPassword, setShowRepeatPassword] = useState(false)
-  const [selectedState, setSelectedState] = useState("")
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-    reset,
-  } = form
+  if (userType !== "CHOKHLA_MEMBER") return null
 
-  const watchedState = watch("state")
+  // Get state options from constants
+  const stateOptions = Object.keys(statesAndDistricts).map((state) => ({
+    label: state,
+    value: state,
+  }))
 
-  const handleStateChange = (state: string) => {
-    setSelectedState(state)
-    setValue("state", state)
-    setValue("district", "") // Reset district when state changes
+  // Get district options based on selected state
+  const selectedState = form.watch("state")
+  const districtOptions =
+    selectedState && statesAndDistricts[selectedState]
+      ? statesAndDistricts[selectedState].map((district) => ({
+        label: district,
+        value: district,
+      }))
+      : []
+
+  const handleStateChange = (value: string) => {
+    form.setValue("state", value)
+    form.setValue("district", "") // Clear district when state changes
   }
 
-  const handleClose = () => {
-    reset()
-    setSelectedState("")
-    onOpenChange(false)
-  }
-
-  if (userType !== "CHOKHLA_MEMBER") {
-    return null
+  const handleDistrictChange = (value: string) => {
+    form.setValue("district", value)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
+        <Button
+          variant="outline"
+          className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-none hover:from-orange-600 hover:to-orange-700 shadow-lg w-full sm:w-auto"
+        >
           <Plus className="w-4 h-4 mr-2" />
-          नया गांव जोड़ें
+          गांव जोड़ें
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden p-2 sm:p-4 lg:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-orange-700 flex items-center">
-            <MapPin className="w-5 h-5 mr-2" />
-            नया गांव जोड़ें
-          </DialogTitle>
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-orange-800 text-center">नया गांव जोड़ें</DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Information */}
-          <Card className="border-orange-200/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-800 flex items-center">
-                <Building className="w-5 h-5 mr-2 text-orange-500" />
-                बुनियादी जानकारी
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                    गांव का नाम *
-                  </Label>
-                  <Input
-                    id="name"
-                    {...register("name", { required: "गांव का नाम आवश्यक है" })}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="गांव का नाम दर्ज करें"
+        <div className="max-h-[70vh] overflow-y-auto px-1">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+              {/* Basic Information Section */}
+              <div className="bg-orange-50 rounded-lg p-3 sm:p-4 border border-orange-200">
+                <h3 className="text-base sm:text-lg font-semibold text-orange-800 mb-3 sm:mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  बुनियादी जानकारी
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <FormField
+                    name="name"
+                    control={form.control}
+                    rules={{ required: "गांव का नाम आवश्यक है" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-orange-700 font-medium text-sm">गांव का नाम *</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="border-orange-300 focus:border-orange-500 text-sm" />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
                   />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="villageMemberName" className="text-sm font-medium text-gray-700">
-                    गांव प्रतिनिधि का नाम *
-                  </Label>
-                  <Input
-                    id="villageMemberName"
-                    {...register("villageMemberName", { required: "प्रतिनिधि का नाम आवश्यक है" })}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="प्रतिनिधि का नाम दर्ज करें"
+                  <FormField
+                    name="villageMemberName"
+                    control={form.control}
+                    rules={{ required: "गांव सदस्य का नाम आवश्यक है" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-orange-700 font-medium text-sm">गांव सदस्य का नाम *</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="border-orange-300 focus:border-orange-500 text-sm" />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
                   />
-                  {errors.villageMemberName && (
-                    <p className="text-red-500 text-sm mt-1">{errors.villageMemberName.message}</p>
-                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Contact Information */}
-          <Card className="border-orange-200/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-800 flex items-center">
-                <Phone className="w-5 h-5 mr-2 text-orange-500" />
-                संपर्क जानकारी
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="mobileNumber" className="text-sm font-medium text-gray-700">
-                    मोबाइल नंबर *
-                  </Label>
-                  <Input
-                    id="mobileNumber"
-                    {...register("mobileNumber", {
+              {/* Contact Information Section */}
+              <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
+                <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3 sm:mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  संपर्क जानकारी
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <FormField
+                    name="mobileNumber"
+                    control={form.control}
+                    rules={{
                       required: "मोबाइल नंबर आवश्यक है",
                       pattern: {
                         value: /^[6-9]\d{9}$/,
                         message: "वैध मोबाइल नंबर दर्ज करें",
                       },
-                    })}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="10 अंकों का मोबाइल नंबर"
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-700 font-medium text-sm">मोबाइल नंबर *</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="tel" className="border-blue-300 focus:border-blue-500 text-sm" />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
                   />
-                  {errors.mobileNumber && <p className="text-red-500 text-sm mt-1">{errors.mobileNumber.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                    ईमेल पता *
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register("email", {
-                      required: "ईमेल पता आवश्यक है",
+                  <FormField
+                    name="email"
+                    control={form.control}
+                    rules={{
+                      required: "ईमेल आवश्यक है",
                       pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                         message: "वैध ईमेल पता दर्ज करें",
                       },
-                    })}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="example@email.com"
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-700 font-medium text-sm">ईमेल *</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" className="border-blue-300 focus:border-blue-500 text-sm" />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
                   />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="age" className="text-sm font-medium text-gray-700">
-                    आयु
-                  </Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    {...register("age", {
+                  <FormField
+                    name="age"
+                    control={form.control}
+                    rules={{
+                      required: "आयु आवश्यक है",
                       min: { value: 18, message: "आयु कम से कम 18 वर्ष होनी चाहिए" },
-                      max: { value: 100, message: "आयु 100 वर्ष से अधिक नहीं हो सकती" },
-                    })}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="आयु दर्ज करें"
-                  />
-                  {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age.message}</p>}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Location Information */}
-          <Card className="border-orange-200/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-800 flex items-center">
-                <MapPin className="w-5 h-5 mr-2 text-orange-500" />
-                स्थान की जानकारी
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="state" className="text-sm font-medium text-gray-700">
-                    राज्य *
-                  </Label>
-                  <Select onValueChange={handleStateChange} value={watchedState}>
-                    <SelectTrigger className="mt-1 border-orange-200 focus:border-orange-500">
-                      <SelectValue placeholder="राज्य चुनें" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATES.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="district" className="text-sm font-medium text-gray-700">
-                    जिला *
-                  </Label>
-                  <Select onValueChange={(value) => setValue("district", value)} disabled={!watchedState}>
-                    <SelectTrigger className="mt-1 border-orange-200 focus:border-orange-500">
-                      <SelectValue placeholder="जिला चुनें" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {watchedState &&
-                        DISTRICTS[watchedState]?.map((district) => (
-                          <SelectItem key={district} value={district}>
-                            {district}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.district && <p className="text-red-500 text-sm mt-1">{errors.district.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="tehsil" className="text-sm font-medium text-gray-700">
-                    तहसील *
-                  </Label>
-                  <Input
-                    id="tehsil"
-                    {...register("tehsil", { required: "तहसील आवश्यक है" })}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="तहसील का नाम दर्ज करें"
-                  />
-                  {errors.tehsil && <p className="text-red-500 text-sm mt-1">{errors.tehsil.message}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="longitude" className="text-sm font-medium text-gray-700">
-                    देशांतर (Longitude)
-                  </Label>
-                  <Input
-                    id="longitude"
-                    type="number"
-                    step="any"
-                    {...register("longitude")}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="जैसे: 72.5714"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="latitude" className="text-sm font-medium text-gray-700">
-                    अक्षांश (Latitude)
-                  </Label>
-                  <Input
-                    id="latitude"
-                    type="number"
-                    step="any"
-                    {...register("latitude")}
-                    className="mt-1 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                    placeholder="जैसे: 23.0225"
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-700 font-medium text-sm">आयु *</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" className="border-blue-300 focus:border-blue-500 text-sm" />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Facilities Information */}
-          <Card className="border-orange-200/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-800 flex items-center">
-                <Building className="w-5 h-5 mr-2 text-orange-500" />
-                सुविधाओं की जानकारी
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                  <Checkbox
-                    id="isVillageHaveSchool"
-                    {...register("isVillageHaveSchool")}
-                    className="border-green-300 data-[state=checked]:bg-green-600"
+              {/* Location Information Section */}
+              <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
+                <h3 className="text-base sm:text-lg font-semibold text-green-800 mb-3 sm:mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  स्थान की जानकारी
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <FormField
+                    name="state"
+                    control={form.control}
+                    rules={{ required: "राज्य आवश्यक है" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <SelectInput
+                          label="राज्य"
+                          value={field.value}
+                          options={stateOptions}
+                          onChange={handleStateChange}
+                          placeholder="राज्य चुनें"
+                          required
+                        />
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
                   />
-                  <div className="flex items-center">
-                    <School className="w-5 h-5 text-green-600 mr-2" />
-                    <Label htmlFor="isVillageHaveSchool" className="text-sm font-medium text-green-800">
-                      स्कूल उपलब्ध है
-                    </Label>
-                  </div>
-                </div>
+                  <FormField
+                    name="district"
+                    control={form.control}
+                    rules={{ required: "जिला आवश्यक है" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <SelectInput
+                          label="जिला"
+                          value={field.value}
+                          options={districtOptions}
+                          onChange={handleDistrictChange}
+                          placeholder="जिला चुनें"
+                          required
+                          disabled={!selectedState}
+                        />
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="tehsil"
+                    control={form.control}
+                    rules={{ required: "तहसील आवश्यक है" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-700 font-medium text-sm">तहसील *</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="border-green-300 focus:border-green-500 text-sm" />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="latitude"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-700 font-medium text-sm">अक्षांश</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            step="any"
+                            className="border-green-300 focus:border-green-500 text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="longitude"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-700 font-medium text-sm">देशांतर</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            step="any"
+                            className="border-green-300 focus:border-green-500 text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                  <Checkbox
-                    id="isVillageHavePrimaryHealthCare"
-                    {...register("isVillageHavePrimaryHealthCare")}
-                    className="border-red-300 data-[state=checked]:bg-red-600"
-                  />
-                  <div className="flex items-center">
-                    <Heart className="w-5 h-5 text-red-600 mr-2" />
-                    <Label htmlFor="isVillageHavePrimaryHealthCare" className="text-sm font-medium text-red-800">
-                      स्वास्थ्य केंद्र उपलब्ध है
-                    </Label>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <Checkbox
-                    id="isVillageHaveCommunityHall"
-                    {...register("isVillageHaveCommunityHall")}
-                    className="border-blue-300 data-[state=checked]:bg-blue-600"
-                  />
-                  <div className="flex items-center">
-                    <Building className="w-5 h-5 text-blue-600 mr-2" />
-                    <Label htmlFor="isVillageHaveCommunityHall" className="text-sm font-medium text-blue-800">
-                      सामुदायिक हॉल उपलब्ध है
-                    </Label>
-                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Security Information */}
-          <Card className="border-orange-200/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-800 flex items-center">
-                <Lock className="w-5 h-5 mr-2 text-orange-500" />
-                सुरक्षा जानकारी
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    पासवर्ड *
-                  </Label>
-                  <div className="relative mt-1">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      {...register("password", {
-                        required: "पासवर्ड आवश्यक है",
-                        minLength: { value: 8, message: "पासवर्ड कम से कम 8 अक्षर का होना चाहिए" },
-                        pattern: {
-                          value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                          message: "पासवर्ड में कम से कम एक बड़ा अक्षर, छोटा अक्षर, संख्या और विशेष चिह्न होना चाहिए",
-                        },
-                      })}
-                      className="pr-10 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                      placeholder="मजबूत पासवर्ड दर्ज करें"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+              {/* Facilities Information Section */}
+              <div className="bg-purple-50 rounded-lg p-3 sm:p-4 border border-purple-200">
+                <h3 className="text-base sm:text-lg font-semibold text-purple-800 mb-3 sm:mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  सुविधाओं की जानकारी
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <FormField
+                    name="isVillageHaveSchool"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between p-3 border border-purple-200 rounded-lg bg-white">
+                        <FormLabel className="text-purple-700 font-medium text-sm">स्कूल</FormLabel>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="isVillageHavePrimaryHealthCare"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between p-3 border border-purple-200 rounded-lg bg-white">
+                        <FormLabel className="text-purple-700 font-medium text-sm">स्वास्थ्य केंद्र</FormLabel>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="isVillageHaveCommunityHall"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between p-3 border border-purple-200 rounded-lg bg-white">
+                        <FormLabel className="text-purple-700 font-medium text-sm">कम्युनिटी हॉल</FormLabel>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
+              </div>
 
-                <div>
-                  <Label htmlFor="repeatPassword" className="text-sm font-medium text-gray-700">
-                    पासवर्ड दोबारा दर्ज करें *
-                  </Label>
-                  <div className="relative mt-1">
-                    <Input
-                      id="repeatPassword"
-                      type={showRepeatPassword ? "text" : "password"}
-                      {...register("repeatPassword", {
-                        required: "पासवर्ड की पुष्टि आवश्यक है",
-                        validate: (value) => value === watch("password") || "पासवर्ड मेल नहीं खाते",
-                      })}
-                      className="pr-10 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                      placeholder="पासवर्ड दोबारा दर्ज करें"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowRepeatPassword(!showRepeatPassword)}
-                    >
-                      {showRepeatPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  {errors.repeatPassword && (
-                    <p className="text-red-500 text-sm mt-1">{errors.repeatPassword.message}</p>
+              {/* Security Information Section */}
+              <div className="bg-red-50 rounded-lg p-3 sm:p-4 border border-red-200">
+                <h3 className="text-base sm:text-lg font-semibold text-red-800 mb-3 sm:mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  सुरक्षा जानकारी
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <FormField
+                    name="password"
+                    control={form.control}
+                    rules={{
+                      required: "पासवर्ड आवश्यक है",
+                      minLength: { value: 8, message: "कम से कम 8 अक्षर" },
+                      pattern: {
+                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                        message: "पासवर्ड मजबूत होना चाहिए",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-red-700 font-medium text-sm">पासवर्ड *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              type={showPassword ? "text" : "password"}
+                              className="border-red-300 focus:border-red-500 pr-10 text-sm"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4 text-red-500" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-red-500" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="repeatPassword"
+                    control={form.control}
+                    rules={{
+                      required: "पासवर्ड दोबारा लिखें आवश्यक है",
+                      validate: (value) => value === form.getValues("password") || "पासवर्ड मेल नहीं खाते",
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-red-700 font-medium text-sm">पासवर्ड दोबारा लिखें *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              type={showRepeatPassword ? "text" : "password"}
+                              className="border-red-300 focus:border-red-500 pr-10 text-sm"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowRepeatPassword(!showRepeatPassword)}
+                            >
+                              {showRepeatPassword ? (
+                                <EyeOff className="h-4 w-4 text-red-500" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-red-500" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="border-gray-300 w-full sm:w-auto"
+                >
+                  रद्द करें
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isCreating}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 w-full sm:w-auto"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      सहेजा जा रहा है...
+                    </>
+                  ) : (
+                    "सहेजें"
                   )}
-                </div>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Form Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={isCreating}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-            >
-              {isCreating ? "गांव जोड़ा जा रहा है..." : "गांव जोड़ें"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1 border-gray-300 hover:bg-gray-50 bg-transparent"
-            >
-              रद्द करें
-            </Button>
-          </div>
-        </form>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )
