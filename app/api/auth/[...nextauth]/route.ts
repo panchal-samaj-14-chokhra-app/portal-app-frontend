@@ -33,7 +33,6 @@ const authOptions: AuthOptions = {
           console.log("Login API response:", data)
 
           if (res.ok && data?.userId) {
-            // Map the API response to NextAuth user object
             const user = {
               id: data.userId,
               email: data.email,
@@ -58,7 +57,6 @@ const authOptions: AuthOptions = {
 
   callbacks: {
     async jwt({ token, user }: { token: JWT; user?: User }) {
-      // If user object exists (first time login), add user data to token
       if (user) {
         console.log("Adding user data to JWT token:", user)
         token.id = user.id
@@ -67,12 +65,10 @@ const authOptions: AuthOptions = {
         token.choklaId = (user as any).choklaId
         token.villageId = (user as any).villageId
       }
-      console.log("JWT token:", token)
       return token
     },
 
     async session({ session, token }: { session: Session; token: JWT }) {
-      // Add token data to session
       if (session.user && token) {
         console.log("Adding token data to session:", token)
         ;(session.user as any).id = token.id
@@ -81,8 +77,39 @@ const authOptions: AuthOptions = {
         ;(session.user as any).choklaId = token.choklaId
         ;(session.user as any).villageId = token.villageId
       }
-      console.log("Final session:", session)
       return session
+    },
+
+    async redirect({ url, baseUrl, token }) {
+      console.log("Redirect callback - URL:", url, "BaseURL:", baseUrl)
+
+      // If we have a token with role information, redirect based on role
+      if (token?.role) {
+        const role = token.role as string
+        const villageId = token.villageId as string
+        const choklaId = token.choklaId as string
+
+        console.log("Redirecting based on role:", role, "VillageId:", villageId, "ChoklaId:", choklaId)
+
+        if (role === "SUPER_ADMIN") {
+          const redirectUrl = `${baseUrl}/admin/superadmin`
+          console.log("Redirecting SUPER_ADMIN to:", redirectUrl)
+          return redirectUrl
+        } else if (role === "VILLAGE_MEMBER" && villageId) {
+          const redirectUrl = `${baseUrl}/admin/village/${villageId}`
+          console.log("Redirecting VILLAGE_MEMBER to:", redirectUrl)
+          return redirectUrl
+        } else if (role === "CHOKHLA_MEMBER" && choklaId) {
+          const redirectUrl = `${baseUrl}/admin/chokhla/${choklaId}`
+          console.log("Redirecting CHOKHLA_MEMBER to:", redirectUrl)
+          return redirectUrl
+        }
+      }
+
+      // Default redirect logic
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     },
   },
 
@@ -97,11 +124,9 @@ const authOptions: AuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
-
   debug: process.env.NODE_ENV === "development",
 }
 
 const handler = NextAuth(authOptions)
-
 export { handler as GET, handler as POST }
 export { authOptions }

@@ -8,18 +8,16 @@ export default async function SuperAdminPage() {
 
   console.log("SuperAdminPage: Session check:", session)
 
-  // Check if user is authenticated
   if (!session?.user) {
     console.log("SuperAdminPage: No session, redirecting to login")
     redirect("/login")
   }
 
-  // Check if user has SUPER_ADMIN role
   const userRole = (session.user as any).role
   console.log("SuperAdminPage: User role:", userRole)
 
   if (userRole !== "SUPER_ADMIN") {
-    console.log("SuperAdminPage: User is not SUPER_ADMIN, redirecting to login")
+    console.log("SuperAdminPage: Unauthorized access, redirecting to login")
     redirect("/login")
   }
 
@@ -27,23 +25,12 @@ export default async function SuperAdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Development Authentication Status */}
       {process.env.NODE_ENV === "development" && (
-        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
-          <div className="flex">
-            <div className="ml-3">
-              <p className="text-sm text-green-700">
-                <strong>Authentication Status:</strong> ✅ Authenticated as SUPER_ADMIN
-              </p>
-              <p className="text-xs text-green-600 mt-1">
-                User: {session.user.email} | Role: {(session.user as any).role}
-              </p>
-            </div>
-          </div>
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 text-sm">
+          <strong>Development Mode:</strong> Authenticated as {session.user.email} ({userRole})
         </div>
       )}
-
-      <SuperAdminClient />
+      <SuperAdminClient session={session} />
     </div>
   )
 }

@@ -1,10 +1,8 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Input } from "@/components/ui/input/input"
@@ -15,7 +13,6 @@ export default function LoginForm() {
   const [formData, setFormData] = useState({ email: "", password: "", showPassword: false })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,52 +25,19 @@ export default function LoginForm() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
-        redirect: false, // Handle redirect manually
+        redirect: true, // Let NextAuth handle the redirect
+        callbackUrl: "/login", // This will trigger the redirect callback
       })
 
       console.log("LoginForm: Sign in result:", result)
 
+      // If we reach here and there's an error, show it
       if (result?.error) {
         console.log("LoginForm: Sign in error:", result.error)
         setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।")
         setLoading(false)
-        return
       }
-
-      if (result?.ok) {
-        console.log("LoginForm: Login successful, getting session...")
-
-        // Get the session to access user role
-        const session = await getSession()
-        console.log("LoginForm: Session after login:", session)
-
-        if (session?.user) {
-          const role = (session.user as any).role
-          const villageId = (session.user as any).villageId
-          const choklaId = (session.user as any).choklaId
-
-          console.log("LoginForm: User role:", role, "VillageId:", villageId, "ChoklaId:", choklaId)
-
-          // Redirect based on role
-          let redirectPath = "/"
-
-          if (role === "SUPER_ADMIN") {
-            redirectPath = "/admin/superadmin"
-          } else if (role === "VILLAGE_MEMBER" && villageId) {
-            redirectPath = `/admin/village/${villageId}`
-          } else if (role === "CHOKHLA_MEMBER" && choklaId) {
-            redirectPath = `/admin/chokhla/${choklaId}`
-          }
-
-          console.log("LoginForm: Redirecting to:", redirectPath)
-          router.push(redirectPath)
-          router.refresh() // Force a refresh to ensure middleware runs
-        } else {
-          console.error("LoginForm: No session found after successful login")
-          setError("लॉगिन के बाद सत्र नहीं मिला। कृपया पुनः प्रयास करें।")
-          setLoading(false)
-        }
-      }
+      // If successful, NextAuth will handle the redirect automatically
     } catch (error) {
       console.error("LoginForm: Login error:", error)
       setError("लॉगिन के दौरान एक त्रुटि हुई। कृपया पुनः प्रयास करें।")
