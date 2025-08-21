@@ -1,25 +1,25 @@
 "use client"
-
-import { useState } from "react"
+import type React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Users, UserPlus, Edit, Trash2, Eye, ToggleLeft, ToggleRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Switch } from "@/components/ui/switch"
+import { Users, Plus, UserCheck, UserX, Loader2, Mail } from "lucide-react"
 
 interface User {
   id: string
   fullName: string
   email: string
   globalRole: string
-  choklaId?: string
-  choklaName?: string
-  villageId?: string
-  villageName?: string
   isActive: boolean
   createdAt: string
-  lastLogin?: string
+  village?: {
+    name: string
+  }
+  chokhla?: {
+    name: string
+  }
 }
 
 interface UserManagementProps {
@@ -30,60 +30,74 @@ interface UserManagementProps {
   onToggleActive: (userId: string, currentStatus: boolean) => void
 }
 
-export default function UserManagement({ users, isLoading, error, onAddUser, onToggleActive }: UserManagementProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedRole, setSelectedRole] = useState("all")
+const UserManagement: React.FC<UserManagementProps> = ({ users, isLoading, error, onAddUser, onToggleActive }) => {
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "SUPER_ADMIN":
+        return <Badge className="bg-red-100 text-red-700 border-red-200">सुपर एडमिन</Badge>
+      case "CHOKHLA_MEMBER":
+        return <Badge className="bg-blue-100 text-blue-700 border-blue-200">चोखरा एडमिन</Badge>
+      case "VILLAGE_MEMBER":
+        return <Badge className="bg-green-100 text-green-700 border-green-200">गांव सदस्य</Badge>
+      default:
+        return <Badge variant="outline">अज्ञात</Badge>
+    }
+  }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.choklaName && user.choklaName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (user.villageName && user.villageName.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesRole = selectedRole === "all" || user.globalRole === selectedRole
-    return matchesSearch && matchesRole
-  })
-
-  const roleStats = {
-    total: users.length,
-    superAdmin: users.filter((u) => u.globalRole === "SUPER_ADMIN").length,
-    chokhlaAdmin: users.filter((u) => u.globalRole === "CHOKHLA_MEMBER").length,
-    villageAdmin: users.filter((u) => u.globalRole === "VILLAGE_MEMBER").length,
-    active: users.filter((u) => u.isActive).length,
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive ? (
+      <Badge className="bg-green-100 text-green-700 border-green-200">
+        <UserCheck className="w-3 h-3 mr-1" />
+        सक्रिय
+      </Badge>
+    ) : (
+      <Badge className="bg-red-100 text-red-700 border-red-200">
+        <UserX className="w-3 h-3 mr-1" />
+        निष्क्रिय
+      </Badge>
+    )
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">उपयोगकर्ता प्रबंधन</h1>
-            <p className="text-gray-600">सभी उपयोगकर्ताओं की जानकारी देखें और प्रबंधित करें</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-        </div>
+      <div className="w-full">
+        <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-orange-200/50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-orange-700">
+              <Users className="w-5 h-5 mr-2" />
+              यूज़र प्रबंधन
+            </CardTitle>
+            <CardDescription>सभी उपयोगकर्ताओं की जानकारी और प्रबंधन</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-600 mx-auto mb-4" />
+                <p className="text-gray-600">उपयोगकर्ताओं की जानकारी लोड हो रही है...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">उपयोगकर्ता प्रबंधन</h1>
-            <p className="text-gray-600">सभी उपयोगकर्ताओं की जानकारी देखें और प्रबंधित करें</p>
-          </div>
-        </div>
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-6">
-            <div className="text-center">
+      <div className="w-full">
+        <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-red-200/50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-red-700">
+              <Users className="w-5 h-5 mr-2" />
+              यूज़र प्रबंधन
+            </CardTitle>
+            <CardDescription>सभी उपयोगकर्ताओं की जानकारी और प्रबंधन</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <UserX className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-red-700 mb-2">त्रुटि</h3>
               <p className="text-red-600">{error}</p>
-              <Button onClick={() => window.location.reload()} className="mt-4">
-                पुनः प्रयास करें
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -91,199 +105,226 @@ export default function UserManagement({ users, isLoading, error, onAddUser, onT
     )
   }
 
+  const activeUsers = users?.filter((user) => user.isActive)?.length || 0
+  const inactiveUsers = users?.filter((user) => !user.isActive)?.length || 0
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">उपयोगकर्ता प्रबंधन</h1>
-          <p className="text-gray-600">सभी उपयोगकर्ताओं की जानकारी देखें और प्रबंधित करें</p>
-        </div>
-        <Button onClick={onAddUser} className="bg-orange-600 hover:bg-orange-700">
-          <UserPlus className="w-4 h-4 mr-2" />
-          नया उपयोगकर्ता जोड़ें
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">कुल उपयोगकर्ता</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{roleStats.total}</div>
-            <p className="text-xs text-muted-foreground">पंजीकृत उपयोगकर्ता</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">सुपर एडमिन</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{roleStats.superAdmin}</div>
-            <p className="text-xs text-muted-foreground">सिस्टम एडमिन</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">चोखला एडमिन</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{roleStats.chokhlaAdmin}</div>
-            <p className="text-xs text-muted-foreground">चोखला प्रबंधक</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">गांव एडमिन</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{roleStats.villageAdmin}</div>
-            <p className="text-xs text-muted-foreground">गांव प्रबंधक</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">सक्रिय उपयोगकर्ता</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{roleStats.active}</div>
-            <p className="text-xs text-muted-foreground">कुल में से</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>फिल्टर और खोज</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="नाम, ईमेल, चोखला या गांव खोजें..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+    <div className="w-full space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-600 text-sm font-medium">कुल यूज़र</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-700">{users?.length || 0}</p>
+              </div>
+              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
             </div>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="all">सभी भूमिकाएं</option>
-              <option value="SUPER_ADMIN">सुपर एडमिन</option>
-              <option value="CHOKHLA_MEMBER">चोखला एडमिन</option>
-              <option value="VILLAGE_MEMBER">गांव एडमिन</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Users Table */}
-      <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-600 text-sm font-medium">सक्रिय यूज़र</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-700">{activeUsers}</p>
+              </div>
+              <UserCheck className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-red-600 text-sm font-medium">निष्क्रिय यूज़र</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-700">{inactiveUsers}</p>
+              </div>
+              <UserX className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-600 text-sm font-medium">नया यूज़र</p>
+                <Button onClick={onAddUser} size="sm" className="bg-orange-600 hover:bg-orange-700 text-white mt-2">
+                  <Plus className="w-4 h-4 mr-1" />
+                  जोड़ें
+                </Button>
+              </div>
+              <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Users Table/Cards */}
+      <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-orange-200/50">
         <CardHeader>
-          <CardTitle>उपयोगकर्ताओं की सूची</CardTitle>
-          <CardDescription>
-            {filteredUsers.length} उपयोगकर्ता मिले (कुल {users.length} में से)
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center text-orange-700">
+                <Users className="w-5 h-5 mr-2" />
+                उपयोगकर्ताओं की सूची
+              </CardTitle>
+              <CardDescription>सभी पंजीकृत उपयोगकर्ताओं की विस्तृत जानकारी</CardDescription>
+            </div>
+            <Button onClick={onAddUser} className="bg-orange-600 hover:bg-orange-700 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              नया यूज़र जोड़ें
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+        <CardContent className="p-0 sm:p-6">
+          {/* Mobile Card Layout */}
+          <div className="block md:hidden">
+            {users?.length > 0 ? (
+              <div className="space-y-4 p-4">
+                {users.map((user, index) => (
+                  <Card key={user.id} className="border border-gray-200 hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-orange-100 text-orange-700 border-orange-200">#{index + 1}</Badge>
+                          <h3 className="font-semibold text-gray-900 text-sm">{user.fullName}</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(user.isActive)}
+                          <Switch
+                            checked={user.isActive}
+                            onCheckedChange={() => onToggleActive(user.id, user.isActive)}
+                            className="data-[state=checked]:bg-green-600"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-600 truncate">{user.email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">भूमिका:</span>
+                          {getRoleBadge(user.globalRole)}
+                        </div>
+                        {user.village && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">गांव:</span>
+                            <span className="font-medium text-xs">{user.village.name}</span>
+                          </div>
+                        )}
+                        {user.chokhla && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">चोखरा:</span>
+                            <span className="font-medium text-xs">{user.chokhla.name}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pt-2 border-t">
+                          <span className="text-gray-600">पंजीकरण:</span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(user.createdAt).toLocaleDateString("hi-IN")}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 px-4">
+                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई उपयोगकर्ता नहीं मिला</h3>
+                <p className="text-gray-600 mb-4">अभी तक कोई उपयोगकर्ता पंजीकृत नहीं है</p>
+                <Button onClick={onAddUser} className="bg-orange-600 hover:bg-orange-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  पहला उपयोगकर्ता जोड़ें
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">क्र.सं.</TableHead>
                   <TableHead>नाम</TableHead>
                   <TableHead>ईमेल</TableHead>
                   <TableHead>भूमिका</TableHead>
-                  <TableHead>चोखला/गांव</TableHead>
                   <TableHead>स्थिति</TableHead>
-                  <TableHead>अंतिम लॉगिन</TableHead>
-                  <TableHead>बनाया गया</TableHead>
-                  <TableHead>कार्य</TableHead>
+                  <TableHead>पंजीकरण तिथि</TableHead>
+                  <TableHead className="text-center">सक्रिय/निष्क्रिय</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.fullName}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {user.globalRole === "SUPER_ADMIN" && "सुपर एडमिन"}
-                        {user.globalRole === "CHOKHLA_MEMBER" && "चोखला एडमिन"}
-                        {user.globalRole === "VILLAGE_MEMBER" && "गांव एडमिन"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {user.choklaName && <div>चोखला: {user.choklaName}</div>}
-                        {user.villageName && <div>गांव: {user.villageName}</div>}
-                        {!user.choklaName && !user.villageName && <span className="text-gray-500">-</span>}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.isActive ? "default" : "secondary"}>
-                        {user.isActive ? "सक्रिय" : "निष्क्रिय"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString("hi-IN") : "कभी नहीं"}
-                    </TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString("hi-IN")}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onToggleActive(user.id, user.isActive)}
-                          className={
-                            user.isActive ? "text-red-600 hover:text-red-700" : "text-green-600 hover:text-green-700"
-                          }
-                        >
-                          {user.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 bg-transparent">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                {users?.length > 0 ? (
+                  users.map((user, index) => (
+                    <TableRow key={user.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <Badge className="bg-orange-100 text-orange-700 border-orange-200">{index + 1}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-orange-600" />
+                          {user.fullName}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-400" />
+                          <span className="truncate max-w-[200px]" title={user.email}>
+                            {user.email}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getRoleBadge(user.globalRole)}</TableCell>
+                      {/* <TableCell>
+                        <div className="text-sm">
+                          {user.village && <div className="text-green-600">गांव: {user.village.name}</div>}
+                          {user.chokhla && <div className="text-blue-600">चोखरा: {user.chokhla.name}</div>}
+                          {!user.village && !user.chokhla && <span className="text-gray-500">-</span>}
+                        </div>
+                      </TableCell> */}
+                      <TableCell>{getStatusBadge(user.isActive)}</TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {new Date(user.createdAt).toLocaleDateString("hi-IN")}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={user.isActive}
+                          onCheckedChange={() => onToggleActive(user.id, user.isActive)}
+                          className="data-[state=checked]:bg-green-600"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-12">
+                      <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-700 mb-2">कोई उपयोगकर्ता नहीं मिला</h3>
+                      <p className="text-gray-600 mb-4">अभी तक कोई उपयोगकर्ता पंजीकृत नहीं है</p>
+                      <Button onClick={onAddUser} className="bg-orange-600 hover:bg-orange-700 text-white">
+                        <Plus className="w-4 h-4 mr-2" />
+                        पहला उपयोगकर्ता जोड़ें
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8">
-              <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">कोई उपयोगकर्ता नहीं मिला</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {searchTerm || selectedRole !== "all" ? "अपने फिल्टर बदलकर देखें" : "नया उपयोगकर्ता जोड़ने के लिए ऊपर बटन दबाएं"}
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
   )
 }
+
+export default UserManagement
