@@ -84,38 +84,6 @@ const authOptions: AuthOptions = {
       console.log("Final session:", session)
       return session
     },
-
-    async redirect({ url, baseUrl, token }) {
-      console.log("Redirect callback - URL:", url, "BaseURL:", baseUrl, "Token:", token)
-
-      // If we have a token with role information, redirect based on role
-      if (token?.role) {
-        const role = token.role as string
-        const villageId = token.villageId as string
-        const choklaId = token.choklaId as string
-
-        console.log("Redirecting based on role:", role, "VillageId:", villageId, "ChoklaId:", choklaId)
-
-        if (role === "SUPER_ADMIN") {
-          const redirectUrl = `${baseUrl}/admin/superadmin`
-          console.log("Redirecting SUPER_ADMIN to:", redirectUrl)
-          return redirectUrl
-        } else if (role === "VILLAGE_MEMBER" && villageId) {
-          const redirectUrl = `${baseUrl}/admin/village/${villageId}`
-          console.log("Redirecting VILLAGE_MEMBER to:", redirectUrl)
-          return redirectUrl
-        } else if (role === "CHOKHLA_MEMBER" && choklaId) {
-          const redirectUrl = `${baseUrl}/admin/chokhla/${choklaId}`
-          console.log("Redirecting CHOKHLA_MEMBER to:", redirectUrl)
-          return redirectUrl
-        }
-      }
-
-      // Default redirect logic
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
-    },
   },
 
   pages: {
