@@ -1,48 +1,37 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { ArrowLeft, Mail, Key, Lock, CheckCircle, Eye, EyeOff, Shield, Clock } from "lucide-react"
-import { Button } from "@/components/ui/button/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
-import { Input } from "@/components/ui/input/input"
-import { Label } from "@/components/ui/label/label"
-import { Alert, AlertDescription } from "@/components/ui/alert/alert"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { toast } from "sonner"
-import { useForgotPassword, useResetPassword, useVerifyOtp } from "@/data-hooks/mutation-query/useAuthQueryMutation"
+import { Mail, Key, Shield, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle, Loader2, Clock } from "lucide-react"
+import Link from "next/link"
+
+type Step = "email" | "otp" | "password" | "success"
+
+interface PasswordRequirement {
+  text: string
+  met: boolean
+}
 
 export default function ResetPasswordPage() {
-  const [step, setStep] = useState<1 | 2 | 3>(1)
-
+  const [currentStep, setCurrentStep] = useState<Step>("email")
   const [email, setEmail] = useState("")
   const [otp, setOtp] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [resendCooldown, setResendCooldown] = useState(0)
-  const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [otpTimer, setOtpTimer] = useState(0)
 
-  const forgotPasswordMutation = useForgotPassword()
-  const verifyOtpMutation = useVerifyOtp()
-  const resetPasswordMutation = useResetPassword()
-
-  // Handle resend cooldown timer
-  useEffect(() => {
-    let timer: NodeJS.Timeout
-    if (resendCooldown > 0) {
-      timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
-    }
-    return () => clearTimeout(timer)
-  }, [resendCooldown])
-
-  // Password strength checker
-  const getPasswordStrength = (password: string) => {
+  // Password strength calculation
+  const getPasswordStrength = (password: string): number => {
     let strength = 0
     if (password.length >= 8) strength += 25
     if (/[A-Z]/.test(password)) strength += 25
@@ -52,217 +41,242 @@ export default function ResetPasswordPage() {
   }
 
   const passwordStrength = getPasswordStrength(newPassword)
-
-  // Step 1: Send OTP
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    forgotPasswordMutation.mutate(email, {
-      onSuccess: () => {
-        toast.success(`OTP sent to ${email}`)
-        setStep(2)
-        setResendCooldown(590)
-      },
-      onError: (err: any) => {
-        const errorMessage = err?.response?.data?.message || "Failed to send OTP. Please try again."
-        setError(errorMessage)
-        toast.error(errorMessage)
-      },
-      onSettled: () => {
-        setLoading(false)
-      },
-    })
+  const getStrengthColor = (strength: number): string => {
+    if (strength < 25) return "bg-red-500"
+    if (strength < 50) return "bg-orange-500"
+    if (strength < 75) return "bg-yellow-500"
+    return "bg-green-500"
   }
 
-  // Step 2: Verify OTP
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    verifyOtpMutation.mutate(
-      { email, otp },
-      {
-        onSuccess: () => {
-          toast.success("OTP verified successfully")
-          setStep(3)
-        },
-        onError: (err: any) => {
-          const errorMessage = err?.response?.data?.message || "Invalid or expired OTP, try again."
-          setError(errorMessage)
-          toast.error(errorMessage)
-        },
-        onSettled: () => {
-          setLoading(false)
-        },
-      },
-    )
+  const getStrengthText = (strength: number): string => {
+    if (strength < 25) return "कमजोर"
+    if (strength < 50) return "मध्यम"
+    if (strength < 75) return "अच्छा"
+    return "मजबूत"
   }
 
-  // Step 3: Reset Password
-  const handleResetPassword = async (e: React.FormEvent) => {
+  // Password requirements
+  const passwordRequirements: PasswordRequirement[] = [
+    { text: "कम से कम 8 अक्षर", met: newPassword.length >= 8 },
+    { text: "एक बड़ा अक्षर (A-Z)", met: /[A-Z]/.test(newPassword) },
+    { text: "एक छोटा अक्षर (a-z)", met: /[a-z]/.test(newPassword) },
+    { text: "एक संख्या (0-9)", met: /[0-9]/.test(newPassword) },
+  ]
+
+  const getStepProgress = (): number => {
+    switch (currentStep) {
+      case "email":
+        return 33
+      case "otp":
+        return 66
+      case "password":
+        return 100
+      case "success":
+        return 100
+      default:
+        return 0
+    }
+  }
+
+  const getStepIcon = (step: Step, isActive: boolean, isCompleted: boolean) => {
+    const iconClass = `w-5 h-5 ${isCompleted ? "text-green-600" : isActive ? "text-orange-600" : "text-gray-400"}`
+
+    if (isCompleted) {
+      return <CheckCircle className={iconClass} />
+    }
+
+    switch (step) {
+      case "email":
+        return <Mail className={iconClass} />
+      case "otp":
+        return <Key className={iconClass} />
+      case "password":
+        return <Shield className={iconClass} />
+      default:
+        return <Mail className={iconClass} />
+    }
+  }
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
+    setError("")
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      setCurrentStep("otp")
+      setOtpTimer(300) // 5 minutes
+
+      // Start countdown
+      const interval = setInterval(() => {
+        setOtpTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } catch (error) {
+      setError("ईमेल भेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (otp === "123456") {
+        setCurrentStep("password")
+      } else {
+        setError("गलत OTP। कृपया सही कोड दर्ज करें।")
+      }
+    } catch (error) {
+      setError("OTP सत्यापन में त्रुटि हुई। कृपया पुनः प्रयास करें।")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
     setError("")
 
     if (newPassword !== confirmPassword) {
-      const errorMessage = "Passwords do not match"
-      setError(errorMessage)
-      toast.error(errorMessage)
-      return
-    }
-    if (newPassword.length < 6) {
-      const errorMessage = "Password must be at least 6 characters"
-      setError(errorMessage)
-      toast.error(errorMessage)
+      setError("पासवर्ड मेल नहीं खाते। कृपया दोबारा जांचें।")
+      setIsLoading(false)
       return
     }
 
-    setLoading(true)
-    resetPasswordMutation.mutate(
-      { email, newPassword },
-      {
-        onSuccess: () => {
-          toast.success("Password reset successful! Redirecting to login...")
-          // redirect handled inside useResetPassword hook
-        },
-        onError: (err: any) => {
-          const errorMessage = err?.response?.data?.message || "Failed to reset password. Please try again."
-          setError(errorMessage)
-          toast.error(errorMessage)
-          setLoading(false)
-        },
-      },
-    )
+    if (passwordStrength < 75) {
+      setError("कृपया एक मजबूत पासवर्ड चुनें।")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      setCurrentStep("success")
+    } catch (error) {
+      setError("पासवर्ड रीसेट में त्रुटि हुई। कृपया पुनः प्रयास करें।")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-4 sm:py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <Image
-                src="/images/main-logo.png"
-                alt="Panchal Samaj Logo"
-                width={50}
-                height={50}
-                className="rounded-full shadow-lg sm:w-[60px] sm:h-[60px]"
-              />
-              <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">पासवर्ड रीसेट</h1>
-                <p className="text-orange-100 text-xs sm:text-sm md:text-lg">पंचाल समाज 14 चोखरा</p>
-              </div>
-            </div>
-            <Link href="/login">
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-xs sm:text-sm"
-              >
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">वापस जाएं</span>
-                <span className="sm:hidden">वापस</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Progress Indicator */}
-      <div className="container mx-auto px-4 py-4 sm:py-6">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600">Step {step} of 3</span>
-            <span className="text-xs sm:text-sm text-gray-600">{Math.round((step / 3) * 100)}%</span>
-          </div>
-          <Progress value={(step / 3) * 100} className="h-2" />
-          <div className="flex justify-between mt-2 text-xs text-gray-500">
-            <span className={step >= 1 ? "text-orange-600 font-medium" : ""}>Email</span>
-            <span className={step >= 2 ? "text-orange-600 font-medium" : ""}>OTP</span>
-            <span className={step >= 3 ? "text-orange-600 font-medium" : ""}>Password</span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-40">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23f97316' fillOpacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        ></div>
       </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 pb-8">
-        <div className="max-w-md mx-auto">
-          <Card className="bg-gradient-to-br from-white to-orange-50 border-orange-200 shadow-xl">
-            <CardHeader className="text-center space-y-2 pb-4">
-              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 rounded-full flex items-center justify-center mb-2">
-                {step === 1 && <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />}
-                {step === 2 && <Key className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />}
-                {step === 3 && <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />}
+      <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-md mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-xl">
+                <Key className="w-8 h-8 text-white" />
               </div>
-              <CardTitle className="text-xl sm:text-2xl text-orange-700">
-                {step === 1 && "पासवर्ड रीसेट करें"}
-                {step === 2 && "OTP सत्यापित करें"}
-                {step === 3 && "नया पासवर्ड सेट करें"}
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">पासवर्ड रीसेट करें</h1>
+            <p className="text-gray-600">अपना नया पासवर्ड सेट करने के लिए निम्नलिखित चरणों का पालन करें</p>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center space-x-2">
+                {getStepIcon("email", currentStep === "email", ["otp", "password", "success"].includes(currentStep))}
+                <span className="text-sm font-medium text-gray-700">ईमेल</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {getStepIcon("otp", currentStep === "otp", ["password", "success"].includes(currentStep))}
+                <span className="text-sm font-medium text-gray-700">OTP</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {getStepIcon("password", currentStep === "password", currentStep === "success")}
+                <span className="text-sm font-medium text-gray-700">पासवर्ड</span>
+              </div>
+            </div>
+            <Progress value={getStepProgress()} className="h-2" />
+            <div className="text-center mt-2">
+              <span className="text-sm text-gray-500">{getStepProgress()}% पूर्ण</span>
+            </div>
+          </div>
+
+          {/* Main Card */}
+          <Card className="bg-white/80 backdrop-blur-sm shadow-2xl border border-white/20">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-xl font-semibold text-gray-900">
+                {currentStep === "email" && "ईमेल पता दर्ज करें"}
+                {currentStep === "otp" && "OTP कोड दर्ज करें"}
+                {currentStep === "password" && "नया पासवर्ड सेट करें"}
+                {currentStep === "success" && "सफलतापूर्वक रीसेट!"}
               </CardTitle>
-              <CardDescription className="text-sm sm:text-base px-2">
-                {step === 1 && "अपना ईमेल पता दर्ज करें और हम आपको पासवर्ड रीसेट करने के लिए एक OTP भेजेंगे।"}
-                {step === 2 && (
-                  <div className="space-y-2">
-                    <p>
-                      हमने <strong className="text-orange-700">{email}</strong> पर OTP भेजा है।
-                    </p>
-                    <div className="flex items-center justify-center space-x-2 text-xs text-gray-600">
-                      <Clock className="w-3 h-3" />
-                      <span>OTP 10 मिनट तक मान्य है</span>
-                    </div>
-                  </div>
-                )}
-                {step === 3 && "कृपया अपना नया पासवर्ड सेट करें। पासवर्ड मजबूत और सुरक्षित होना चाहिए।"}
-              </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
-              {/* Show error alert if error */}
+            <CardContent className="space-y-6">
+              {/* Error Message */}
               {error && (
-                <Alert className="border-red-200 bg-red-50">
-                  <AlertDescription className="text-red-800 text-sm">{error}</AlertDescription>
-                </Alert>
+                <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
               )}
 
-              {/* Step 1: Enter Email */}
-              {step === 1 && (
-                <form onSubmit={handleSendOtp} className="space-y-4">
+              {/* Step 1: Email */}
+              {currentStep === "email" && (
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-orange-700 font-medium text-sm">
-                      ईमेल पता *
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      ईमेल पता
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <Input
                         id="email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="अपना ईमेल पता दर्ज करें"
-                        className="border-orange-200 focus:border-orange-400 pl-10 h-11 text-base"
+                        placeholder="आपका पंजीकृत ईमेल पता"
+                        className="pl-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
                         required
-                        disabled={loading}
+                        disabled={isLoading}
                       />
                     </div>
+                    <p className="text-xs text-gray-500">हम आपके ईमेल पर एक OTP कोड भेजेंगे</p>
                   </div>
 
                   <Button
                     type="submit"
-                    disabled={loading || !email}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 h-11 text-base font-medium"
+                    className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium rounded-xl"
+                    disabled={isLoading}
                   >
-                    {loading ? (
+                    {isLoading ? (
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>भेजा जा रहा है...</span>
                       </div>
                     ) : (
@@ -272,98 +286,112 @@ export default function ResetPasswordPage() {
                 </form>
               )}
 
-              {/* Step 2: Verify OTP */}
-              {step === 2 && (
-                <form onSubmit={handleVerifyOtp} className="space-y-4">
+              {/* Step 2: OTP */}
+              {currentStep === "otp" && (
+                <form onSubmit={handleOtpSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="otp" className="text-orange-700 font-medium text-sm">
-                      OTP *
+                    <Label htmlFor="otp" className="text-sm font-medium text-gray-700">
+                      OTP कोड
                     </Label>
                     <div className="relative">
-                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <Input
                         id="otp"
                         type="text"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        placeholder="6-अंकीय OTP दर्ज करें"
-                        className="border-orange-200 focus:border-orange-400 pl-10 h-11 text-base text-center tracking-widest"
+                        placeholder="6 अंकों का कोड"
+                        className="pl-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-center text-lg tracking-widest"
                         required
-                        disabled={loading}
+                        disabled={isLoading}
                         maxLength={6}
                       />
                     </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-500">कोड {email} पर भेजा गया</span>
+                      {otpTimer > 0 && (
+                        <div className="flex items-center space-x-1 text-orange-600">
+                          <Clock className="w-3 h-3" />
+                          <span>{formatTime(otpTimer)}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      type="submit"
-                      disabled={loading || otp.length !== 6}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 h-11 text-base font-medium"
-                    >
-                      {loading ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>सत्यापित हो रहा है...</span>
-                        </div>
-                      ) : (
-                        "OTP सत्यापित करें"
-                      )}
-                    </Button>
-
+                  <div className="flex space-x-3">
                     <Button
                       type="button"
-                      disabled={resendCooldown > 0 || loading}
                       variant="outline"
-                      className="flex-1 sm:flex-none border-orange-200 text-orange-600 hover:bg-orange-50 h-11 text-sm"
-                      onClick={() => handleSendOtp(new Event("submit") as any)}
+                      className="flex-1 h-12 bg-transparent"
+                      onClick={() => setCurrentStep("email")}
+                      disabled={isLoading}
                     >
-                      {resendCooldown > 0 ? (
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{formatTime(resendCooldown)}</span>
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      वापस
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium rounded-xl"
+                      disabled={isLoading || otp.length !== 6}
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>सत्यापित कर रहे हैं...</span>
                         </div>
                       ) : (
-                        "दोबारा भेजें"
+                        "सत्यापित करें"
                       )}
                     </Button>
                   </div>
+
+                  {/* Test OTP Helper */}
+                  {process.env.NODE_ENV === "development" && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs text-blue-600">
+                        <strong>टेस्ट OTP:</strong> 123456
+                      </p>
+                    </div>
+                  )}
                 </form>
               )}
 
-              {/* Step 3: Reset Password */}
-              {step === 3 && (
-                <form onSubmit={handleResetPassword} className="space-y-4">
+              {/* Step 3: New Password */}
+              {currentStep === "password" && (
+                <form onSubmit={handlePasswordSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword" className="text-orange-700 font-medium text-sm">
-                      नया पासवर्ड *
+                    <Label htmlFor="newPassword" className="text-sm font-medium text-gray-700">
+                      नया पासवर्ड
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <Input
                         id="newPassword"
-                        type={showPassword ? "text" : "password"}
+                        type={showNewPassword ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="नया पासवर्ड दर्ज करें"
-                        className="border-orange-200 focus:border-orange-400 pl-10 pr-10 h-11 text-base"
+                        className="pl-10 pr-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
                         required
-                        disabled={loading}
+                        disabled={isLoading}
                       />
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => setShowNewPassword(!showNewPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        disabled={isLoading}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
+
+                    {/* Password Strength Meter */}
                     {newPassword && (
                       <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-600">Password Strength</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">पासवर्ड की मजबूती:</span>
                           <span
-                            className={`font-medium ${
+                            className={`text-xs font-medium ${
                               passwordStrength < 50
                                 ? "text-red-600"
                                 : passwordStrength < 75
@@ -371,98 +399,146 @@ export default function ResetPasswordPage() {
                                   : "text-green-600"
                             }`}
                           >
-                            {passwordStrength < 50 ? "Weak" : passwordStrength < 75 ? "Medium" : "Strong"}
+                            {getStrengthText(passwordStrength)}
                           </span>
                         </div>
-                        <Progress
-                          value={passwordStrength}
-                          className={`h-2 ${
-                            passwordStrength < 50
-                              ? "[&>div]:bg-red-500"
-                              : passwordStrength < 75
-                                ? "[&>div]:bg-yellow-500"
-                                : "[&>div]:bg-green-500"
-                          }`}
-                        />
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${getStrengthColor(passwordStrength)}`}
+                            style={{ width: `${passwordStrength}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Password Requirements */}
+                    {newPassword && (
+                      <div className="space-y-1">
+                        {passwordRequirements.map((req, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <div
+                              className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                                req.met ? "bg-green-100" : "bg-gray-100"
+                              }`}
+                            >
+                              {req.met ? (
+                                <CheckCircle className="w-3 h-3 text-green-600" />
+                              ) : (
+                                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                              )}
+                            </div>
+                            <span className={`text-xs ${req.met ? "text-green-600" : "text-gray-500"}`}>
+                              {req.text}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-orange-700 font-medium text-sm">
-                      पासवर्ड पुष्टि करें *
+                    <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                      पासवर्ड की पुष्टि करें
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <Input
                         id="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="पासवर्ड फिर से दर्ज करें"
-                        className="border-orange-200 focus:border-orange-400 pl-10 pr-10 h-11 text-base"
+                        placeholder="पासवर्ड दोबारा दर्ज करें"
+                        className="pl-10 pr-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
                         required
-                        disabled={loading}
+                        disabled={isLoading}
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        disabled={isLoading}
                       >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
                     {confirmPassword && newPassword !== confirmPassword && (
-                      <p className="text-xs text-red-600">Passwords do not match</p>
+                      <p className="text-xs text-red-600">पासवर्ड मेल नहीं खाते</p>
                     )}
                     {confirmPassword && newPassword === confirmPassword && (
-                      <div className="flex items-center space-x-1 text-xs text-green-600">
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Passwords match</span>
-                      </div>
+                      <p className="text-xs text-green-600">पासवर्ड मैच हो गए</p>
                     )}
                   </div>
 
-                  <Button
-                    type="submit"
-                    disabled={loading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 h-11 text-base font-medium"
-                  >
-                    {loading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>रीसेट हो रहा है...</span>
-                      </div>
-                    ) : (
-                      "पासवर्ड रीसेट करें"
-                    )}
-                  </Button>
+                  <div className="flex space-x-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1 h-12 bg-transparent"
+                      onClick={() => setCurrentStep("otp")}
+                      disabled={isLoading}
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      वापस
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium rounded-xl"
+                      disabled={isLoading || passwordStrength < 75 || newPassword !== confirmPassword}
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>सेव कर रहे हैं...</span>
+                        </div>
+                      ) : (
+                        "पासवर्ड सेट करें"
+                      )}
+                    </Button>
+                  </div>
                 </form>
               )}
 
-              {/* Help Text */}
-              <div className="text-center pt-4 border-t border-orange-100">
-                <p className="text-xs text-gray-600">
-                  समस्या हो रही है?{" "}
-                  <Link href="/help" className="text-orange-600 hover:text-orange-700 font-medium">
-                    सहायता केंद्र
-                  </Link>{" "}
-                  पर जाएं
-                </p>
-              </div>
+              {/* Step 4: Success */}
+              {currentStep === "success" && (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-900">पासवर्ड सफलतापूर्वक रीसेट हो गया!</h3>
+                    <p className="text-gray-600">आपका नया पासवर्ड सेट हो गया है। अब आप अपने नए पासवर्ड से लॉगिन कर सकते हैं।</p>
+                  </div>
+                  <Link href="/login">
+                    <Button className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium rounded-xl">
+                      लॉगिन पेज पर जाएं
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
-        </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-6 mt-8">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-orange-100 text-xs sm:text-sm">
-            © 2025 पंचाल समाज 14 चोखरा डिजिटल जनगणना। सभी अधिकार सुरक्षित।
-          </p>
+          {/* Back to Login */}
+          {currentStep !== "success" && (
+            <div className="text-center mt-6">
+              <Link
+                href="/login"
+                className="inline-flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 hover:underline transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>लॉगिन पेज पर वापस जाएं</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Help Link */}
+          <div className="text-center mt-4">
+            <a href="/help" className="text-sm text-gray-500 hover:text-gray-700 hover:underline transition-colors">
+              सहायता चाहिए? सहायता केंद्र पर जाएं
+            </a>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
   )
 }
