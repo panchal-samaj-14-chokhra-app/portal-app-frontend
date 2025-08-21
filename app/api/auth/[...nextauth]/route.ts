@@ -64,12 +64,11 @@ const authOptions: AuthOptions = {
     },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
-        ;(session.user as any).id =
-          token.id(session.user as any).role =
-          token.role(session.user as any).token =
-          token.token(session.user as any).choklaId =
-          token.choklaId(session.user as any).villageId =
-            token.villageId
+        ;(session.user as any).id = token.id
+        ;(session.user as any).role = token.role
+        ;(session.user as any).token = token.token
+        ;(session.user as any).choklaId = token.choklaId
+        ;(session.user as any).villageId = token.villageId
       }
       return session
     },

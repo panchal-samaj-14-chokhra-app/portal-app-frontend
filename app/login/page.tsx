@@ -79,7 +79,7 @@ export default async function LoginPage() {
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">साइन इन करें</h2>
+            <h2 className="text-xl font-semibent text-gray-900 mb-2">साइन इन करें</h2>
             <p className="text-sm text-gray-600">अपने खाते में प्रवेश करें</p>
           </div>
           <LoginForm />
