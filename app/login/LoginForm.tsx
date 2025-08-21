@@ -23,31 +23,27 @@ export default function LoginForm() {
     setError("")
 
     try {
-      console.log("Attempting to sign in with:", formData.email)
+      console.log("LoginForm: Attempting to sign in with:", formData.email)
 
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
-        redirect: false,
+        redirect: true, // Let NextAuth handle the redirect
+        callbackUrl: "/login", // This will trigger the redirect callback
       })
 
-      console.log("Sign in result:", result)
+      console.log("LoginForm: Sign in result:", result)
 
+      // If we reach here and there's an error, show it
       if (result?.error) {
+        console.log("LoginForm: Sign in error:", result.error)
         setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।")
         setLoading(false)
-        return
       }
-
-      if (result?.ok) {
-        console.log("Login successful, redirecting...")
-        // Force a full page reload to trigger server-side redirect
-        window.location.href = "/login"
-      }
+      // If successful, NextAuth will handle the redirect automatically
     } catch (error) {
-      console.error("Login error:", error)
+      console.error("LoginForm: Login error:", error)
       setError("लॉगिन के दौरान एक त्रुटि हुई। कृपया पुनः प्रयास करें।")
-    } finally {
       setLoading(false)
     }
   }

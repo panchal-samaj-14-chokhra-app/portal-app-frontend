@@ -16,7 +16,7 @@ export default withAuth(
     // Protect admin routes
     if (pathname.startsWith("/admin")) {
       if (!token) {
-        console.log("No token, redirecting to login")
+        console.log("Middleware: No token, redirecting to login")
         return NextResponse.redirect(new URL("/login", req.url))
       }
 
@@ -25,12 +25,12 @@ export default withAuth(
       const villageId = token.villageId as string
       const choklaId = token.choklaId as string
 
-      console.log("User role:", role, "VillageId:", villageId, "ChoklaId:", choklaId)
+      console.log("Middleware: User role:", role, "VillageId:", villageId, "ChoklaId:", choklaId)
 
       // Super Admin access
       if (pathname.startsWith("/admin/superadmin")) {
         if (role !== "SUPER_ADMIN") {
-          console.log("Unauthorized access to superadmin, redirecting to login")
+          console.log("Middleware: Unauthorized access to superadmin, redirecting to login")
           return NextResponse.redirect(new URL("/login", req.url))
         }
       }
@@ -38,13 +38,13 @@ export default withAuth(
       // Village Member access
       if (pathname.startsWith("/admin/village")) {
         if (role !== "VILLAGE_MEMBER") {
-          console.log("Unauthorized access to village, redirecting to login")
+          console.log("Middleware: Unauthorized access to village, redirecting to login")
           return NextResponse.redirect(new URL("/login", req.url))
         }
         // Check if accessing correct village
         const pathVillageId = pathname.split("/")[3]
         if (pathVillageId && pathVillageId !== villageId) {
-          console.log("Accessing wrong village, redirecting to correct village")
+          console.log("Middleware: Accessing wrong village, redirecting to correct village")
           return NextResponse.redirect(new URL(`/admin/village/${villageId}`, req.url))
         }
       }
@@ -52,13 +52,13 @@ export default withAuth(
       // Chokhla Member access
       if (pathname.startsWith("/admin/chokhla")) {
         if (role !== "CHOKHLA_MEMBER") {
-          console.log("Unauthorized access to chokhla, redirecting to login")
+          console.log("Middleware: Unauthorized access to chokhla, redirecting to login")
           return NextResponse.redirect(new URL("/login", req.url))
         }
         // Check if accessing correct chokhla
         const pathChoklaId = pathname.split("/")[3]
         if (pathChoklaId && pathChoklaId !== choklaId) {
-          console.log("Accessing wrong chokhla, redirecting to correct chokhla")
+          console.log("Middleware: Accessing wrong chokhla, redirecting to correct chokhla")
           return NextResponse.redirect(new URL(`/admin/chokhla/${choklaId}`, req.url))
         }
       }

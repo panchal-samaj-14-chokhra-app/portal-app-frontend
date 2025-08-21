@@ -7,21 +7,67 @@ import Link from "next/link"
 import { HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 
-export default async function LoginPage() {
-  const session = await getServerSession(authOptions)
+// Extend NextAuth session types
+declare module "next-auth" {
+  interface User {
+    id: string
+    email?: string | null
+    role?: string
+    token?: string
+    choklaId?: string
+    villageId?: string
+  }
 
-  // If user is already logged in, redirect based on their role
-  if (session?.user) {
-    const { role, villageId, choklaId } = session.user as any
-
-    if (role === "SUPER_ADMIN") {
-      redirect("/admin/superadmin")
-    } else if (role === "VILLAGE_MEMBER" && villageId) {
-      redirect(`/admin/village/${villageId}`)
-    } else if (role === "CHOKHLA_MEMBER" && choklaId) {
-      redirect(`/admin/chokhla/${choklaId}`)
+  interface Session {
+    user: {
+      id: string
+      email?: string | null
+      role?: string
+      token?: string
+      choklaId?: string
+      villageId?: string
     }
   }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string
+    role?: string
+    token?: string
+    choklaId?: string
+    villageId?: string
+  }
+}
+
+export default async function LoginPage() {
+  console.log("LoginPage: Getting server session...")
+
+  try {
+    const session = await getServerSession(authOptions)
+    console.log("LoginPage: Server session:", session)
+
+    // If user is already logged in, redirect based on their role
+    if (session?.user) {
+      const { role, villageId, choklaId } = session.user as any
+      console.log("LoginPage: User already logged in with role:", role)
+
+      if (role === "SUPER_ADMIN") {
+        console.log("LoginPage: Redirecting SUPER_ADMIN to /admin/superadmin")
+        redirect("/admin/superadmin")
+      } else if (role === "VILLAGE_MEMBER" && villageId) {
+        console.log("LoginPage: Redirecting VILLAGE_MEMBER to /admin/village/" + villageId)
+        redirect(`/admin/village/${villageId}`)
+      } else if (role === "CHOKHLA_MEMBER" && choklaId) {
+        console.log("LoginPage: Redirecting CHOKHLA_MEMBER to /admin/chokhla/" + choklaId)
+        redirect(`/admin/chokhla/${choklaId}`)
+      }
+    }
+  } catch (error) {
+    console.error("LoginPage: Error getting session:", error)
+  }
+
+  console.log("LoginPage: Rendering login form")
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
