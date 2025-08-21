@@ -1,26 +1,7 @@
-"use client"
 import { getServerSession } from "next-auth/next"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { Home, Building2, BarChart3, Users, User } from "lucide-react"
-import SuperAdmin from "@/components/superadmin/SuperAdmin"
-
-const SIDEBAR_TABS = [
-  { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
-  { key: "chokhla", label: "चोखरा प्रबंधन", icon: Building2, shortLabel: "चोखरा" },
-  { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
-  { key: "user", label: "यूज़र प्रबंधन", icon: Users, shortLabel: "यूज़र" },
-  { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
-]
-
-interface CreatedData {
-  chokhlaId: string
-  userId: string
-  email: string
-  fullName: string
-  role: string
-  password: string
-}
+import SuperAdminClient from "./SuperAdminClient"
 
 export default async function SuperAdminPage() {
   const session = await getServerSession(authOptions)
@@ -62,7 +43,7 @@ export default async function SuperAdminPage() {
         </div>
       )}
 
-      <SuperAdmin />
+      <SuperAdminClient />
     </div>
   )
 }
