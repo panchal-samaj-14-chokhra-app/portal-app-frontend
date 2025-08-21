@@ -5,6 +5,7 @@ import "./globals.css"
 import { QueryProvider } from "@/lib/providers/query-provider"
 import { ToastProvider } from "@/components/ui/toast/toast-provider"
 import { AuthProvider } from "@/lib/providers/auth-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Panchal Samaj 14 Chokhra" }],
   viewport: "width=device-width, initial-scale=1",
   themeColor: "#f97316",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -37,6 +38,12 @@ export default function RootLayout({
         <AuthProvider>
           <QueryProvider>
             {children}
+            <Toaster
+              position="top-center" // optional, default is top-right
+              richColors
+              closeButton
+              duration={4000}
+            />
             <ToastProvider />
           </QueryProvider>
         </AuthProvider>
