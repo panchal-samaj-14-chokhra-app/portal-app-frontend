@@ -6,10 +6,10 @@ export default withAuth(
     const token = req.nextauth.token
     const { pathname } = req.nextUrl
 
-    console.log("Middleware - Path:", pathname, "Token:", token)
+    console.log("Middleware - Path:", pathname, "Token role:", token?.role)
 
     // Allow access to login page and public routes
-    if (pathname === "/login" || pathname === "/" || pathname === "/help") {
+    if (pathname === "/login" || pathname === "/" || pathname === "/help" || pathname === "/reset-password") {
       return NextResponse.next()
     }
 
@@ -22,21 +22,45 @@ export default withAuth(
 
       // Role-based access control
       const role = token.role as string
-      console.log("User role:", role)
+      const villageId = token.villageId as string
+      const choklaId = token.choklaId as string
 
-      if (pathname.startsWith("/admin/superadmin") && role !== "SUPER_ADMIN") {
-        console.log("Unauthorized access to superadmin")
-        return NextResponse.redirect(new URL("/login", req.url))
+      console.log("User role:", role, "VillageId:", villageId, "ChoklaId:", choklaId)
+
+      // Super Admin access
+      if (pathname.startsWith("/admin/superadmin")) {
+        if (role !== "SUPER_ADMIN") {
+          console.log("Unauthorized access to superadmin, redirecting to login")
+          return NextResponse.redirect(new URL("/login", req.url))
+        }
       }
 
-      if (pathname.startsWith("/admin/village") && role !== "VILLAGE_MEMBER") {
-        console.log("Unauthorized access to village")
-        return NextResponse.redirect(new URL("/login", req.url))
+      // Village Member access
+      if (pathname.startsWith("/admin/village")) {
+        if (role !== "VILLAGE_MEMBER") {
+          console.log("Unauthorized access to village, redirecting to login")
+          return NextResponse.redirect(new URL("/login", req.url))
+        }
+        // Check if accessing correct village
+        const pathVillageId = pathname.split("/")[3]
+        if (pathVillageId && pathVillageId !== villageId) {
+          console.log("Accessing wrong village, redirecting to correct village")
+          return NextResponse.redirect(new URL(`/admin/village/${villageId}`, req.url))
+        }
       }
 
-      if (pathname.startsWith("/admin/chokhla") && role !== "CHOKHLA_MEMBER") {
-        console.log("Unauthorized access to chokhla")
-        return NextResponse.redirect(new URL("/login", req.url))
+      // Chokhla Member access
+      if (pathname.startsWith("/admin/chokhla")) {
+        if (role !== "CHOKHLA_MEMBER") {
+          console.log("Unauthorized access to chokhla, redirecting to login")
+          return NextResponse.redirect(new URL("/login", req.url))
+        }
+        // Check if accessing correct chokhla
+        const pathChoklaId = pathname.split("/")[3]
+        if (pathChoklaId && pathChoklaId !== choklaId) {
+          console.log("Accessing wrong chokhla, redirecting to correct chokhla")
+          return NextResponse.redirect(new URL(`/admin/chokhla/${choklaId}`, req.url))
+        }
       }
     }
 
@@ -48,7 +72,7 @@ export default withAuth(
         const { pathname } = req.nextUrl
 
         // Allow public routes
-        if (pathname === "/login" || pathname === "/" || pathname === "/help") {
+        if (pathname === "/login" || pathname === "/" || pathname === "/help" || pathname === "/reset-password") {
           return true
         }
 

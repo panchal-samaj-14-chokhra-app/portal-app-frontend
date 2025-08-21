@@ -72,29 +72,6 @@ const authOptions: AuthOptions = {
       }
       return session
     },
-    async redirect({ url, baseUrl, token }) {
-      console.log("Redirect callback - URL:", url, "BaseURL:", baseUrl, "Token:", token)
-
-      // If user is signing in, redirect based on their role
-      if (token?.role) {
-        const role = token.role as string
-        const villageId = token.villageId as string
-        const choklaId = token.choklaId as string
-
-        if (role === "SUPER_ADMIN") {
-          return `${baseUrl}/admin/superadmin`
-        } else if (role === "VILLAGE_MEMBER" && villageId) {
-          return `${baseUrl}/admin/village/${villageId}`
-        } else if (role === "CHOKHLA_MEMBER" && choklaId) {
-          return `${baseUrl}/admin/chokhla/${choklaId}`
-        }
-      }
-
-      // Default redirect
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
-    },
   },
 
   pages: {

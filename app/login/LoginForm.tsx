@@ -3,151 +3,126 @@
 import type React from "react"
 
 import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button/button"
+import { Input } from "@/components/ui/input/input"
+import { Label } from "@/components/ui/label/label"
+import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({ email: "", password: "", showPassword: false })
   const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     setError("")
-    setIsLoading(true)
 
     try {
-      console.log("Attempting to sign in...")
+      console.log("Attempting to sign in with:", formData.email)
 
       const result = await signIn("credentials", {
-        email,
-        password,
+        email: formData.email,
+        password: formData.password,
         redirect: false,
       })
 
       console.log("Sign in result:", result)
 
       if (result?.error) {
-        setError("Invalid credentials. Please try again.")
-        setIsLoading(false)
+        setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।")
+        setLoading(false)
         return
       }
 
       if (result?.ok) {
-        console.log("Sign in successful, getting session...")
-
-        // Get the session to determine redirect
-        const session = await getSession()
-        console.log("Session after login:", session)
-
-        if (session?.user) {
-          const { role, villageId, choklaId } = session.user as any
-
-          // Manual redirect based on role
-          if (role === "SUPER_ADMIN") {
-            console.log("Redirecting to super admin...")
-            router.push("/admin/superadmin")
-          } else if (role === "VILLAGE_MEMBER" && villageId) {
-            console.log("Redirecting to village admin...")
-            router.push(`/admin/village/${villageId}`)
-          } else if (role === "CHOKHLA_MEMBER" && choklaId) {
-            console.log("Redirecting to chokhla admin...")
-            router.push(`/admin/chokhla/${choklaId}`)
-          } else {
-            console.log("No valid role found, redirecting to login...")
-            router.push("/login")
-          }
-        } else {
-          console.log("No session found after login")
-          setError("Login successful but session not found. Please try again.")
-        }
+        console.log("Login successful, redirecting...")
+        // Force a full page reload to trigger server-side redirect
+        window.location.href = "/login"
       }
     } catch (error) {
       console.error("Login error:", error)
-      setError("An error occurred during login. Please try again.")
+      setError("लॉगिन के दौरान एक त्रुटि हुई। कृपया पुनः प्रयास करें।")
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-          ईमेल पता
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          required
-          disabled={isLoading}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-          पासवर्ड
+      <div>
+        <Label htmlFor="email" className="text-orange-700 font-medium">
+          ईमेल पता *
         </Label>
         <div className="relative">
+          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+            placeholder="अपना ईमेल पता दर्ज करें"
+            className="border-orange-200 focus:border-orange-400 pl-10"
             required
-            disabled={isLoading}
-            className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            disabled={loading}
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            disabled={isLoading}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
         </div>
       </div>
-
+      <div>
+        <Label htmlFor="password" className="text-orange-700 font-medium">
+          पासवर्ड *
+        </Label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            id="password"
+            type={formData.showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+            placeholder="पासवर्ड दर्ज करें"
+            className="border-orange-200 focus:border-orange-400 pl-10 pr-10"
+            required
+            disabled={loading}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+            onClick={() => setFormData((prev) => ({ ...prev, showPassword: !prev.showPassword }))}
+            disabled={loading}
+          >
+            {formData.showPassword ? (
+              <EyeOff className="h-4 w-4 text-gray-400" />
+            ) : (
+              <Eye className="h-4 w-4 text-gray-400" />
+            )}
+          </Button>
+        </div>
+      </div>
+      {error && (
+        <Alert className="border-red-200 bg-red-50">
+          <AlertDescription className="text-red-800">{error}</AlertDescription>
+        </Alert>
+      )}
       <Button
         type="submit"
-        disabled={isLoading}
-        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+        disabled={loading || !formData.email || !formData.password}
+        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
       >
-        {isLoading ? (
+        {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            साइन इन हो रहा है...
+            लॉगिन हो रहा है...
           </>
         ) : (
-          "साइन इन करें"
+          "लॉगिन करें"
         )}
       </Button>
-
-      <div className="text-center">
-        <a href="/reset-password" className="text-sm text-orange-600 hover:text-orange-700 underline">
-          पासवर्ड भूल गए?
-        </a>
-      </div>
     </form>
   )
 }
