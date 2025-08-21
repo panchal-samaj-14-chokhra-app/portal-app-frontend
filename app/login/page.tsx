@@ -1,34 +1,62 @@
 import { redirect } from "next/navigation"
+import { getServerSession } from "next-auth"
 import LoginForm from "./LoginForm"
 import { authOptions } from "../api/auth/[...nextauth]/route"
-import { getServerSession } from "next-auth"
 
 // Extend NextAuth session types
 declare module "next-auth" {
   interface User {
+    id: string
+    email?: string | null
     role?: string
+    token?: string
     choklaId?: string
     villageId?: string
   }
+
   interface Session {
-    user?: User
+    user: {
+      id: string
+      email?: string | null
+      role?: string
+      token?: string
+      choklaId?: string
+      villageId?: string
+    }
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string
+    role?: string
+    token?: string
+    choklaId?: string
+    villageId?: string
   }
 }
 
 export default async function LoginPage() {
-  // Get the session on the server
-  const session = await getServerSession(authOptions)
+  try {
+    // Get the session on the server
+    const session = await getServerSession(authOptions)
 
-  // Debug: log full session
+    console.log("Session in login page:", session)
 
+    // Redirect based on role if already logged in
+    if (session?.user) {
+      const { role, villageId, choklaId } = session.user
 
-  // Redirect based on role if already logged in
-  if (session?.user?.role === "SUPER_ADMIN") {
-    redirect("/admin/superadmin")
-  } else if (session?.user?.role === "VILLAGE_MEMBER" && session.user.villageId) {
-    redirect(`/admin/village/${session.user.villageId}`)
-  } else if (session?.user?.role === "CHOKHLA_MEMBER" && session.user.choklaId) {
-    redirect(`/admin/chokhla/${session.user.choklaId}`)
+      if (role === "SUPER_ADMIN") {
+        redirect("/admin/superadmin")
+      } else if (role === "VILLAGE_MEMBER" && villageId) {
+        redirect(`/admin/village/${villageId}`)
+      } else if (role === "CHOKHLA_MEMBER" && choklaId) {
+        redirect(`/admin/chokhla/${choklaId}`)
+      }
+    }
+  } catch (error) {
+    console.error("Error getting session:", error)
   }
 
   // Otherwise, render login page
