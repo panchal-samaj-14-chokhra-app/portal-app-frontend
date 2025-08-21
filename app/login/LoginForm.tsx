@@ -225,34 +225,7 @@ export default function LoginForm() {
                   </Button>
                 </form>
 
-                {/* User Types */}
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-center mb-3">
-                    <h3 className="text-sm font-medium text-gray-700">उपयोगकर्ता प्रकार</h3>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Shield className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div className="text-blue-700 text-xs font-medium">सुपर एडमिन</div>
-                    </div>
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-100">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Users className="w-4 h-4 text-green-600" />
-                      </div>
-                      <div className="text-green-700 text-xs font-medium">गांव सदस्य</div>
-                    </div>
-                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <BarChart3 className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <div className="text-purple-700 text-xs font-medium">चोखला सदस्य</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Support Links */}
+                {/* Support Links - Mobile Simplified */}
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex flex-col sm:flex-row justify-between gap-3 text-sm">
                     <Link
@@ -271,16 +244,16 @@ export default function LoginForm() {
                   </div>
                 </div>
 
-                {/* System Status */}
+                {/* System Status - Mobile Simplified */}
                 <div className="text-center">
-                  <div className="flex items-center justify-center space-x-4 text-xs text-gray-500 mb-2">
+                  <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
                     <div className="flex items-center space-x-1">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                       <span>सिस्टम ऑनलाइन</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Shield className="w-3 h-3" />
-                      <span>सुरक्षित कनेक्शन</span>
+                      <span>सुरक्षित</span>
                     </div>
                   </div>
                 </div>
