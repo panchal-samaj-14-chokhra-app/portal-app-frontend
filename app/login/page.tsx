@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
 import LoginForm from "./LoginForm"
 import { authOptions } from "../api/auth/[...nextauth]/route"
+import { getServerSession } from "next-auth"
 
+// Extend NextAuth session types
 declare module "next-auth" {
   interface User {
     role?: string
@@ -18,23 +19,24 @@ export default async function LoginPage() {
   // Get the session on the server
   const session = await getServerSession(authOptions)
 
-  // If already logged in, redirect based on role
+  // Debug: log full session
+
+
+  // Redirect based on role if already logged in
   if (session?.user?.role === "SUPER_ADMIN") {
     redirect("/admin/superadmin")
-  } else if (session?.user?.role === "VILLAGE_MEMBER") {
+  } else if (session?.user?.role === "VILLAGE_MEMBER" && session.user.villageId) {
     redirect(`/admin/village/${session.user.villageId}`)
-  } else if (session?.user?.role === "CHOKHLA_MEMBER") {
-    redirect(`/admin/chokhla/${session?.user?.choklaId}`)
+  } else if (session?.user?.role === "CHOKHLA_MEMBER" && session.user.choklaId) {
+    redirect(`/admin/chokhla/${session.user.choklaId}`)
   }
 
-  // Otherwise, render the clean login form
+  // Otherwise, render login page
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
-      {/* Main Login Container */}
       <div className="w-full max-w-sm mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          {/* Logo */}
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -42,21 +44,16 @@ export default async function LoginPage() {
               </svg>
             </div>
           </div>
-
-          {/* Title */}
           <h1 className="text-2xl font-bold text-gray-900 mb-1">पंचाल समाज जनगणना</h1>
           <p className="text-sm text-gray-600">Panchal Samaj Census System</p>
         </div>
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          {/* Form Header */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">साइन इन करें</h2>
             <p className="text-sm text-gray-600">अपने खाते में प्रवेश करें</p>
           </div>
-
-          {/* Login Form */}
           <LoginForm />
         </div>
 
@@ -96,9 +93,7 @@ export default async function LoginPage() {
               <span>सुरक्षित</span>
             </div>
           </div>
-
           <p className="text-xs text-gray-400">© 2024 पंचाल समाज जनगणना सिस्टम</p>
-
           <div className="mt-2">
             <a href="/help" className="text-xs text-orange-600 hover:text-orange-700 underline">
               सहायता चाहिए? यहाँ क्लिक करें
