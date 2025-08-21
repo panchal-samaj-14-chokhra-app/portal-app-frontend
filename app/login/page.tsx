@@ -29,19 +29,18 @@ export default async function LoginPage() {
 
   // Otherwise, render the clean login form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
       {/* Main Login Container */}
       <div className="w-full  mx-auto">
         {/* Header */}
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-
-          {/* Login Form */}
-          <LoginForm />
 
 
-        </div>
+        {/* Login Form */}
+        <LoginForm />
+
+
 
 
       </div>
