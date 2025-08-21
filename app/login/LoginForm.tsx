@@ -1,61 +1,59 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
-import { Eye, EyeOff, Mail, Lock, HelpCircle, Shield, Users, BarChart3 } from "lucide-react"
-import { Button } from "@/components/ui/button/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
-import { Input } from "@/components/ui/input/input"
-import { Label } from "@/components/ui/label/label"
-import { Alert, AlertDescription } from "@/components/ui/alert/alert"
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { Eye, EyeOff, Mail, Lock, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card";
+import { Input } from "@/components/ui/input/input";
+import { Label } from "@/components/ui/label/label";
+import { Alert, AlertDescription } from "@/components/ui/alert/alert";
 
 export default function LoginForm() {
-  const [formData, setFormData] = useState({ email: "", password: "", showPassword: false })
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-
+  const [formData, setFormData] = useState({ email: "", password: "", showPassword: false });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     const result = await signIn("credentials", {
       email: formData.email,
       password: formData.password,
       redirect: false,
-    })
+    });
 
     if (result?.error) {
-      setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।")
+      setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।");
     } else {
-      router.refresh()
+      // Let the server-side page handle the redirect on reload
+      router.refresh();
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Mobile Header */}
-      <header className="lg:hidden bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
-        <div className="container mx-auto px-4 py-4">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Image
                 src="/images/main-logo.png"
                 alt="Panchal Samaj Logo"
-                width={50}
-                height={50}
+                width={60}
+                height={60}
                 className="rounded-full shadow-lg"
               />
-              <div className="text-center">
-                <h1 className="text-xl font-bold text-white">पंचाल समाज 14 चोखरा</h1>
-                <p className="text-orange-100 text-sm">डिजिटल जनगणना 2025</p>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">पंचाल समाज 14 चोखरा</h1>
+                <p className="text-orange-100 text-sm md:text-lg">डिजिटल जनगणना 2025 - एडमिन लॉगिन</p>
               </div>
             </div>
           </div>
@@ -63,224 +61,150 @@ export default function LoginForm() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 lg:py-12">
-        <div className="lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center max-w-6xl mx-auto">
-          {/* Left Side - Branding (Desktop Only) */}
-          <div className="hidden lg:block">
-            <div className="space-y-8">
-              {/* Logo and Title */}
-              <div className="text-center lg:text-left">
-                <div className="flex items-center justify-center lg:justify-start space-x-4 mb-6">
-                  <Image
-                    src="/images/main-logo.png"
-                    alt="Panchal Samaj Logo"
-                    width={80}
-                    height={80}
-                    className="rounded-full shadow-xl"
-                  />
-                  <div>
-                    <h1 className="text-3xl xl:text-4xl font-bold text-gray-800">पंचाल समाज 14 चोखरा</h1>
-                    <p className="text-lg text-orange-600 font-medium">डिजिटल जनगणना 2025</p>
+      <main className="container mx-auto px-4 py-8 md:py-12">
+        <div className="max-w-md mx-auto">
+          <Card className="bg-gradient-to-br from-white to-orange-50 border-orange-200 shadow-xl">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl text-orange-700">एडमिन लॉगिन पोर्टल</CardTitle>
+              <CardDescription>जनगणना प्रबंधन प्रणाली में प्रवेश के लिए साइन इन करें</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="email" className="text-orange-700 font-medium">
+                    ईमेल पता *
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="अपना ईमेल पता दर्ज करें"
+                      className="border-orange-200 focus:border-orange-400 pl-10"
+                      required
+                    />
                   </div>
                 </div>
-                <p className="text-gray-600 text-lg leading-relaxed">
-                  आधुनिक तकनीक के साथ हमारे समुदाय की संपूर्ण जनगणना प्रबंधन प्रणाली में आपका स्वागत है।
-                </p>
-              </div>
-
-              {/* Features */}
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex items-center space-x-4 p-4 bg-white/60 rounded-xl backdrop-blur-sm border border-orange-100">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">परिवार प्रबंधन</h3>
-                    <p className="text-sm text-gray-600">संपूर्ण परिवारिक जानकारी का डिजिटल रिकॉर्ड</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4 p-4 bg-white/60 rounded-xl backdrop-blur-sm border border-orange-100">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">डेटा एनालिटिक्स</h3>
-                    <p className="text-sm text-gray-600">विस्तृत रिपोर्ट और सांख्यिकीय विश्लेषण</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4 p-4 bg-white/60 rounded-xl backdrop-blur-sm border border-orange-100">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Shield className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">सुरक्षित प्रणाली</h3>
-                    <p className="text-sm text-gray-600">उन्नत सुरक्षा के साथ डेटा संरक्षण</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Statistics */}
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white">
-                <h3 className="text-lg font-semibold mb-4">वर्तमान आंकड़े</h3>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold">14</div>
-                    <div className="text-sm text-orange-100">चोखरा</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">100+</div>
-                    <div className="text-sm text-orange-100">गांव</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">1000+</div>
-                    <div className="text-sm text-orange-100">परिवार</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Login Form */}
-          <div className="w-full max-w-md mx-auto lg:max-w-none">
-            <Card className="bg-white/80 backdrop-blur-sm border-orange-200 shadow-2xl">
-              <CardHeader className="text-center pb-6">
-                <CardTitle className="text-2xl lg:text-3xl text-orange-700 font-bold">एडमिन लॉगिन पोर्टल</CardTitle>
-                <CardDescription className="text-gray-600 text-base">
-                  जनगणना प्रबंधन प्रणाली में प्रवेश के लिए साइन इन करें
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Email Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-orange-700 font-medium text-sm">
-                      ईमेल पता *
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                        placeholder="आपका ईमेल पता दर्ज करें"
-                        className="border-orange-200 focus:border-orange-400 focus:ring-orange-400 pl-10 h-12 text-base"
-                        required
-                        disabled={loading}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-orange-700 font-medium text-sm">
-                      पासवर्ड *
-                    </Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        id="password"
-                        type={formData.showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                        placeholder="पासवर्ड दर्ज करें"
-                        className="border-orange-200 focus:border-orange-400 focus:ring-orange-400 pl-10 pr-12 h-12 text-base"
-                        required
-                        disabled={loading}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-10 w-10 hover:bg-gray-100"
-                        onClick={() => setFormData((prev) => ({ ...prev, showPassword: !prev.showPassword }))}
-                        disabled={loading}
-                      >
-                        {formData.showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Error Alert */}
-                  {error && (
-                    <Alert className="border-red-200 bg-red-50">
-                      <AlertDescription className="text-red-800 text-sm">{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  {/* Login Button */}
-                  <Button
-                    type="submit"
-                    disabled={loading || !formData.email || !formData.password}
-                    className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium text-base shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    {loading ? "लॉगिन हो रहा है..." : "लॉगिन करें"}
-                  </Button>
-                </form>
-
-                {/* Support Links - Mobile Simplified */}
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="flex flex-col sm:flex-row justify-between gap-3 text-sm">
-                    <Link
-                      href="/reset-password"
-                      className="text-orange-600 hover:text-orange-700 hover:underline transition-colors text-center sm:text-left"
+                <div>
+                  <Label htmlFor="password" className="text-orange-700 font-medium">
+                    पासवर्ड *
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="password"
+                      type={formData.showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="पासवर्ड दर्ज करें"
+                      className="border-orange-200 focus:border-orange-400 pl-10 pr-10"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setFormData(prev => ({ ...prev, showPassword: !prev.showPassword }))}
                     >
-                      पासवर्ड भूल गए?
-                    </Link>
-                    <Link
-                      href="/help"
-                      className="text-orange-600 hover:text-orange-700 hover:underline flex items-center justify-center sm:justify-start transition-colors"
-                    >
-                      <HelpCircle className="w-4 h-4 mr-1" />
-                      सहायता केंद्र
-                    </Link>
+                      {formData.showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400" />
+                      )}
+                    </Button>
                   </div>
                 </div>
-
-                {/* System Status - Mobile Simplified */}
-                <div className="text-center">
-                  <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span>सिस्टम ऑनलाइन</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Shield className="w-3 h-3" />
-                      <span>सुरक्षित</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Back to Home */}
-            <div className="text-center mt-6">
-              <Link href="/">
+                {error && (
+                  <Alert className="border-red-200 bg-red-50">
+                    <AlertDescription className="text-red-800">{error}</AlertDescription>
+                  </Alert>
+                )}
                 <Button
-                  variant="outline"
-                  className="border-orange-200 text-orange-600 hover:bg-orange-50 bg-white/80 backdrop-blur-sm shadow-lg"
+                  type="submit"
+                  disabled={loading || !formData.email || !formData.password}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
                 >
-                  मुख्य पेज पर वापस जाएं
+                  {loading ? "लॉगिन हो रहा है..." : "लॉगिन करें"}
                 </Button>
-              </Link>
-            </div>
+              </form>
+              {/* Support Options */}
+              <div className="mt-6 pt-6 border-t border-orange-200">
+                <div className="flex justify-between text-sm">
+                  <Link href="/reset-password" className="text-orange-600 hover:text-orange-700 hover:underline">
+                    पासवर्ड भूल गए?
+                  </Link>
+                  <Link
+                    href="/help"
+                    className="text-orange-600 hover:text-orange-700 hover:underline flex items-center"
+                  >
+                    <HelpCircle className="w-4 h-4 mr-1" />
+                    सहायता
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {/* Back to Home */}
+          <div className="text-center mt-6">
+            <Link href="/">
+              <Button variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 bg-transparent">
+                मुख्य पेज पर वापस जाएं
+              </Button>
+            </Link>
           </div>
         </div>
       </main>
+      <div className="text-center">
+        <div className="flex items-center justify-center space-x-4 text-xs text-gray-500 mb-2">
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span>सिस्टम ऑनलाइन</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>सुरक्षित</span>
+          </div>
+        </div>
 
+
+
+        <div className="mt-2">
+          <a href="/help" className="text-xs text-orange-600 hover:text-orange-700 underline">
+            सहायता चाहिए? यहाँ क्लिक करें
+          </a>
+        </div>
+      </div>
+      <div className="bg-white/80 rounded-xl p-4 mb-4">
+        <div className="text-center mb-3">
+          <h3 className="text-sm font-medium text-gray-700">उपयोगकर्ता प्रकार</h3>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <div className="text-blue-600 text-xs font-medium">सुपर एडमिन</div>
+          </div>
+          <div className="p-2 bg-green-50 rounded-lg">
+            <div className="text-green-600 text-xs font-medium">गांव सदस्य</div>
+          </div>
+          <div className="p-2 bg-purple-50 rounded-lg">
+            <div className="text-purple-600 text-xs font-medium">चोखला सदस्य</div>
+          </div>
+        </div>
+      </div>
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-6 mt-12">
+      <footer className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8 mt-16">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-orange-100 text-sm">© 2025 पंचाल समाज 14 चोखरा डिजिटल जनगणना। सभी अधिकार सुरक्षित।</p>
+          <p className="text-orange-100">© 2025 पंचाल समाज 14 चोखरा डिजिटल जनगणना। सभी अधिकार सुरक्षित।</p>
         </div>
       </footer>
     </div>
-  )
+  );
 }
