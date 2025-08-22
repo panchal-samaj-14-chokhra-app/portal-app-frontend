@@ -54,7 +54,7 @@ interface CreatedData {
 }
 
 function SuperAdmin() {
-  const [activeTab, setActiveTab] = useState("village")
+  const [activeTab, setActiveTab] = useState("chokhla")
   const [openChokhlaModal, setOpenChokhlaModal] = useState(false)
   const [openAddUserModal, setOpenAddUserModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
