@@ -200,7 +200,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                   <TableHead>गांव का नाम</TableHead>
                   <TableHead>गांव सदस्य</TableHead>
                   <TableHead>संपर्क</TableHead>
-
+                  <TableHead>चोखरा</TableHead>
                   <TableHead>स्थान</TableHead>
                   <TableHead className="text-center">परिवार</TableHead>
                   <TableHead className="text-center">सदस्य</TableHead>
@@ -224,6 +224,13 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                         <div>
                           <div className="font-medium">{village.villageMemberName}</div>
                           <div className="text-sm text-gray-500">{village.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{village.mobileNumber}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{village.chakolaName}</div>
+
                         </div>
                       </TableCell>
                       <TableCell>{village.mobileNumber}</TableCell>

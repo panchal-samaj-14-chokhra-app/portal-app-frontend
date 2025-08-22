@@ -37,8 +37,8 @@ import ErrorModal from "@/components/superadmin/error-modal"
 import AddUserForm from "@/components/superadmin/add-user-form"
 
 const SIDEBAR_TABS = [
-  { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
   { key: "chokhla", label: "चोखरा प्रबंधन", icon: Building2, shortLabel: "चोखरा" },
+  { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
   { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
   { key: "user", label: "यूज़र प्रबंधन", icon: Users, shortLabel: "यूज़र" },
   { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, MapPin, Users, School, Heart, Building, Loader2, Phone, Mail } from "lucide-react"
+import { Eye, MapPin, Users, School, Heart, Building, Loader2, Phone, Mail, Hotel } from "lucide-react"
 import { AddVillageForm } from "./add-village-form"
 import type { UseFormReturn } from "react-hook-form"
 
@@ -21,9 +21,10 @@ interface Village {
   isVillageHaveSchool: boolean
   isVillageHavePrimaryHealthCare: boolean
   isVillageHaveCommunityHall: boolean
-  _count?: {
-    families: number
-  }
+
+  familyCount: number,
+  personCount: number
+
 }
 
 interface VillageManagementProps {
@@ -43,7 +44,6 @@ export function VillageManagement({
   villages,
   isLoading,
   userType,
-  chokhlaId,
   onVillageView,
   open,
   onOpenChange,
@@ -89,7 +89,14 @@ export function VillageManagement({
               <div>
                 <p className="text-green-600 text-sm font-medium">कुल परिवार</p>
                 <p className="text-2xl sm:text-3xl font-bold text-green-700">
-                  {villages?.reduce((acc, village) => acc + (village._count?.families || 0), 0) || 0}
+                  {villages?.reduce((acc, village) => acc + (village.familyCount || 0), 0) || 0}
+                </p>
+                <p className="text-xs text-green-500 mt-1">पंजीकृत परिवार</p>
+              </div>
+              <div>
+                <p className="text-green-600 text-sm font-medium">कुल सदस्य</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-700">
+                  {villages?.reduce((acc, village) => acc + (village.personCount || 0), 0) || 0}
                 </p>
                 <p className="text-xs text-green-500 mt-1">पंजीकृत परिवार</p>
               </div>
@@ -116,7 +123,23 @@ export function VillageManagement({
             </div>
           </CardContent>
         </Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-shadow">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-600 text-sm font-medium"> सामुदायिक हॉल वाले गांव</p>
+                <p className="text-2xl sm:text-3xl font-bold text-purple-700">
+                  {villages?.filter((v) => v.isVillageHaveCommunityHall).length || 0}
+                </p>
+                <p className="text-xs text-purple-500 mt-1">शिक्षा सुविधा</p>
+              </div>
+              <div className="bg-purple-500 p-3 rounded-full">
+                <Hotel className="w-6 h-6 text-white" />
 
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 hover:shadow-lg transition-shadow">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
@@ -273,6 +296,7 @@ export function VillageManagement({
                         <TableHead className="text-white font-bold text-sm uppercase tracking-wider">आयु</TableHead>
                         <TableHead className="text-white font-bold text-sm uppercase tracking-wider">स्थान</TableHead>
                         <TableHead className="text-white font-bold text-sm uppercase tracking-wider">परिवार</TableHead>
+                        <TableHead className="text-white font-bold text-sm uppercase tracking-wider">सदस्य</TableHead>
                         <TableHead className="text-white font-bold text-sm uppercase tracking-wider">सुविधाएं</TableHead>
                         <TableHead className="text-white font-bold text-sm uppercase tracking-wider">कार्रवाई</TableHead>
                       </TableRow>
@@ -325,7 +349,12 @@ export function VillageManagement({
                           </TableCell>
                           <TableCell className="px-4 py-4 whitespace-nowrap text-center">
                             <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              {village._count?.families || 0}
+                              {village.familyCount || 0}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="px-4 py-4 whitespace-nowrap text-center">
+                            <Badge variant="secondary" className="bg-green-100 text-green-700">
+                              {village.personCount || 0}
                             </Badge>
                           </TableCell>
                           <TableCell className="px-4 py-4 whitespace-nowrap">
