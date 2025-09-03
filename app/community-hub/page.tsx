@@ -1,4 +1,3 @@
-
 import { getAllChokhlasServer } from '@/lib/server-api/getChokhlas'
 import ClientComponent from './ClientComponent'
 
