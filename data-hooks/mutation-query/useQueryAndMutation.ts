@@ -234,4 +234,3 @@ export const useGetPollsByVillage = (villageId?: string) => {
 
 
 //polls app integration
-
