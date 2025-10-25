@@ -75,7 +75,7 @@ export const getAlluserList = async () => {
 }
 
 
-export const createMember = async (payload) => {
+export const createMember = async (payload: any) => {
   const { data } = await request.post('/person/create', payload);
   return { data };
 }
@@ -98,7 +98,7 @@ export const toggleUserStatus = async (userId: string) => {
 };
 
 
-export const registerUser = async (payload) => {
+export const registerUser = async (payload: any) => {
   const { data } = await request.post(`/api/auth/register`, payload);
   return data;
 };
@@ -107,4 +107,34 @@ export const registerUser = async (payload) => {
 export const updatePerson = async ({ id, payload }: { id: string; payload: any }) => {
   const { data } = await request.put(`/person/update/${id}`, payload);
   return data;
+}
+
+// polls
+export const getPolls = async () => {
+  const { data } = await request.get('/polls/getpolls');
+  return data;
+}
+
+export const getPollsByVillage = async (villageId: string) => {
+  const { data } = await request.get(`/polls/getpolls/${villageId}`)
+  return data
+}
+
+export const createPoll = async (payload: any) => {
+  const { data } = await request.post('/polls/create', payload);
+  return data;
+}
+export const updatePoll = async (pollId: string, payload: any) => {
+    const { data } = await request.put(`/polls/edit/${pollId}`, payload)
+    return data
+}
+
+export const submitVote = async (payload: any) => {
+  const { data } = await request.post('/polls/vote', payload)
+  return data
+}
+
+export const deletePoll = async (pollId: string) => {
+  const { data } = await request.delete(`/polls/delete/${pollId}`)
+  return data
 }

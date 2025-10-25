@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
+import { deletePoll } from '../requests/village-family';
 
 export const useCreateFamily = (onSuccess: any, onError: { (): void; (arg0: Error): void; }) => {
   const mutation = useMutation({
@@ -120,6 +121,48 @@ export const useCreateChokhla = () => {
   });
 }
 
+export const useCreatePoll = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => createPoll(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['polls'] });
+    },
+  });
+}
+
+export const useUpdatePoll = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => updatePoll(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['polls'] });
+    },
+  });
+}
+
+export const useDeletePoll = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (pollId: string) => deletePoll(pollId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['polls'] });
+    },
+    onError: (err) => console.error('Delete poll failed', err),
+  });
+}
+
+export const useSubmitVote = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: any) => submitVote(payload),
+    onSuccess: () => {
+      // optionally refresh polls or other queries
+      queryClient.invalidateQueries({ queryKey: ['polls'] })
+    },
+  })
+}
+
 
 export const useCreateMember = () => {
   return useMutation({
@@ -135,18 +178,18 @@ export const useGetMemberDetails = (memberId: string) => {
     queryFn: () => fetchMemberDetails(memberId),
   });
 };
-export const useDeleteMember = (): ReturnType<typeof useMutation> => {
+export const useDeleteMember = () => {
   return useMutation({
     mutationFn: (id: any) => removeMemberRequest(id),
   });
 };
 
-export const useUpdatePerson = (): ReturnType<typeof useMutation> => {
+export const useUpdatePerson = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: any }) => updatePerson({ id, payload }),
   });
 };
-export const useToggleUserStatus = (): ReturnType<typeof useMutation> => {
+export const useToggleUserStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => toggleUserStatus(userId),
@@ -173,3 +216,22 @@ export const useRegisterUser = () => {
     },
   })
 }
+
+export const useGetPolls = () => {
+  return useQuery({
+    queryKey: ['polls'],
+    queryFn: getPolls,
+  });
+}
+
+export const useGetPollsByVillage = (villageId?: string) => {
+  return useQuery({
+    queryKey: ['polls', villageId],
+    queryFn: () => getPollsByVillage(villageId!),
+    enabled: !!villageId,
+  })
+}
+
+
+//polls app integration
+

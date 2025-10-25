@@ -7,13 +7,15 @@ import {
   useGetAllUserList,
   useToggleUserStatus,
   useRegisterUser,
+  useGetPolls,
 } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, Home, Building2, BarChart3, Users, User, Menu } from "lucide-react"
+import { LogOut, Home, Building2, BarChart3, Users, User, Menu, Vote } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,13 +37,16 @@ import AddChokhlaForm from "@/components/superadmin/add-chokhla-form"
 import SuccessModal from "@/components/superadmin/success-modal"
 import ErrorModal from "@/components/superadmin/error-modal"
 import AddUserForm from "@/components/superadmin/add-user-form"
+import Polls from "@/components/superadmin/polls"
 
 const SIDEBAR_TABS = [
   { key: "chokhla", label: "चोखरा प्रबंधन", icon: Building2, shortLabel: "चोखरा" },
   { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
   { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
   { key: "user", label: "यूज़र प्रबंधन", icon: Users, shortLabel: "यूज़र" },
+  { key: "polls", label: "पोल्स", icon: Vote, shortLabel: "पोल्स", tab: "polls" },
   { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
+
 ]
 
 interface CreatedData {
@@ -70,9 +75,16 @@ function SuperAdmin() {
   const { data: villages, isLoading: isVillagesLoading } = useAllVillages()
   const { data: chokhlas, isLoading: isChokhlasLoading } = useAllChokhlas()
   const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList()
+  const { data: pollsData, isLoading: pollsLoading, error: pollsError } = useGetPolls()
   const { mutate: createChokhla } = useCreateChokhla()
-  const { mutate: registerUser, isLoading: creatingUser, isError, error } = useRegisterUser()
-  const { mutate, isLoading: loading } = useToggleUserStatus()
+  const registerUserMutation = useRegisterUser()
+  const registerUser = registerUserMutation.mutate
+  const creatingUser = (registerUserMutation as any).isLoading
+  const isError = (registerUserMutation as any).isError
+  const error = (registerUserMutation as any).error
+  const toggleUserStatusMutation = useToggleUserStatus()
+  const mutate = toggleUserStatusMutation.mutate
+  const loading = (toggleUserStatusMutation as any).isLoading
   const { data: userData } = useSession()
 
   const handleChokhlaSubmit = (formData: any) => {
@@ -190,6 +202,8 @@ function SuperAdmin() {
         )
       case "profile":
         return <ProfileView userData={userData} />
+      case "polls":
+        return <Polls polls={pollsData?.data || []} isLoading={pollsLoading} error={pollsError} />
       default:
         return null
     }
