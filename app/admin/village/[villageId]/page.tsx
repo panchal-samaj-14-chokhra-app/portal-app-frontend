@@ -25,7 +25,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge/badge"
 import { Input } from "@/components/ui/input/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table/table"
-import { useDeleteFamilyUsingID, useVillageDetails } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useDeleteFamilyUsingID, useVillageDetails, useGetPollsByVillage, useSubmitVote } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { getPollsByVillage } from '@/data-hooks/requests/village-family'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useQueryClient } from "@tanstack/react-query"
 import AddFamilyDialog from "@/components/add-family-component/addfamily"
+import { useToast } from '@/hooks/use-toast'
+import DonutChart, { DEFAULT_COLORS } from '@/components/ui/donut'
 
 export default function VillageDetailPage() {
   const { data: session, status } = useSession()
@@ -77,7 +80,155 @@ export default function VillageDetailPage() {
   const queryClient = useQueryClient()
 
   const { data: villageData, isLoading, error } = useVillageDetails(villageId)
+  const { data: pollsResponse, isLoading: pollsLoading, error: pollsError } = useGetPollsByVillage(villageId)
+
+  const polls = (pollsResponse && (pollsResponse.data || pollsResponse)) || []
+
+  const [viewOpen, setViewOpen] = useState(false)
+  const [viewIndex, setViewIndex] = useState(0)
+  const [voteSelections, setVoteSelections] = useState<Record<string, string[]>>({})
+  const [disabledQuestions, setDisabledQuestions] = useState<Record<string, boolean>>({})
+  const [submittedPolls, setSubmittedPolls] = useState<Record<string, boolean>>({})
+
+  const submitVoteMutation = useSubmitVote()
+  
+  
+  const initializeFromPoll = (poll: any) => {
+    const initialSelections: Record<string, string[]> = {}
+    const initialDisabled: Record<string, boolean> = {}
+
+    if (poll && poll.questions) {
+      ;(poll.questions || []).forEach((q: any) => {
+        if (q.villageVotedOptionId) {
+          initialSelections[q.id] = [q.villageVotedOptionId]
+          initialDisabled[q.id] = true
+        } else if (q.villageVotedOptionIds && Array.isArray(q.villageVotedOptionIds) && q.villageVotedOptionIds.length) {
+          initialSelections[q.id] = [...q.villageVotedOptionIds]
+          initialDisabled[q.id] = true
+        } else if (q.votedByVillage) {
+          const votedOpt = (q.options || []).find((o: any) => o.votedByVillage || o.villageVoted)
+          if (votedOpt) {
+            initialSelections[q.id] = [votedOpt.id]
+            initialDisabled[q.id] = true
+          } else {
+            initialSelections[q.id] = []
+            initialDisabled[q.id] = true
+          }
+        } else {
+          initialSelections[q.id] = []
+          initialDisabled[q.id] = false
+        }
+      })
+    }
+
+    setVoteSelections(initialSelections)
+    setDisabledQuestions(initialDisabled)
+    if (poll && poll.id) {
+      const anyDisabled = Object.values(initialDisabled).some(Boolean)
+      setSubmittedPolls((s) => ({ ...s, [poll.id]: anyDisabled }))
+    }
+  }
+
+  const openView = (idx: number) => {
+    const poll = polls[idx]
+    initializeFromPoll(poll)
+    setViewIndex(idx)
+    setViewOpen(true)
+  }
+
+  const prevView = () => {
+    if (!polls || polls.length === 0) return
+    setViewIndex((i) => {
+      const nextIdx = (i - 1 + polls.length) % polls.length
+      openView(nextIdx)
+      return nextIdx
+    })
+  }
+  const nextView = () => {
+    if (!polls || polls.length === 0) return
+    setViewIndex((i) => {
+      const nextIdx = (i + 1) % polls.length
+      openView(nextIdx)
+      return nextIdx
+    })
+  }
   const { mutate: deleteFamily } = useDeleteFamilyUsingID()
+
+  const sessionUserId = (session as any)?.user?.id
+  const { toast } = useToast()
+
+  const toggleSelection = (questionId: string, optionId: string, multiple: boolean) => {
+    setVoteSelections((s) => {
+      const current = s[questionId] ?? []
+      if (multiple) {
+        // toggle
+        const exists = current.includes(optionId)
+        return { ...s, [questionId]: exists ? current.filter((o) => o !== optionId) : [...current, optionId] }
+      } else {
+        return { ...s, [questionId]: [optionId] }
+      }
+    })
+  }
+
+  const handleSubmitVotesForCurrent = async () => {
+    const poll = polls[viewIndex]
+    if (!poll) return
+    if (!sessionUserId) {
+      // no user
+      toast({ title: 'लॉगिन आवश्यक', description: 'कृपया पहले लॉगिन करें।', variant: 'destructive' })
+      return
+    }
+
+    const submissions: any[] = []
+    ;(poll.questions || []).forEach((q: any) => {
+      const selected = voteSelections[q.id] || []
+      selected.forEach((optionId) => {
+        submissions.push({
+          villageId: villageId,
+          userId: sessionUserId,
+          pollId: poll.id,
+          questionId: q.id,
+          optionId,
+        })
+      })
+    })
+
+    if (submissions.length === 0) {
+      toast({ title: 'चुनाव आवश्यक', description: 'कृपया कम से कम एक विकल्प चुनें', variant: 'destructive' })
+      return
+    }
+
+    try {
+      // submit each vote sequentially (could be parallel)
+      await Promise.all(submissions.map((p) => submitVoteMutation.mutateAsync(p)))
+      // fetch fresh polls from server for this village so we derive submitted state from server response
+      try {
+  const fresh: any = await queryClient.fetchQuery({ queryKey: ['polls', villageId], queryFn: () => getPollsByVillage(villageId) })
+  const freshPolls: any[] = (fresh && (fresh.data || fresh)) || []
+        // reset selections for this poll
+        const newSel = { ...voteSelections }
+        ;(poll.questions || []).forEach((q: any) => delete newSel[q.id])
+        setVoteSelections(newSel)
+
+        const updatedPoll = freshPolls[viewIndex]
+        if (updatedPoll) {
+          initializeFromPoll(updatedPoll)
+        } else if (poll?.id) {
+          setSubmittedPolls((s) => ({ ...s, [poll.id]: true }))
+        }
+      } catch (fetchErr) {
+        // fallback: mark as submitted locally
+        if (poll?.id) setSubmittedPolls((s) => ({ ...s, [poll.id]: true }))
+      }
+
+      toast({ title: 'वोट सफल', description: 'वोट सफलतापूर्वक सबमिट किया गया।', variant: 'success' })
+      // close the poll view dialog after successful submission
+      setViewOpen(false)
+    } catch (e) {
+      console.error(e)
+      toast({ title: 'त्रुटि', description: 'वोट सबमिट करने में त्रुटि', variant: 'destructive' })
+    }
+  }
 
   const families = useMemo(() => {
     return villageData?.families
@@ -611,6 +762,24 @@ export default function VillageDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Polls Quick Action */}
+        <div className="mt-6">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center text-orange-700">Polls</CardTitle>
+              <CardDescription>सत्यापित पोल्स देखें</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">कुल पोल्स: {polls?.length || 0}</div>
+                <div>
+                  <Button onClick={() => openView(0)} className="bg-orange-500 hover:bg-orange-600 text-white">View Polls / पोल देखें</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
 
       {/* Confirmation Modal */}
@@ -697,10 +866,144 @@ export default function VillageDetailPage() {
       <AddFamilyDialog
         isOpen={addFamilyOpen}
         onClose={() => setAddFamilyOpen(false)}
-
+        onSubmit={async (formData: any) => {
+          // noop submit handler for AddFamilyDialog usage on this page
+          return Promise.resolve()
+        }}
         chakolaId={chokhlaID}
         villageId={villageId}
       />
+      {/* Polls View Dialog (carousel) */}
+      <Dialog open={viewOpen} onOpenChange={(open) => {
+        setViewOpen(open)
+        if (!open) {
+          // clear selections/disabled state when dialog closes
+          setVoteSelections({})
+          setDisabledQuestions({})
+        } else {
+          // if opening and a poll is currently selected, re-init from that poll
+          if (typeof viewIndex === 'number' && polls && polls[viewIndex]) {
+            openView(viewIndex)
+          }
+        }
+      }}>
+  <DialogContent className="w-[98vw] max-w-5xl max-h-[95vh] p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center">Polls</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-start gap-4 mt-4">
+            <div className="flex-shrink-0 flex flex-col items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={prevView} aria-label="Previous poll">Prev</Button>
+              <div className="text-sm text-gray-500">{viewIndex + 1} / {polls?.length || 0}</div>
+              <Button variant="ghost" size="sm" onClick={nextView} aria-label="Next poll">Next</Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto max-h-[70vh]">
+              {polls.length === 0 ? (
+                <div className="text-center text-sm text-gray-600">No polls available</div>
+              ) : (
+                (() => {
+                  const poll = polls[viewIndex]
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold">{poll.title}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{poll.description}</p>
+                      <div className="text-xs text-gray-500 mb-3">Created: {poll.createdAt ? new Date(poll.createdAt).toLocaleDateString('hi-IN') : '-'}</div>
+                      <div className="space-y-4">
+                        {(poll.questions || []).map((q: any) => {
+                          // build vote counts
+                          const options = (q.options || []).map((o: any, i: number) => {
+                            const count = o.votesCount ?? o.votes ?? o.count ?? 0
+                            return { id: o.id, optionText: o.optionText, count, color: undefined }
+                          })
+                          const total = options.reduce((s: number, it: any) => s + (it.count || 0), 0)
+                          const top = options.reduce((best: any, it: any) => (it.count > (best.count || 0) ? it : best), options[0] || { count: 0 })
+
+                          const donutData = options.map((it: any, i: number) => ({ label: it.optionText, value: it.count, color: undefined }))
+
+                          return (
+                            <div key={q.id} className="p-3 border rounded-md">
+                              <div className="flex items-start gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="font-medium">{q.questionText}</div>
+                                    {disabledQuestions[q.id] && (
+                                      <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded">वोट पहले से दिया गया</div>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2">
+                                    {(q.options || []).map((o: any) => {
+                                      const multiple = q.questionType === 'MULTIPLE_CHOICE'
+                                      const checked = (voteSelections[q.id] || []).includes(o.id)
+                                      const optionDisabled = Boolean(disabledQuestions[q.id] || o.votedByVillage || o.villageVoted)
+                                      const isChosen = checked || o.votedByVillage || o.villageVoted
+                                      const count = o.votesCount ?? o.votes ?? o.count ?? 0
+
+                                      return (
+                                        <label
+                                          key={o.id}
+                                          className={`flex items-center gap-3 w-full p-2 rounded ${isChosen ? 'bg-green-50 border border-green-100' : 'hover:bg-gray-50'}`}
+                                        >
+                                          <input
+                                            type={multiple ? 'checkbox' : 'radio'}
+                                            name={`view-q-${q.id}`}
+                                            checked={checked}
+                                            onChange={() => toggleSelection(q.id, o.id, multiple)}
+                                            className="w-4 h-4"
+                                            disabled={optionDisabled}
+                                          />
+                                          <span title={o.optionText} className={`text-sm flex-1 ${isChosen ? 'font-semibold text-green-700' : optionDisabled ? 'text-gray-400' : ''}`}>{o.optionText}</span>
+                                          <span className="text-xs text-gray-500">{count} वोट</span>
+                                          {isChosen && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                                        </label>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                                <div className="w-40 flex-shrink-0 flex flex-col items-center">
+                                  <DonutChart data={donutData} size={96} strokeWidth={14} showCenterPercent />
+                                  <div className="mt-2 text-xs text-gray-600 text-center">Top: {top?.optionText ? String(top.optionText).slice(0, 18) : '—'}</div>
+                                  <div className="text-xs text-gray-500">Total: {total}</div>
+                                  <div className="mt-2 w-full">
+                                    {options.map((it: any, i: number) => {
+                                      const pct = total ? Math.round((it.count / total) * 100) : 0
+                                      const color = DEFAULT_COLORS[i % DEFAULT_COLORS.length]
+                                      return (
+                                        <div key={it.id} className="flex items-center justify-between text-xs text-gray-600 py-0.5">
+                                          <div className="flex items-center gap-2">
+                                            <span style={{ background: color }} className="w-3 h-3 rounded-full inline-block" />
+                                            <span title={String(it.optionText)} className="truncate max-w-[120px]">{String(it.optionText).slice(0, 24)}</span>
+                                          </div>
+                                          <div className="ml-2 text-gray-500">{pct}%</div>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                        <div className="mt-4 flex justify-end">
+                          <Button
+                            onClick={handleSubmitVotesForCurrent}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            disabled={Boolean((submitVoteMutation as any).isLoading || (polls[viewIndex] && submittedPolls[polls[viewIndex].id]))}
+                          >
+                            {(submitVoteMutation as any).isLoading ? 'सबमिट कर रहे हैं...' : 'वोट सबमिट करें'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
     </div>
   )
 }
