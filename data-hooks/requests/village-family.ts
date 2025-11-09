@@ -125,8 +125,8 @@ export const createPoll = async (payload: any) => {
   return data;
 }
 export const updatePoll = async (pollId: string, payload: any) => {
-    const { data } = await request.put(`/polls/edit/${pollId}`, payload)
-    return data
+  const { data } = await request.put(`/polls/edit/${pollId}`, payload)
+  return data
 }
 
 export const submitVote = async (payload: any) => {
@@ -136,5 +136,10 @@ export const submitVote = async (payload: any) => {
 
 export const deletePoll = async (pollId: string) => {
   const { data } = await request.delete(`/polls/delete/${pollId}`)
+  return data
+}
+
+export const getPollResultsById = async (pollId: string) => {
+  const { data } = await request.get(`/polls/results/${pollId}`)
   return data
 }

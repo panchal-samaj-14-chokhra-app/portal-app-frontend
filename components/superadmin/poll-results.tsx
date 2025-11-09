@@ -1,31 +1,23 @@
 "use client"
-
 import React from 'react'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import DonutChart, { DEFAULT_COLORS } from '@/components/ui/donut'
-
 type PollOption = { id: string; optionText: string; votesCount?: number }
 type Question = { id: string; questionText: string; options: PollOption[] }
-type Poll = { id: string; title: string; description?: string; questions: Question[] }
+type Poll = { id: string; title: string; description?: string; questions: Question[], votes: VoteData[] }
 
 export default function PollResults({ poll }: { poll: Poll }) {
-  const router = useRouter()
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">{poll.title}</h1>
-            {poll.description ? <p className="text-sm text-slate-600">{poll.description}</p> : null}
-          </div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+        <div className="flex flex-col  gap-2 ">
+          <h1 className="text-2xl font-bold text-slate-800">{poll.title}</h1>
+
+          {poll.description && (
+            <p className="text-sm text-slate-600">{poll.description}</p>
+          )}
         </div>
       </div>
+
 
       <div className="grid grid-cols-1 gap-6">
         {poll.questions.map((q, qi) => {
@@ -73,6 +65,11 @@ export default function PollResults({ poll }: { poll: Poll }) {
           )
         })}
       </div>
+
     </div>
   )
 }
+
+
+
+

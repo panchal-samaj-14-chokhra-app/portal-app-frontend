@@ -91,14 +91,14 @@ export default function VillageDetailPage() {
   const [submittedPolls, setSubmittedPolls] = useState<Record<string, boolean>>({})
 
   const submitVoteMutation = useSubmitVote()
-  
-  
+
+
   const initializeFromPoll = (poll: any) => {
     const initialSelections: Record<string, string[]> = {}
     const initialDisabled: Record<string, boolean> = {}
 
     if (poll && poll.questions) {
-      ;(poll.questions || []).forEach((q: any) => {
+      ; (poll.questions || []).forEach((q: any) => {
         if (q.villageVotedOptionId) {
           initialSelections[q.id] = [q.villageVotedOptionId]
           initialDisabled[q.id] = true
@@ -180,18 +180,18 @@ export default function VillageDetailPage() {
     }
 
     const submissions: any[] = []
-    ;(poll.questions || []).forEach((q: any) => {
-      const selected = voteSelections[q.id] || []
-      selected.forEach((optionId) => {
-        submissions.push({
-          villageId: villageId,
-          userId: sessionUserId,
-          pollId: poll.id,
-          questionId: q.id,
-          optionId,
+      ; (poll.questions || []).forEach((q: any) => {
+        const selected = voteSelections[q.id] || []
+        selected.forEach((optionId) => {
+          submissions.push({
+            villageId: villageId,
+            userId: sessionUserId,
+            pollId: poll.id,
+            questionId: q.id,
+            optionId,
+          })
         })
       })
-    })
 
     if (submissions.length === 0) {
       toast({ title: 'चुनाव आवश्यक', description: 'कृपया कम से कम एक विकल्प चुनें', variant: 'destructive' })
@@ -203,11 +203,11 @@ export default function VillageDetailPage() {
       await Promise.all(submissions.map((p) => submitVoteMutation.mutateAsync(p)))
       // fetch fresh polls from server for this village so we derive submitted state from server response
       try {
-  const fresh: any = await queryClient.fetchQuery({ queryKey: ['polls', villageId], queryFn: () => getPollsByVillage(villageId) })
-  const freshPolls: any[] = (fresh && (fresh.data || fresh)) || []
+        const fresh: any = await queryClient.fetchQuery({ queryKey: ['polls', villageId], queryFn: () => getPollsByVillage(villageId) })
+        const freshPolls: any[] = (fresh && (fresh.data || fresh)) || []
         // reset selections for this poll
         const newSel = { ...voteSelections }
-        ;(poll.questions || []).forEach((q: any) => delete newSel[q.id])
+          ; (poll.questions || []).forEach((q: any) => delete newSel[q.id])
         setVoteSelections(newSel)
 
         const updatedPoll = freshPolls[viewIndex]
@@ -887,18 +887,18 @@ export default function VillageDetailPage() {
           }
         }
       }}>
-  <DialogContent className="w-[98vw] max-w-5xl max-h-[95vh] p-6">
+        <DialogContent className="w-full sm:w-[95vw] sm:max-w-5xl h-[100vh] sm:h-auto sm:max-h-[90vh] p-4 sm:p-6 rounded-none sm:rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-center">Polls</DialogTitle>
           </DialogHeader>
-          <div className="flex items-start gap-4 mt-4">
-            <div className="flex-shrink-0 flex flex-col items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={prevView} aria-label="Previous poll">Prev</Button>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mt-4">
+            <div className="flex sm:flex-col items-center justify-between w-full sm:w-auto gap-4 sm:gap-2 border-b sm:border-0 pb-4 sm:pb-0">
+              <Button variant="ghost" size="sm" onClick={prevView} aria-label="Previous poll" className="w-20">Prev</Button>
               <div className="text-sm text-gray-500">{viewIndex + 1} / {polls?.length || 0}</div>
-              <Button variant="ghost" size="sm" onClick={nextView} aria-label="Next poll">Next</Button>
+              <Button variant="ghost" size="sm" onClick={nextView} aria-label="Next poll" className="w-20">Next</Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto max-h-[70vh]">
+            <div className="flex-1 overflow-y-auto max-h-[calc(100vh-12rem)] sm:max-h-[70vh] w-full">
               {polls.length === 0 ? (
                 <div className="text-center text-sm text-gray-600">No polls available</div>
               ) : (
@@ -923,12 +923,12 @@ export default function VillageDetailPage() {
 
                           return (
                             <div key={q.id} className="p-3 border rounded-md">
-                              <div className="flex items-start gap-4">
-                                <div className="flex-1">
-                                  <div className="flex items-center justify-between mb-2">
+                              <div className="flex flex-col md:flex-row items-start gap-4">
+                                <div className="flex-1 w-full">
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
                                     <div className="font-medium">{q.questionText}</div>
                                     {disabledQuestions[q.id] && (
-                                      <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded">वोट पहले से दिया गया</div>
+                                      <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded whitespace-nowrap">वोट पहले से दिया गया</div>
                                     )}
                                   </div>
                                   <div className="space-y-2">
@@ -960,11 +960,11 @@ export default function VillageDetailPage() {
                                     })}
                                   </div>
                                 </div>
-                                <div className="w-40 flex-shrink-0 flex flex-col items-center">
-                                  <DonutChart data={donutData} size={96} strokeWidth={14} showCenterPercent />
+                                <div className="w-full md:w-48 flex-shrink-0 flex flex-col items-center border-t md:border-t-0 pt-4 md:pt-0">
+                                  <DonutChart data={donutData} size={120} strokeWidth={14} showCenterPercent />
                                   <div className="mt-2 text-xs text-gray-600 text-center">Top: {top?.optionText ? String(top.optionText).slice(0, 18) : '—'}</div>
                                   <div className="text-xs text-gray-500">Total: {total}</div>
-                                  <div className="mt-2 w-full">
+                                  <div className="mt-2 w-full max-w-[240px]">
                                     {options.map((it: any, i: number) => {
                                       const pct = total ? Math.round((it.count / total) * 100) : 0
                                       const color = DEFAULT_COLORS[i % DEFAULT_COLORS.length]
@@ -984,10 +984,10 @@ export default function VillageDetailPage() {
                             </div>
                           )
                         })}
-                        <div className="mt-4 flex justify-end">
+                        <div className="sticky bottom-0 left-0 right-0 mt-4 flex justify-end bg-white border-t p-4 sm:p-0 sm:border-0">
                           <Button
                             onClick={handleSubmitVotesForCurrent}
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                             disabled={Boolean((submitVoteMutation as any).isLoading || (polls[viewIndex] && submittedPolls[polls[viewIndex].id]))}
                           >
                             {(submitVoteMutation as any).isLoading ? 'सबमिट कर रहे हैं...' : 'वोट सबमिट करें'}
