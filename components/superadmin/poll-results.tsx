@@ -69,7 +69,3 @@ export default function PollResults({ poll }: { poll: Poll }) {
     </div>
   )
 }
-
-
-
-

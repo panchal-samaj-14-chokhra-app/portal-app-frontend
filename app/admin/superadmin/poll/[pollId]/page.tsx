@@ -199,6 +199,3 @@ const PollResultsAccordion = ({ votes }: { votes: VoteData[] }) => {
     </Accordion >
   )
 }
-
-
-
