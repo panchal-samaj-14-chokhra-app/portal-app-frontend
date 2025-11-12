@@ -212,6 +212,7 @@ function SuperAdmin() {
         return (
           // When rendering UserManagement
           <UserManagement
+            summary={users?.summary}
             setOnlyActive={setOnlyActive}
             onlyActive={onlyActive}
             setGlobalRole={setGlobalRole}

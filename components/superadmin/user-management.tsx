@@ -32,6 +32,11 @@ interface PaginationInfo {
 }
 
 interface UserManagementProps {
+  summary: {
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+  };
   totalPages: number
   users: User[];
   isLoading: boolean;
@@ -56,6 +61,7 @@ interface PaginationProps {
 
 const UserManagement: React.FC<UserManagementProps> = ({ users,
   globalRole, setGlobalRole,
+  summary,
   setSearchTerm,
   searchTerm,
   isLoading,
@@ -164,11 +170,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users,
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-2 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-600 text-sm font-medium">कुल यूज़र</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-700">{users?.length || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-700">{summary?.totalUsers || 0}</p>
               </div>
               <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
             </div>
@@ -176,11 +182,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users,
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-2 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-600 text-sm font-medium">सक्रिय यूज़र</p>
-                <p className="text-xl sm:text-2xl font-bold text-green-700">{activeUsers}</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-700">{summary?.activeUsers}</p>
               </div>
               <UserCheck className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
             </div>
@@ -188,11 +194,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users,
         </Card>
 
         <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-2 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-red-600 text-sm font-medium">निष्क्रिय यूज़र</p>
-                <p className="text-xl sm:text-2xl font-bold text-red-700">{inactiveUsers}</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-700">{summary?.inactiveUsers}</p>
               </div>
               <UserX className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
             </div>
@@ -200,7 +206,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users,
         </Card>
 
         <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-2 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-orange-600 text-sm font-medium">नया यूज़र</p>
