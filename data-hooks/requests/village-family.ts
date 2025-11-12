@@ -35,10 +35,11 @@ export const getVillageDetails = async (id: string) => {
   return data
 }
 
-export const getAllVillages = async () => {
-  const { data } = await request.get('/village');
+export const getAllVillages = async ({ selectedId, page = 1 }: { selectedId: string, page: number }) => {
+  const { data } = await request.get(`/village?chakolaId=${selectedId}&page=${page}`);
   return data;
-}
+};
+
 export const getAllVillagesWithChokhlaID = async (chokhlaID: string) => {
   const { data } = await request.get(`chokhla/getvillage/${chokhlaID}`);
   return data;
@@ -69,8 +70,8 @@ export const createChokhla = async (payload: any) => {
   return data;
 }
 
-export const getAlluserList = async () => {
-  const { data } = await request.get('/api/auth/users')
+export const getAlluserList = async ({ page, searchTerm, globalRole, onlyActive }: { page: string, searchTerm: string, globalRole: string, onlyActive: boolean }) => {
+  const { data } = await request.get(`/api/auth/users?page=${page}&search=${searchTerm}&globalRole=${globalRole}&onlyActive=${onlyActive}`);
   return data;
 }
 

@@ -70,11 +70,16 @@ function SuperAdmin() {
   const [errorMessage, setErrorMessage] = useState("")
   const [createdData, setCreatedData] = useState<CreatedData | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 15 });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [globalRole, setGlobalRole] = useState<string>("")
+  const [onlyActive, setOnlyActive] = useState<boolean>(false)
   // Data hooks
-  const { data: villages, isLoading: isVillagesLoading } = useAllVillages()
+  const { data: villages, isLoading: isVillagesLoading } = useAllVillages({ selectedId: selectedId ?? "", page });
   const { data: chokhlas, isLoading: isChokhlasLoading } = useAllChokhlas()
-  const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList()
+  const { data: users, isLoading: usersLoading, error: usersError } = useGetAllUserList(pagination, searchTerm, globalRole, onlyActive)
   const { data: pollsData, isLoading: pollsLoading, error: pollsError } = useGetPolls()
   const { mutate: createChokhla } = useCreateChokhla()
   const registerUserMutation = useRegisterUser()
@@ -86,6 +91,7 @@ function SuperAdmin() {
   const mutate = toggleUserStatusMutation.mutate
   const loading = (toggleUserStatusMutation as any).isLoading
   const { data: userData } = useSession()
+
 
   const handleChokhlaSubmit = (formData: any) => {
     setIsSubmitting(true)
@@ -179,7 +185,19 @@ function SuperAdmin() {
   const renderActiveTab = () => {
     switch (activeTab) {
       case "village":
-        return <VillageManagement villages={villages?.data || []} isLoading={isVillagesLoading} />
+        return <VillageManagement
+          summary={villages?.summary}
+          villages={villages?.data || []}
+          chakolaList={villages?.chakolaList || []}
+          isLoading={isVillagesLoading}
+          selectedId={selectedId}
+          setSelectedId={(id) => {
+            setSelectedId(id);
+            setPage(1); // reset to first page on filter change
+          }}
+          pagination={villages?.pagination}
+          onPageChange={(newPage) => setPage(newPage)}
+        />
       case "chokhla":
         return (
           <ChokhlaManagement
@@ -192,13 +210,25 @@ function SuperAdmin() {
         return <StatisticsView />
       case "user":
         return (
+          // When rendering UserManagement
           <UserManagement
+            setOnlyActive={setOnlyActive}
+            onlyActive={onlyActive}
+            setGlobalRole={setGlobalRole}
+            globalRole={globalRole}
+            searchTerm={searchTerm}
             onAddUser={() => setOpenAddUserModal(true)}
-            users={users || []}
+            users={users?.data || []}
             isLoading={usersLoading}
             error={usersError || loading ? "डेटा लोड करने में त्रुटि" : null}
             onToggleActive={handleToggleActive}
+            pagination={users?.pagination || { page: 1, totalPages: 1, limit: 15 }}
+            setPagination={setPagination}
+            totalPages={users?.pagination?.totalPages || 1}
+            setSearchTerm={setSearchTerm}
           />
+
+
         )
       case "profile":
         return <ProfileView userData={userData} />
@@ -388,9 +418,7 @@ function SuperAdmin() {
         chokhlaList={chokhlas || []}
         villages={villages?.data || []}
       />
-
       <SuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} data={createdData} />
-
       <ErrorModal isOpen={showErrorModal} onClose={() => setShowErrorModal(false)} message={errorMessage} />
     </div>
   )

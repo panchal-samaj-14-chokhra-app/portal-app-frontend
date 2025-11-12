@@ -62,12 +62,13 @@ export const useVillageDetails = (villageId: string) => {
   })
 }
 
-export const useAllVillages = () => {
+
+export const useAllVillages = ({ selectedId, page }: { selectedId?: string | null; page?: number }) => {
   return useQuery({
-    queryKey: ['all-villages'],
-    queryFn: getAllVillages,
+    queryKey: ['all-villages', selectedId, page],
+    queryFn: () => getAllVillages({ selectedId, page }),
   });
-}
+};
 
 export const useGetAllVillageswithChokhlaID = (chokhlaID: string) => {
   return useQuery({
@@ -199,10 +200,10 @@ export const useToggleUserStatus = () => {
   });
 };
 
-export const useGetAllUserList = () => {
+export const useGetAllUserList = ({ page, totalPages, limit, }: any, searchTerm: string, globalRole: string, onlyActive: boolean) => {
   return useQuery({
-    queryKey: ['all-users'],
-    queryFn: getAlluserList
+    queryKey: ['all-users', page, searchTerm, globalRole, onlyActive],
+    queryFn: () => getAlluserList({ page, searchTerm, globalRole, onlyActive: onlyActive ? true : false })
   });
 };
 

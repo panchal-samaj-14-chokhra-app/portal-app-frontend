@@ -25,15 +25,32 @@ interface Village {
 
 interface VillageManagementProps {
   villages: Village[]
-  isLoading: boolean
+  isLoading: boolean,
+  chakolaList: chakolaList[],
+  selectedId: string | null,
+  setSelectedId: (id: string | null) => void
+  pagination?: { page: number; totalPages: number }; // 👈 add pagination info
+  onPageChange?: (page: number) => void; // 👈 handler for page change
+  summary: {
+    totalVillages: number
+    totalFamilies: number
+    totalPersons: number
+    activeVillages: number
+  }
 }
 
-const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoading }) => {
+interface chakolaList {
+  id: string, name: string
+}
+const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoading, chakolaList, selectedId, setSelectedId, pagination, onPageChange, summary }) => {
   const router = useRouter()
 
   const handleViewVillage = (villageId: string) => {
     router.push(`/admin/village/${villageId}`)
   }
+  const handleBadgeClick = (id: string) => {
+    setSelectedId(selectedId === id ? null : id); // toggle select/deselect
+  };
 
   if (isLoading) {
     return (
@@ -68,7 +85,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-600 text-sm font-medium">कुल गांव</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-700">{villages?.length || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-700">{summary?.totalVillages || 0}</p>
               </div>
               <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
             </div>
@@ -81,7 +98,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
               <div>
                 <p className="text-green-600 text-sm font-medium">कुल परिवार</p>
                 <p className="text-xl sm:text-2xl font-bold text-green-700">
-                  {villages?.reduce((sum, village) => sum + (village.familyCount || 0), 0) || 0}
+                  {summary?.totalFamilies || 0}
                 </p>
               </div>
               <Users className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
@@ -95,7 +112,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
               <div>
                 <p className="text-purple-600 text-sm font-medium">कुल सदस्य</p>
                 <p className="text-xl sm:text-2xl font-bold text-purple-700">
-                  {villages?.reduce((sum, village) => sum + (village.memberCount || 0), 0) || 0}
+                  {summary?.totalPersons || 0}
                 </p>
               </div>
               <Users className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
@@ -108,7 +125,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-orange-600 text-sm font-medium">सक्रिय गांव</p>
-                <p className="text-xl sm:text-2xl font-bold text-orange-700">{villages?.length || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold text-orange-700">{summary?.activeVillages || 0}</p>
               </div>
               <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
             </div>
@@ -119,12 +136,40 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
       {/* Villages Table/Cards */}
       <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-orange-200/50">
         <CardHeader>
-          <CardTitle className="flex items-center text-orange-700">
-            <Building2 className="w-5 h-5 mr-2" />
-            गांवों की सूची
-          </CardTitle>
-          <CardDescription>सभी पंजीकृत गांवों की विस्तृत जानकारी</CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {/* Left Section: Title & Description */}
+            <div>
+              <CardTitle className="flex items-center text-orange-700">
+                <Building2 className="w-5 h-5 mr-2" />
+                गांवों की सूची
+              </CardTitle>
+              <CardDescription>
+                सभी पंजीकृत गांवों की विस्तृत जानकारी
+              </CardDescription>
+            </div>
+
+            {/* Right Section: Badges */}
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              {chakolaList?.map((chakola) => (
+                <Badge
+                  key={chakola.id}
+                  onClick={() => handleBadgeClick(chakola.id)}
+                  className={`
+            cursor-pointer transition-all
+            ${selectedId === chakola.id
+                      ? "bg-orange-600 text-white border-orange-600" // Solid style
+                      : "border border-orange-600 text-orange-600 bg-transparent"} // Outline style
+          `}
+                >
+                  {chakola.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
         </CardHeader>
+
+
+
         <CardContent className="p-0 sm:p-6">
           {/* Mobile Card Layout */}
           <div className="block md:hidden">
@@ -245,7 +290,7 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline" className="bg-green-50 text-green-700">
-                          {village.families.length || 0}
+                          {village?.familyCount || 0}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
@@ -280,6 +325,72 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
           </div>
         </CardContent>
       </Card>
+
+
+      {/* Pagination Footer */}
+      {pagination && pagination.totalPages > 1 && (
+        <Card className="mt-4 shadow-md border-orange-200/50 bg-white/90 backdrop-blur-sm">
+          <CardContent className="flex items-center justify-center sm:justify-between px-4 sm:px-6 py-3">
+            {/* --- Mobile View (< > only) --- */}
+            <div className="flex items-center justify-center gap-6 sm:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange?.(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50"
+              >
+                &lt;
+              </Button>
+
+              <span className="text-gray-700 text-sm font-medium">
+                {pagination.page} / {pagination.totalPages}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange?.(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50"
+              >
+                &gt;
+              </Button>
+            </div>
+
+            {/* --- Desktop View --- */}
+            <div className="hidden sm:flex items-center justify-between w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange?.(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800 disabled:opacity-50"
+              >
+                ◀ पिछला
+              </Button>
+
+              <div className="text-sm text-gray-700">
+                पेज <span className="text-orange-700 font-semibold">{pagination.page}</span> /
+                <span className="text-gray-600"> {pagination.totalPages}</span>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange?.(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800 disabled:opacity-50"
+              >
+                अगला ▶
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
+
     </div>
   )
 }
