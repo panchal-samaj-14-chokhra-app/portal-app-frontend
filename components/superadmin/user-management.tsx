@@ -573,4 +573,3 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange 
     </Card>
   );
 };
-
