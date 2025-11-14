@@ -42,10 +42,10 @@ import Polls from "@/components/superadmin/polls"
 const SIDEBAR_TABS = [
   { key: "chokhla", label: "चोखरा प्रबंधन", icon: Building2, shortLabel: "चोखरा" },
   { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
-  { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
   { key: "user", label: "यूज़र प्रबंधन", icon: Users, shortLabel: "यूज़र" },
   { key: "polls", label: "पोल्स", icon: Vote, shortLabel: "पोल्स", tab: "polls" },
   { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
+  { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
 
 ]
 
@@ -206,8 +206,7 @@ function SuperAdmin() {
             onAddChokhla={() => setOpenChokhlaModal(true)}
           />
         )
-      case "statics":
-        return <StatisticsView />
+
       case "user":
         return (
           // When rendering UserManagement
@@ -235,6 +234,8 @@ function SuperAdmin() {
         return <ProfileView userData={userData} />
       case "polls":
         return <Polls polls={pollsData?.data || []} isLoading={pollsLoading} error={pollsError} />
+      case "statics":
+        return <StatisticsView />
       default:
         return null
     }

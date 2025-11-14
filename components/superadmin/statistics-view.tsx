@@ -1,242 +1,397 @@
-"use client"
-import type React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { BarChart3, Users, Building2, Home, TrendingUp, Calendar, MapPin, UserCheck } from "lucide-react"
+"use client";
+
+import React from "react";
+
+// UI Components
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+// Icons
+import {
+  Users,
+  HeartPulse,
+  GraduationCap,
+  Briefcase,
+  Landmark,
+} from "lucide-react";
+
+import ApexChart from "react-apexcharts";
+
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+
+import { useStaticData } from "@/data-hooks/mutation-query/useQueryAndMutation";
 
 const StatisticsView: React.FC = () => {
-  // Mock data - replace with actual data from your API
-  const stats = {
-    totalVillages: 45,
-    totalChokhlas: 8,
-    totalFamilies: 1250,
-    totalMembers: 4800,
-    activeUsers: 52,
-    maleMembers: 2400,
-    femaleMembers: 2300,
-    otherMembers: 100,
-    recentRegistrations: 25,
-    completedProfiles: 1180,
-    pendingVerifications: 70,
+  const { data, isLoading } = useStaticData();
+
+  if (isLoading) {
+    return <p className="text-center py-10">Loading...</p>;
   }
 
-  const recentActivity = [
-    { id: 1, action: "नया गांव पंजीकृत", details: "राजपुरा गांव", time: "2 घंटे पहले" },
-    { id: 2, action: "परिवार जोड़ा गया", details: "शर्मा परिवार", time: "4 घंटे पहले" },
-    { id: 3, action: "प्रोफाइल अपडेट", details: "गुप्ता परिवार", time: "6 घंटे पहले" },
-    { id: 4, action: "नया यूज़र", details: "राम कुमार", time: "1 दिन पहले" },
-    { id: 5, action: "चोखरा अपडेट", details: "मध्य चोखरा", time: "2 दिन पहले" },
-  ]
+  const api = data?.data;
 
+  // ===============================================
+  // MAP API VALUES
+  // ===============================================
+  const stats = {
+    male: api?.global?.gender?.male || 0,
+    female: api?.global?.gender?.female || 0,
+    other: api?.global?.gender?.other || 0,
+
+    insured: api?.global?.health?.insured || 0,
+    interested: api?.global?.health?.interested || 0,
+
+    bankAccount: api?.global?.social?.bankAccount || 0,
+    govBenefit: api?.global?.social?.govBenefit || 0,
+
+    eduMale: api?.global?.education?.male || 0,
+    eduFemale: api?.global?.education?.female || 0,
+    eduOther: api?.global?.education?.other || 0,
+
+    working: api?.global?.employment?.working || 0,
+    notWorking: api?.global?.employment?.notWorking || 0,
+
+    ageRange: api?.global?.ageRange || {},
+  };
+
+  // ===============================================
+  // 1️⃣ Gender Donut Chart (Apex)
+  // ===============================================
+  const genderSeries = [stats.male, stats.female, stats.other];
+
+  const genderOptions: ApexCharts.ApexOptions = {
+    chart: { type: "donut" },
+    labels: ["पुरुष", "महिला", "अन्य"],
+    colors: ["#2563eb", "#db2777", "#7c3aed"],
+    legend: { position: "bottom" },
+    dataLabels: { enabled: true },
+    responsive: [
+      {
+        breakpoint: 640,
+        options: {
+          chart: { width: "100%" },
+          legend: { position: "bottom" },
+        },
+      },
+    ],
+  };
+
+  // ===============================================
+  // 2️⃣ Line Graph – Chokhla Male/Female Comparison
+  // ===============================================
+  const chokhlaGraphData =
+    api?.chokhlaStats?.map((ch: any) => ({
+      name: ch.chokhlaName,
+      male: ch.gender.male,
+      female: ch.gender.female,
+    })) || [];
+
+  const chokhlaOptions: ApexCharts.ApexOptions = {
+    chart: { type: "line", toolbar: { show: false } },
+    xaxis: { categories: chokhlaGraphData.map((d: any) => d.name) },
+    colors: ["#2563eb", "#db2777"],
+    stroke: { curve: "smooth", width: 3 },
+    legend: { position: "top" },
+  };
+
+  const chokhlaSeries = [
+    { name: "पुरुष", data: chokhlaGraphData.map((d: any) => d.male) },
+    { name: "महिला", data: chokhlaGraphData.map((d: any) => d.female) },
+  ];
+
+  // ===============================================
+  // RENDER
+  // ===============================================
   return (
     <div className="w-full space-y-6">
-      {/* Main Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-600 text-sm font-medium">कुल गांव</p>
-                <p className="text-2xl sm:text-3xl font-bold text-blue-700">{stats.totalVillages}</p>
-                <p className="text-xs text-blue-500 mt-1">+3 इस महीने</p>
-              </div>
-              <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" />
+
+      {/* =====================================================
+          🌟 GENDER DONUT CARD (Modern + Icons + ApexChart)
+      ====================================================== */}
+      <Card className="bg-gradient-to-br from-orange-50 to-white shadow-lg border border-orange-200 rounded-2xl">
+        <CardHeader className="pb-2">
+          <div className="flex items-center space-x-2">
+            <Users className="w-6 h-6 text-orange-700" />
+            <div>
+              <CardTitle className="text-lg font-semibold text-orange-700">
+                लिंग अनुपात
+              </CardTitle>
+              <CardDescription className="text-gray-600 text-sm">
+                कुल सदस्यों का लिंग आधारित वितरण
+              </CardDescription>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-600 text-sm font-medium">कुल परिवार</p>
-                <p className="text-2xl sm:text-3xl font-bold text-green-700">{stats.totalFamilies}</p>
-                <p className="text-xs text-green-500 mt-1">+15 इस सप्ताह</p>
-              </div>
-              <Home className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-600 text-sm font-medium">कुल सदस्य</p>
-                <p className="text-2xl sm:text-3xl font-bold text-purple-700">{stats.totalMembers}</p>
-                <p className="text-xs text-purple-500 mt-1">+42 इस महीने</p>
-              </div>
-              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-600 text-sm font-medium">सक्रिय यूज़र</p>
-                <p className="text-2xl sm:text-3xl font-bold text-orange-700">{stats.activeUsers}</p>
-                <p className="text-xs text-orange-500 mt-1">+5 इस सप्ताह</p>
-              </div>
-              <UserCheck className="w-8 h-8 sm:w-10 sm:h-10 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Secondary Statistics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gender Distribution */}
-        <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-orange-200/50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-orange-700">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              लिंग वितरण
-            </CardTitle>
-            <CardDescription>सदस्यों का लिंग के आधार पर वितरण</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                  <span className="font-medium">पुरुष</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-blue-700">{stats.maleMembers}</div>
-                  <div className="text-sm text-blue-600">50%</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
-                  <span className="font-medium">महिला</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-pink-700">{stats.femaleMembers}</div>
-                  <div className="text-sm text-pink-600">48%</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
-                  <span className="font-medium">अन्य</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-gray-700">{stats.otherMembers}</div>
-                  <div className="text-sm text-gray-600">2%</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-orange-200/50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-orange-700">
-              <Calendar className="w-5 h-5 mr-2" />
-              हाल की गतिविधि
-            </CardTitle>
-            <CardDescription>सिस्टम में हाल की गतिविधियां</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 text-sm">{activity.action}</div>
-                    <div className="text-sm text-gray-600 truncate">{activity.details}</div>
-                    <div className="text-xs text-gray-500 mt-1">{activity.time}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-600 text-sm font-medium">चोखरा</p>
-                <p className="text-xl sm:text-2xl font-bold text-indigo-700">{stats.totalChokhlas}</p>
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 mt-2">सभी सक्रिय</Badge>
-              </div>
-              <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200 hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-teal-600 text-sm font-medium">पूर्ण प्रोफाइल</p>
-                <p className="text-xl sm:text-2xl font-bold text-teal-700">{stats.completedProfiles}</p>
-                <Badge className="bg-teal-100 text-teal-700 border-teal-200 mt-2">94% पूर्ण</Badge>
-              </div>
-              <UserCheck className="w-6 h-6 sm:w-8 sm:h-8 text-teal-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-amber-600 text-sm font-medium">लंबित सत्यापन</p>
-                <p className="text-xl sm:text-2xl font-bold text-amber-700">{stats.pendingVerifications}</p>
-                <Badge className="bg-amber-100 text-amber-700 border-amber-200 mt-2">कार्रवाई आवश्यक</Badge>
-              </div>
-              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Summary Card */}
-      <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-        <CardHeader>
-          <CardTitle className="flex items-center text-white">
-            <BarChart3 className="w-5 h-5 mr-2" />
-            सिस्टम सारांश
-          </CardTitle>
-          <CardDescription className="text-orange-100">पंचाल समाज 14 चोखरा प्रबंधन सिस्टम का समग्र विवरण</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold">{stats.totalVillages}</div>
-              <div className="text-orange-100 text-sm">गांव</div>
+
+        {/* Donut Chart */}
+        <CardContent className="pt-0">
+          <div className="flex justify-center items-center w-full">
+            <ApexChart
+              type="donut"
+              width="100%"
+              height={300}
+              options={genderOptions}
+              series={genderSeries}
+            />
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+
+            {/* Male */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-200 flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
+              <p className="text-sm text-gray-600">पुरुष</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.male}</p>
             </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.totalFamilies}</div>
-              <div className="text-orange-100 text-sm">परिवार</div>
+
+            {/* Female */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-pink-200 flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mb-2">
+                <Users className="w-5 h-5 text-pink-600" />
+              </div>
+              <p className="text-sm text-gray-600">महिला</p>
+              <p className="text-2xl font-bold text-pink-600">{stats.female}</p>
             </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.totalMembers}</div>
-              <div className="text-orange-100 text-sm">सदस्य</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.activeUsers}</div>
-              <div className="text-orange-100 text-sm">यूज़र</div>
+
+            {/* Other */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-200 flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
+                <Users className="w-5 h-5 text-purple-600" />
+              </div>
+              <p className="text-sm text-gray-600">अन्य</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.other}</p>
             </div>
           </div>
         </CardContent>
       </Card>
-    </div>
-  )
-}
 
-export default StatisticsView
+      {/* =====================================================
+          AGE RANGE CARD
+      ====================================================== */}
+      <Card className="bg-white shadow-md border-orange-200">
+        <CardHeader>
+          <CardTitle className="flex items-center text-orange-700">
+            <Users className="w-5 h-5 mr-2" />
+            आयु वितरण
+          </CardTitle>
+          <CardDescription>
+            सदस्यों की आयु सीमा के अनुसार संख्या
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          {Object.entries(stats.ageRange).map(([range, total]: any) => (
+            <div
+              key={range}
+              className="flex justify-between bg-orange-50 p-3 rounded-lg"
+            >
+              <span className="font-medium">{range}</span>
+              <span className="font-bold text-orange-700">{total}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* =====================================================
+          HEALTH / SOCIAL / EDUCATION / EMPLOYMENT CARDS
+      ====================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* HEALTH */}
+        <Card className="bg-white shadow-md border-green-200">
+          <CardHeader>
+            <CardTitle className="text-green-700 flex items-center">
+              <HeartPulse className="w-5 h-5 mr-2" />
+              स्वास्थ्य जानकारी
+            </CardTitle>
+            <CardDescription>बीमा और रुचि</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <div className="flex justify-between p-3 bg-green-50 rounded-lg">
+              <span className="font-medium">बीमित सदस्य</span>
+              <span className="font-bold text-green-700">{stats.insured}</span>
+            </div>
+
+            <div className="flex justify-between p-3 bg-green-50 rounded-lg">
+              <span className="font-medium">बीमा में रुचि</span>
+              <span className="font-bold text-green-700">{stats.interested}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* SOCIAL */}
+        <Card className="bg-white shadow-md border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-blue-700 flex items-center">
+              <Landmark className="w-5 h-5 mr-2" />
+              सामाजिक जानकारी
+            </CardTitle>
+            <CardDescription>बैंक एवं सरकारी लाभ</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <div className="flex justify-between p-3 bg-blue-50 rounded-lg">
+              <span className="font-medium">बैंक खाते</span>
+              <span className="font-bold text-blue-700">{stats.bankAccount}</span>
+            </div>
+
+            <div className="flex justify-between p-3 bg-blue-50 rounded-lg">
+              <span className="font-medium">सरकारी लाभ</span>
+              <span className="font-bold text-blue-700">{stats.govBenefit}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* EDUCATION */}
+        <Card className="bg-white shadow-md border-purple-200">
+          <CardHeader>
+            <CardTitle className="text-purple-700 flex items-center">
+              <GraduationCap className="w-5 h-5 mr-2" />
+              शिक्षा स्तर
+            </CardTitle>
+            <CardDescription>शिक्षा अनुसार सदस्य</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <div className="flex justify-between p-3 bg-purple-50 rounded-lg">
+              <span className="font-medium">पुरुष</span>
+              <span className="font-bold text-purple-700">{stats.eduMale}</span>
+            </div>
+
+            <div className="flex justify-between p-3 bg-purple-50 rounded-lg">
+              <span className="font-medium">महिला</span>
+              <span className="font-bold text-purple-700">{stats.eduFemale}</span>
+            </div>
+
+            <div className="flex justify-between p-3 bg-purple-50 rounded-lg">
+              <span className="font-medium">अन्य</span>
+              <span className="font-bold text-purple-700">{stats.eduOther}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* EMPLOYMENT */}
+        <Card className="bg-white shadow-md border-orange-200">
+          <CardHeader>
+            <CardTitle className="text-orange-700 flex items-center">
+              <Briefcase className="w-5 h-5 mr-2" />
+              रोजगार स्थिति
+            </CardTitle>
+            <CardDescription>कार्यरत एवं बेरोजगार सदस्य</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <div className="flex justify-between p-3 bg-orange-50 rounded-lg">
+              <span className="font-medium">कार्यरत</span>
+              <span className="font-bold text-orange-700">{stats.working}</span>
+            </div>
+
+            <div className="flex justify-between p-3 bg-orange-50 rounded-lg">
+              <span className="font-medium">बेरोजगार</span>
+              <span className="font-bold text-orange-700">{stats.notWorking}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* =====================================================
+          LINE GRAPH: CHOKHLA MALE/FEMALE RATIO
+      ====================================================== */}
+      <Card className="bg-white shadow-md border-indigo-200">
+        <CardHeader>
+          <CardTitle className="text-indigo-700">
+            चोखरा अनुसार पुरुष–महिला तुलना
+          </CardTitle>
+          <CardDescription>
+            प्रत्येक चोखरा के पुरुष–महिला आँकड़ों का रुझान
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <ApexChart
+            type="line"
+            height={350}
+            options={chokhlaOptions}
+            series={chokhlaSeries}
+          />
+        </CardContent>
+      </Card>
+
+      {/* =====================================================
+          ACCORDION: CHOKHLA DETAILS
+      ====================================================== */}
+      <Card className="bg-white shadow-md border-orange-200">
+        <CardHeader>
+          <CardTitle className="text-orange-700">चोखरा आंकड़े</CardTitle>
+          <CardDescription>प्रत्येक चोखरा का विस्तृत विवरण</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {api?.chokhlaStats?.map((item: any) => (
+              <AccordionItem key={item.chokhlaId} value={item.chokhlaId}>
+                <AccordionTrigger className="text-lg font-semibold">
+                  {item.chokhlaName} — (लिंग अनुपात: {item.genderRatio})
+                </AccordionTrigger>
+
+                <AccordionContent>
+                  <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">पुरुष:</span>
+                      <span className="text-gray-900">{item.gender.male}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">महिला:</span>
+                      <span className="text-gray-900">{item.gender.female}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">अन्य:</span>
+                      <span className="text-gray-900">{item.gender.other}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">बीमा प्राप्त:</span>
+                      <span className="text-gray-900">{item.health.insured}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">रुचि:</span>
+                      <span className="text-gray-900">{item.health.interested}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">
+                        बैंक खाते:
+                      </span>
+                      <span className="text-gray-900">
+                        {item.social.bankAccount}
+                      </span>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default StatisticsView;

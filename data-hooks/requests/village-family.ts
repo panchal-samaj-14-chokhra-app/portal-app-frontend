@@ -75,6 +75,10 @@ export const getAlluserList = async ({ page, searchTerm, globalRole, onlyActive 
   return data;
 }
 
+export const getStaticData = async () => {
+  const { data } = await request.get('/static/statistics');
+  return data;
+}
 
 export const createMember = async (payload: any) => {
   const { data } = await request.post('/person/create', payload);
