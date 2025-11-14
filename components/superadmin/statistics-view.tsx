@@ -19,8 +19,11 @@ import {
   Briefcase,
   Landmark,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+const ApexChart = dynamic(() => import("react-apexcharts"), {
+  ssr: false,
+});
 
-import ApexChart from "react-apexcharts";
 
 import {
   Accordion,
