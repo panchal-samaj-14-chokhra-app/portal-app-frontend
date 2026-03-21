@@ -10,6 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import autoTable from "jspdf-autotable";
+import jsPDF from "jspdf";
+
 
 // Icons
 import {
@@ -31,18 +34,114 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-
-import { useStaticData } from "@/data-hooks/mutation-query/useQueryAndMutation";
+import * as XLSX from "xlsx";
+import { useDownloadFamilyData, useStaticData } from "@/data-hooks/mutation-query/useQueryAndMutation";
+import { Button } from "../ui/button";
 
 const StatisticsView: React.FC = () => {
   const { data, isLoading } = useStaticData();
+  const { downloadExcel, downloadPdf, loadingType } = useDownloadFamilyData();
 
-  if (isLoading) {
+
+
+  if (isLoading || loadingType) {
     return <p className="text-center py-10">Loading...</p>;
   }
 
   const api = data?.data;
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+
+    const chokhlaStats = data.data.chokhlaStats;
+
+    // 🔥 Flatten data
+    const tableData = chokhlaStats.map(item => [
+      item.chokhlaName,
+      item.gender.male,
+      item.gender.female,
+      item.gender.other,
+      item.health.insured,
+      item.health.interested,
+      item.social.bankAccount,
+      item.social.janDhan,
+      item.social.govBenefit,
+      item.social.financialAssistance,
+      item.genderRatio,
+    ]);
+
+    // Table headers
+    const headers = [[
+      "Chokhla",
+      "Male",
+      "Female",
+      "Other",
+      "Insured",
+      "Interested",
+      "Bank Acc",
+      "JanDhan",
+      "Gov Benefit",
+      "Financial Assist",
+      "Ratio"
+    ]];
+
+    // Add title
+    doc.text("Chokhla Statistics Report", 14, 15);
+
+    // Create table
+    autoTable(doc, {
+      head: headers,
+      body: tableData,
+      startY: 20,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [22, 160, 133] },
+    });
+
+    // Download
+    doc.save("chokhla_stats.pdf");
+  };
+
+  const exportToExcel = () => {
+    const chokhlaStats = data.data.chokhlaStats;
+
+    // 🔥 Flatten data
+    const flatData = chokhlaStats.map(item => ({
+      chokhlaName: item.chokhlaName,
+
+      male: item.gender.male,
+      female: item.gender.female,
+      other: item.gender.other,
+
+      insured: item.health.insured,
+      interested: item.health.interested,
+
+      bankAccount: item.social.bankAccount,
+      janDhan: item.social.janDhan,
+      govBenefit: item.social.govBenefit,
+      financialAssistance: item.social.financialAssistance,
+
+      genderRatio: item.genderRatio,
+    }));
+
+    // Convert JSON → Sheet
+    const worksheet = XLSX.utils.json_to_sheet(flatData);
+
+    // Optional: column width
+    worksheet["!cols"] = [
+      { wch: 15 }, // chokhlaName
+      { wch: 10 }, { wch: 10 }, { wch: 10 },
+      { wch: 12 }, { wch: 12 },
+      { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
+      { wch: 12 },
+    ];
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Chokhla Stats");
+
+    // Download file
+    XLSX.writeFile(workbook, "chokhla_stats.xlsx");
+  };
   // ===============================================
   // MAP API VALUES
   // ===============================================
@@ -118,6 +217,18 @@ const StatisticsView: React.FC = () => {
   return (
     <div className="w-full space-y-6">
 
+      <Card className="bg-gradient-to-br from-orange-50 to-white shadow-lg border border-orange-200 rounded-2xl">
+        <CardHeader>
+          <Button onClick={exportToPDF}
+            size="sm" className="bg-orange-600 hover:bg-orange-700 text-white mt-2">
+            Export pdf 📄
+          </Button>
+          <Button onClick={exportToExcel}
+            size="sm" className="bg-orange-600 hover:bg-orange-700 text-white mt-2">
+            Export Excel 📋
+          </Button>
+        </CardHeader>
+      </Card>
       {/* =====================================================
           🌟 GENDER DONUT CARD (Modern + Icons + ApexChart)
       ====================================================== */}
@@ -386,6 +497,43 @@ const StatisticsView: React.FC = () => {
                         {item.social.bankAccount}
                       </span>
                     </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+      <Card className="bg-white shadow-md border-orange-200">
+        <CardHeader>
+          <CardTitle className="text-orange-700">चोखरा आंकड़े</CardTitle>
+          <CardDescription>Export data with chokhra name</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {api?.chokhlaStats?.map((item: any) => (
+              <AccordionItem key={item.chokhlaId} value={item.chokhlaId}>
+                <AccordionTrigger className="text-lg font-semibold">
+                  {item.chokhlaName}
+                </AccordionTrigger>
+
+                <AccordionContent>
+                  <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">village list</span>
+                      <span className="text-gray-900"><Button onClick={() => downloadPdf(item.chokhlaId)}>PDF</Button></span>
+                      <span className="text-gray-900"><Button onClick={() => downloadExcel(item.chokhlaId)}>Excel</Button></span>
+
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Family list</span>
+                      <span className="text-gray-900"><Button>PDF</Button></span>
+                      <span className="text-gray-900"><Button>Excel</Button></span>
+
+                    </div>
+
+
                   </div>
                 </AccordionContent>
               </AccordionItem>

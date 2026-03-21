@@ -1,3 +1,4 @@
+import Chokhla from "@/app/admin/chokhla/[chokhlaId]/page";
 import request from "@/config/request";
 
 export const getApiCall = async () => {
@@ -148,3 +149,30 @@ export const getPollResultsById = async (pollId: string) => {
   const { data } = await request.get(`/polls/results/${pollId}`)
   return data
 }
+
+
+export const getExcelData = async (chokhlaId: string) => {
+  try {
+    const response = await request.get(
+      `/export/family-excel/${chokhlaId}`,
+      { responseType: "blob" }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Excel download failed", error);
+    throw error;
+  }
+};
+
+export const getPdfData = async (chokhlaId: string) => {
+  try {
+    const response = await request.get(
+      `/export/family-pdf/${chokhlaId}`,
+      { responseType: "blob" }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("PDF download failed", error);
+    throw error;
+  }
+};

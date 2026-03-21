@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
 import { deletePoll } from '../requests/village-family';
+import { useState } from 'react';
 
 export const useCreateFamily = (onSuccess: any, onError: { (): void; (arg0: Error): void; }) => {
   const mutation = useMutation({
@@ -248,3 +249,50 @@ export const useGetPollResultsById = (pollId?: string) => {
     enabled: !!pollId,
   })
 }
+
+
+export const useDownloadFamilyData = () => {
+  const [loadingType, setLoadingType] = useState<"excel" | "pdf" | null>(null);
+
+  const downloadExcel = async (chokhlaId: string) => {
+    try {
+      setLoadingType("excel");
+
+      const data = await getExcelData(chokhlaId);
+
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "family_list.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } finally {
+      setLoadingType(null);
+    }
+  };
+
+  const downloadPdf = async (chokhlaId: string) => {
+    try {
+      setLoadingType("pdf");
+
+      const data = await getPdfData(chokhlaId);
+
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "family_list.pdf");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } finally {
+      setLoadingType(null);
+    }
+  };
+
+  return {
+    downloadExcel,
+    downloadPdf,
+    loadingType,
+  };
+};
