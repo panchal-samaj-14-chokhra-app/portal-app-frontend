@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { SelectInput } from "@/components/group-component/family-form/employment-info-section"
+import { useGetAllVillageswithChokhlaID } from "@/data-hooks/mutation-query/useQueryAndMutation"
 
 interface AddUserFormProps {
   isOpen: boolean
@@ -13,11 +14,6 @@ interface AddUserFormProps {
   onSubmit: (data: any) => void
   isSubmitting: boolean
   chokhlaList: { id: string; name: string }[]
-  villages: {
-    id: string
-    name: string
-    choklaId: string
-  }[]
 }
 
 const GLOBAL_ROLES = [
@@ -32,7 +28,6 @@ export default function AddUserForm({
   onSubmit,
   isSubmitting,
   chokhlaList,
-  villages,
 }: AddUserFormProps) {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -49,10 +44,13 @@ export default function AddUserForm({
   const [showPassword, setShowPassword] = useState(false)
   const [showRepeatPassword, setShowRepeatPassword] = useState(false)
 
-  // Filter villages based on selected chokhlaId
-  const filteredVillages = villages.filter(
-    (village) => village.choklaId === formData.choklaId
-  )
+  // Fetch villages for the chokhla selected inside this modal
+  const { data: villages, isLoading: isVillagesLoading } =
+    useGetAllVillageswithChokhlaID(formData.choklaId)
+
+  const filteredVillages: { id: string; name: string }[] = Array.isArray(villages)
+    ? villages
+    : []
 
   // Clear villageId if choklaId changes or role changes
   useEffect(() => {
@@ -276,9 +274,24 @@ export default function AddUserForm({
                       value: village.id,
                     }))}
                     onChange={(val) => handleSelectChange("villageId", val)}
-                    placeholder="गांव चुनें"
+                    placeholder={
+                      !formData.choklaId
+                        ? "पहले चोखरा चुनें"
+                        : isVillagesLoading
+                          ? "गांव लोड हो रहे हैं..."
+                          : filteredVillages.length === 0
+                            ? "इस चोखरा में कोई गांव नहीं है"
+                            : "गांव चुनें"
+                    }
                     required
                   />
+                  {formData.choklaId &&
+                    !isVillagesLoading &&
+                    filteredVillages.length === 0 && (
+                      <p className="text-amber-600 text-xs mt-1">
+                        इस चोखरा में कोई गांव उपलब्ध नहीं है। कृपया पहले गांव जोड़ें।
+                      </p>
+                    )}
                   {errors.villageId && (
                     <p className="text-red-600 text-xs mt-1">{errors.villageId}</p>
                   )}

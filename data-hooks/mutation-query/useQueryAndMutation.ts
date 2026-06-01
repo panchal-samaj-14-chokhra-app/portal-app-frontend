@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, updateVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
 import { deletePoll } from '../requests/village-family';
@@ -73,8 +73,9 @@ export const useAllVillages = ({ selectedId, page }: { selectedId?: string | nul
 
 export const useGetAllVillageswithChokhlaID = (chokhlaID: string) => {
   return useQuery({
-    queryKey: ['all-villages-with-chokhla-id'],
+    queryKey: ['all-villages-with-chokhla-id', chokhlaID],
     queryFn: async () => await getAllVillagesWithChokhlaID(chokhlaID),
+    enabled: !!chokhlaID,
   });
 }
 
@@ -84,6 +85,18 @@ export const useCreateVillage = () => {
     mutationFn: (payload: any) => createVillage(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-villages', 'all-villages-with-chokhla-id'] });
+    },
+  });
+}
+
+export const useUpdateVillage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ villageId, payload }: { villageId: string; payload: any }) => updateVillage(villageId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['all-villages'] });
+      queryClient.invalidateQueries({ queryKey: ['all-villages-with-chokhla-id'] });
+      queryClient.invalidateQueries({ queryKey: ['village-details', variables.villageId] });
     },
   });
 }

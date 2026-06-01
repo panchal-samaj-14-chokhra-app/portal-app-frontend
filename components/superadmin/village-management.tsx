@@ -1,11 +1,15 @@
 "use client"
 import type React from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, MapPin, Users, Building2, Loader2 } from "lucide-react"
+import { Eye, MapPin, Users, Building2, Loader2, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useUpdateVillage } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useToast } from "@/hooks/use-toast"
+import EditVillageForm from "./edit-village-form"
 
 interface Village {
   id: string
@@ -44,6 +48,10 @@ interface chakolaList {
 }
 const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoading, chakolaList, selectedId, setSelectedId, pagination, onPageChange, summary }) => {
   const router = useRouter()
+  const { toast } = useToast()
+  const updateVillageMutation = useUpdateVillage()
+  const [editVillage, setEditVillage] = useState<Village | null>(null)
+  const [isEditOpen, setIsEditOpen] = useState(false)
 
   const handleViewVillage = (villageId: string) => {
     router.push(`/admin/village/${villageId}`)
@@ -51,6 +59,27 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
   const handleBadgeClick = (id: string) => {
     setSelectedId(selectedId === id ? null : id); // toggle select/deselect
   };
+
+  const handleEditVillage = (village: Village) => {
+    setEditVillage(village)
+    setIsEditOpen(true)
+  }
+
+  const handleEditSubmit = (villageId: string, data: any) => {
+    updateVillageMutation.mutate(
+      { villageId, payload: data },
+      {
+        onSuccess: () => {
+          toast({ title: "गांव अपडेट हुआ", description: "गांव की जानकारी सफलतापूर्वक अपडेट कर दी गई।", variant: "success" })
+          setIsEditOpen(false)
+          setEditVillage(null)
+        },
+        onError: (err: any) => {
+          toast({ title: "अपडेट त्रुटि", description: err?.message || "गांव अपडेट करने में समस्या हुई।", variant: "destructive" })
+        },
+      },
+    )
+  }
 
   if (isLoading) {
     return (
@@ -183,14 +212,24 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                           <Badge className="bg-orange-100 text-orange-700 border-orange-200">#{index + 1}</Badge>
                           <h3 className="font-semibold text-gray-900 text-sm">{village.name}</h3>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewVillage(village.id)}
-                          className="bg-transparent border-orange-200 text-orange-600 hover:bg-orange-50"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewVillage(village.id)}
+                            className="bg-transparent border-orange-200 text-orange-600 hover:bg-orange-50"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditVillage(village)}
+                            className="bg-transparent border-blue-200 text-blue-600 hover:bg-blue-50"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
 
                       <div className="space-y-2 text-sm">
@@ -299,15 +338,26 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewVillage(village.id)}
-                          className="bg-transparent border-orange-200 text-orange-600 hover:bg-orange-50"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          देखें
-                        </Button>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewVillage(village.id)}
+                            className="bg-transparent border-orange-200 text-orange-600 hover:bg-orange-50"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            देखें
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditVillage(village)}
+                            className="bg-transparent border-blue-200 text-blue-600 hover:bg-blue-50"
+                          >
+                            <Pencil className="w-4 h-4 mr-1" />
+                            संपादित करें
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -389,7 +439,19 @@ const VillageManagement: React.FC<VillageManagementProps> = ({ villages, isLoadi
         </Card>
       )}
 
-
+      {editVillage && (
+        <EditVillageForm
+          isOpen={isEditOpen}
+          onClose={() => {
+            setIsEditOpen(false)
+            setEditVillage(null)
+          }}
+          onSubmit={handleEditSubmit}
+          isSubmitting={(updateVillageMutation as any).isLoading || (updateVillageMutation as any).isPending}
+          villageId={editVillage.id}
+          chakolaList={chakolaList}
+        />
+      )}
 
     </div>
   )

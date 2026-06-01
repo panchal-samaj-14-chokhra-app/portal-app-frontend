@@ -586,7 +586,7 @@ export default function FamilyDetailPage() {
                     <FileText className="w-4 h-4 text-orange-500" />
                     <div>
                       <p className="text-sm text-gray-600 hindi-text">परिवार ID</p>
-                      <p className="font-semibold">{familyDetail.id}</p>
+                      <p className="font-semibold">{familyDetail.displayId ?? familyDetail.id}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

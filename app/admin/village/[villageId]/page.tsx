@@ -267,10 +267,11 @@ export default function VillageDetailPage() {
     // router.push(`/admin/village/${villageId}/add-family?chakolaId=${chokhlaID}`)
   }
 
-  const filteredFamilies = families?.filter((family: { mukhiyaName: string; id: string; status: string }) => {
+  const filteredFamilies = families?.filter((family: { mukhiyaName: string; id: string; displayId?: number; status: string }) => {
     const matchesSearch =
       family.mukhiyaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      family.id.toLowerCase().includes(searchTerm.toLowerCase())
+      family.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(family.displayId ?? "").includes(searchTerm.trim())
     const matchesStatus = statusFilter === "all" || family.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -538,7 +539,7 @@ export default function VillageDetailPage() {
 
                     return (
                       <TableRow key={family.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{family.id}</TableCell>
+                        <TableCell className="font-medium">{family.displayId ?? family.id}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <UserCheck className="w-4 h-4 text-orange-600" />
@@ -566,7 +567,7 @@ export default function VillageDetailPage() {
                         <TableCell className="max-w-xs truncate" title={family.currentAddress}>
                           {family.currentAddress}
                         </TableCell>
-                        <TableCell>{family.contactNumber || "N/A"}</TableCell>
+                        <TableCell>{family.mobileNumber || family.contactNumber || "N/A"}</TableCell>
                         <TableCell>{family.economicStatus}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -676,7 +677,7 @@ export default function VillageDetailPage() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <p>
-                  <strong>गांव ID:</strong> {villageData?.id}
+                  <strong>गांव ID:</strong> {villageData?.displayId ?? villageData?.id}
                 </p>
                 <p>
                   <strong>नाम:</strong> {villageData?.name}
@@ -722,7 +723,7 @@ export default function VillageDetailPage() {
                   <strong>देशांतर (Longitude):</strong> {villageData?.longitude}
                 </p>
                 <p>
-                  <strong>चोखरा ID:</strong> {villageData?.choklaId}
+                  <strong>चोखरा ID:</strong> {villageData?.chakolaDisplayId ?? villageData?.choklaId}
                 </p>
                 <p>
                   <strong>निर्माण तिथि:</strong>{" "}

@@ -3,13 +3,18 @@
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { useDeleteMember, useGetFamilyDetails } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useDeleteMember, useGetFamilyDetails, useUpdateFamily } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, User, Home, MapPin, Users, FileText, AlertCircle, CheckCircle2, Info, Plus } from "lucide-react"
+import { ArrowLeft, User, Home, MapPin, Users, FileText, AlertCircle, CheckCircle2, Info, Plus, Pencil, Save, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
 import { Alert, AlertDescription } from "@/components/ui/alert/alert"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { statesAndDistricts } from "./family-form/constants"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +31,37 @@ import { initialMember } from "./family-form/constants"
 
 import { MemberForm } from "./family-form/member-form"
 import { calculateAge } from "./family-form/utils"
+
+const economicStatusOptions = [
+  { value: "bpl", label: "गरीबी रेखा से नीचे (BPL)" },
+  { value: "apl", label: "गरीबी रेखा से ऊपर (APL)" },
+  { value: "middle", label: "मध्यम वर्गीय (Middle Class)" },
+  { value: "upper", label: "उच्च वर्गीय (Upper Middle Class)" },
+]
+
+const familyStatusOptions = [
+  { value: "active", label: "सक्रिय (Active)" },
+  { value: "verified", label: "सत्यापित (Verified)" },
+  { value: "draft", label: "ड्राफ्ट (Draft)" },
+  { value: "inactive", label: "निष्क्रिय (Inactive)" },
+]
+
+type MainInfoForm = {
+  mukhiyaName: string
+  economicStatus: string
+  status: string
+  permanentFamilyState: string
+  permanentFamilyDistrict: string
+  permanentFamilyVillage: string
+  permanentFamilyPincode: string
+  permanentAddress: string
+  currentFamilyState: string
+  currentFamilyDistrict: string
+  currentFamilyVillage: string
+  currentFamilyPincode: string
+  currentAddress: string
+  anyComment: string
+}
 
 export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const queryClient = useQueryClient()
@@ -71,6 +107,121 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const [loading, setLoading] = useState(false)
 
   const { mutate: deleteMember, isSuccess: deleteSuccess } = useDeleteMember()
+
+  // --- Editable "main info" card state ---
+  const [isEditingMain, setIsEditingMain] = useState(false)
+  const [savingMain, setSavingMain] = useState(false)
+  const [mainSaveError, setMainSaveError] = useState("")
+  const [mainSaveSuccessOpen, setMainSaveSuccessOpen] = useState(false)
+  const [mainForm, setMainForm] = useState<MainInfoForm>({
+    mukhiyaName: "",
+    economicStatus: "",
+    status: "",
+    permanentFamilyState: "",
+    permanentFamilyDistrict: "",
+    permanentFamilyVillage: "",
+    permanentFamilyPincode: "",
+    permanentAddress: "",
+    currentFamilyState: "",
+    currentFamilyDistrict: "",
+    currentFamilyVillage: "",
+    currentFamilyPincode: "",
+    currentAddress: "",
+    anyComment: "",
+  })
+
+  const stateOptions = Object.keys(statesAndDistricts)
+  const permDistricts = mainForm.permanentFamilyState ? statesAndDistricts[mainForm.permanentFamilyState] || [] : []
+  const currDistricts = mainForm.currentFamilyState ? statesAndDistricts[mainForm.currentFamilyState] || [] : []
+
+  const populateMainForm = () => {
+    if (!familyDetails) return
+    setMainForm({
+      mukhiyaName: familyDetails.mukhiyaName || "",
+      economicStatus: familyDetails.economicStatus || "",
+      status: familyDetails.status || "",
+      permanentFamilyState: familyDetails.permanentFamilyState || "",
+      permanentFamilyDistrict: familyDetails.permanentFamilyDistrict || "",
+      permanentFamilyVillage: familyDetails.permanentFamilyVillage || "",
+      permanentFamilyPincode: familyDetails.permanentFamilyPincode || "",
+      permanentAddress: familyDetails.permanentAddress || "",
+      currentFamilyState: familyDetails.currentFamilyState || "",
+      currentFamilyDistrict: familyDetails.currentFamilyDistrict || "",
+      currentFamilyVillage: familyDetails.currentFamilyVillage || "",
+      currentFamilyPincode: familyDetails.currentFamilyPincode || "",
+      currentAddress: familyDetails.currentAddress || "",
+      anyComment: familyDetails.anyComment || "",
+    })
+  }
+
+  const updateMainField = (field: keyof MainInfoForm, value: string) => {
+    setMainForm((prev) => {
+      const next = { ...prev, [field]: value }
+      // Reset district when state changes
+      if (field === "permanentFamilyState") next.permanentFamilyDistrict = ""
+      if (field === "currentFamilyState") next.currentFamilyDistrict = ""
+      return next
+    })
+  }
+
+  const { mutation: updateFamilyMutation } = useUpdateFamily(
+    () => {
+      setSavingMain(false)
+      setIsEditingMain(false)
+      setMainSaveSuccessOpen(true)
+      queryClient.invalidateQueries({ queryKey: ["family-detail", familyId] })
+    },
+    (err: Error) => {
+      setSavingMain(false)
+      setMainSaveError(err?.message || "विवरण सहेजने में त्रुटि हुई।")
+    },
+  )
+
+  const startEditMain = () => {
+    populateMainForm()
+    setMainSaveError("")
+    setIsEditingMain(true)
+  }
+
+  const cancelEditMain = () => {
+    setMainSaveError("")
+    setIsEditingMain(false)
+  }
+
+  const saveMain = () => {
+    if (!familyDetails) return
+    if (!mainForm.mukhiyaName.trim()) {
+      setMainSaveError("मुखिया का नाम आवश्यक है।")
+      return
+    }
+    setMainSaveError("")
+    setSavingMain(true)
+    const submitData = {
+      // editable family fields
+      mukhiyaName: mainForm.mukhiyaName,
+      status: mainForm.status,
+      economicStatus: mainForm.economicStatus,
+      permanentFamilyState: mainForm.permanentFamilyState,
+      permanentFamilyDistrict: mainForm.permanentFamilyDistrict,
+      permanentFamilyVillage: mainForm.permanentFamilyVillage,
+      permanentFamilyPincode: mainForm.permanentFamilyPincode,
+      permanentAddress: mainForm.permanentAddress,
+      currentFamilyState: mainForm.currentFamilyState,
+      currentFamilyDistrict: mainForm.currentFamilyDistrict,
+      currentFamilyVillage: mainForm.currentFamilyVillage,
+      currentFamilyPincode: mainForm.currentFamilyPincode,
+      currentAddress: mainForm.currentAddress,
+      anyComment: mainForm.anyComment,
+      // unchanged relations / location (preserve existing values)
+      villageId: familyDetails.villageId,
+      chakolaId: familyDetails.chakolaId,
+      longitude: familyDetails.longitude ?? null,
+      latitude: familyDetails.latitude ?? null,
+      // do not touch members from this card
+      members: [],
+    }
+    updateFamilyMutation.mutate({ familyId, submitData })
+  }
 
   useEffect(() => {
     if (status === "loading") return
@@ -180,52 +331,145 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
         {mode === "edit" && familyDetails && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Info className="w-5 h-5 mr-2" />
-                परिवार की मुख्य जानकारी
-              </CardTitle>
-              <CardDescription>पंजीकृत परिवार का विस्तृत विवरण</CardDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <Info className="w-5 h-5 mr-2" />
+                    परिवार की मुख्य जानकारी
+                  </CardTitle>
+                  <CardDescription>पंजीकृत परिवार का विस्तृत विवरण</CardDescription>
+                </div>
+                {!isEditingMain ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={startEditMain}
+                    className="text-orange-600 border-orange-300 hover:bg-orange-50 shrink-0"
+                  >
+                    <Pencil className="w-4 h-4 mr-2" />
+                    संपादित करें
+                  </Button>
+                ) : (
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={cancelEditMain}
+                      disabled={savingMain}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      रद्द करें
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={saveMain}
+                      disabled={savingMain}
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                    >
+                      {savingMain ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          सहेजा जा रहा है...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          सहेजें
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
+              {mainSaveError && (
+                <Alert className="mb-4 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-red-800">{mainSaveError}</AlertDescription>
+                </Alert>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
                     <User className="h-4 w-4" />
                     मुखिया का नाम
                   </div>
-                  <p className="text-lg font-semibold text-gray-900">{familyDetails.mukhiyaName || "—"}</p>
+                  {isEditingMain ? (
+                    <Input
+                      value={mainForm.mukhiyaName}
+                      onChange={(e) => updateMainField("mukhiyaName", e.target.value)}
+                      placeholder="मुखिया का नाम"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{familyDetails.mukhiyaName || "—"}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
                     <FileText className="h-4 w-4" />
                     आर्थिक स्थिति
                   </div>
-                  <Badge variant="outline" className="text-sm px-3 py-1">
-                    {familyDetails.economicStatus || "—"}
-                  </Badge>
+                  {isEditingMain ? (
+                    <Select
+                      value={mainForm.economicStatus}
+                      onValueChange={(val) => updateMainField("economicStatus", val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="आर्थिक स्थिति चुनें" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {economicStatusOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className="text-sm px-3 py-1">
+                      {familyDetails.economicStatus || "—"}
+                    </Badge>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
                     <CheckCircle2 className="h-4 w-4" />
                     स्थिति
                   </div>
-                  <Badge
-                    variant={familyDetails.status === "completed" ? "default" : "secondary"}
-                    className="text-sm px-3 py-1"
-                  >
-                    {familyDetails.status || "—"}
-                  </Badge>
+                  {isEditingMain ? (
+                    <Select value={mainForm.status} onValueChange={(val) => updateMainField("status", val)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="स्थिति चुनें" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {familyStatusOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge
+                      variant={familyDetails.status === "completed" ? "default" : "secondary"}
+                      className="text-sm px-3 py-1"
+                    >
+                      {familyDetails.status || "—"}
+                    </Badge>
+                  )}
                 </div>
+                {/* Village ID & Chakola ID — always read-only, show numeric displayId */}
                 <div className="space-y-2">
                   <div className="text-sm font-medium text-gray-600">Village ID</div>
                   <p className="text-gray-900 font-mono text-sm bg-gray-100 px-3 py-1 rounded">
-                    {familyDetails.villageId || "—"}
+                    {familyDetails.village?.displayId ?? familyDetails.villageId ?? "—"}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <div className="text-sm font-medium text-gray-600">Chakola ID</div>
                   <p className="text-gray-900 font-mono text-sm bg-gray-100 px-3 py-1 rounded">
-                    {familyDetails.chakolaId || "—"}
+                    {familyDetails.village?.chakola?.displayId ?? familyDetails.chakolaId ?? "—"}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -251,32 +495,107 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                       स्थायी पता (Permanent Address)
                     </h3>
                     <div className="space-y-3 pl-7">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">राज्य:</span>
-                          <p className="text-gray-900">{familyDetails.permanentFamilyState || "—"}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">जिला:</span>
-                          <p className="text-gray-900">{familyDetails.permanentFamilyDistrict || "—"}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">गांव:</span>
-                          <p className="text-gray-900">{familyDetails.permanentFamilyVillage || "—"}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">पिनकोड:</span>
-                          <p className="text-gray-900 font-mono">{familyDetails.permanentFamilyPincode || "—"}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-600">पूरा पता:</span>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-1">
-                          {familyDetails.permanentAddress || "—"}
-                        </p>
-                      </div>
+                      {isEditingMain ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">राज्य</Label>
+                              <Select
+                                value={mainForm.permanentFamilyState}
+                                onValueChange={(val) => updateMainField("permanentFamilyState", val)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="राज्य चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {stateOptions.map((s) => (
+                                    <SelectItem key={s} value={s}>
+                                      {s}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">जिला</Label>
+                              <Select
+                                value={mainForm.permanentFamilyDistrict}
+                                onValueChange={(val) => updateMainField("permanentFamilyDistrict", val)}
+                                disabled={!mainForm.permanentFamilyState}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="जिला चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {permDistricts.map((d) => (
+                                    <SelectItem key={d} value={d}>
+                                      {d}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">गांव</Label>
+                              <Input
+                                value={mainForm.permanentFamilyVillage}
+                                onChange={(e) => updateMainField("permanentFamilyVillage", e.target.value)}
+                                placeholder="गांव"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">पिनकोड</Label>
+                              <Input
+                                value={mainForm.permanentFamilyPincode}
+                                onChange={(e) =>
+                                  updateMainField("permanentFamilyPincode", e.target.value.replace(/\D/g, "").slice(0, 6))
+                                }
+                                placeholder="पिनकोड"
+                                inputMode="numeric"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-600">पूरा पता</Label>
+                            <Textarea
+                              value={mainForm.permanentAddress}
+                              onChange={(e) => updateMainField("permanentAddress", e.target.value)}
+                              placeholder="पूरा पता"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">राज्य:</span>
+                              <p className="text-gray-900">{familyDetails.permanentFamilyState || "—"}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">जिला:</span>
+                              <p className="text-gray-900">{familyDetails.permanentFamilyDistrict || "—"}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">गांव:</span>
+                              <p className="text-gray-900">{familyDetails.permanentFamilyVillage || "—"}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">पिनकोड:</span>
+                              <p className="text-gray-900 font-mono">{familyDetails.permanentFamilyPincode || "—"}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">पूरा पता:</span>
+                            <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-1">
+                              {familyDetails.permanentAddress || "—"}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -287,47 +606,137 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                       वर्तमान पता (Current Address)
                     </h3>
                     <div className="space-y-3 pl-7">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">राज्य:</span>
-                          <p className="text-gray-900">{familyDetails.currentFamilyState || "—"}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">जिला:</span>
-                          <p className="text-gray-900">{familyDetails.currentFamilyDistrict || "—"}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">गांव:</span>
-                          <p className="text-gray-900">{familyDetails.currentFamilyVillage || "—"}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">पिनकोड:</span>
-                          <p className="text-gray-900 font-mono">{familyDetails.currentFamilyPincode || "—"}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-600">पूरा पता:</span>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-1">
-                          {familyDetails.currentAddress || "—"}
-                        </p>
-                      </div>
+                      {isEditingMain ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">राज्य</Label>
+                              <Select
+                                value={mainForm.currentFamilyState}
+                                onValueChange={(val) => updateMainField("currentFamilyState", val)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="राज्य चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {stateOptions.map((s) => (
+                                    <SelectItem key={s} value={s}>
+                                      {s}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">जिला</Label>
+                              <Select
+                                value={mainForm.currentFamilyDistrict}
+                                onValueChange={(val) => updateMainField("currentFamilyDistrict", val)}
+                                disabled={!mainForm.currentFamilyState}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="जिला चुनें" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {currDistricts.map((d) => (
+                                    <SelectItem key={d} value={d}>
+                                      {d}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">गांव</Label>
+                              <Input
+                                value={mainForm.currentFamilyVillage}
+                                onChange={(e) => updateMainField("currentFamilyVillage", e.target.value)}
+                                placeholder="गांव"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-600">पिनकोड</Label>
+                              <Input
+                                value={mainForm.currentFamilyPincode}
+                                onChange={(e) =>
+                                  updateMainField("currentFamilyPincode", e.target.value.replace(/\D/g, "").slice(0, 6))
+                                }
+                                placeholder="पिनकोड"
+                                inputMode="numeric"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-600">पूरा पता</Label>
+                            <Textarea
+                              value={mainForm.currentAddress}
+                              onChange={(e) => updateMainField("currentAddress", e.target.value)}
+                              placeholder="पूरा पता"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">राज्य:</span>
+                              <p className="text-gray-900">{familyDetails.currentFamilyState || "—"}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">जिला:</span>
+                              <p className="text-gray-900">{familyDetails.currentFamilyDistrict || "—"}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">गांव:</span>
+                              <p className="text-gray-900">{familyDetails.currentFamilyVillage || "—"}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">पिनकोड:</span>
+                              <p className="text-gray-900 font-mono">{familyDetails.currentFamilyPincode || "—"}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">पूरा पता:</span>
+                            <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-1">
+                              {familyDetails.currentAddress || "—"}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Comments */}
-                {familyDetails.anyComment && (
+                {isEditingMain ? (
                   <div className="space-y-2">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                       <FileText className="h-5 w-5 text-purple-600" />
                       समाज हित के लिए सुझाव (Suggestions for the welfare of the community)
                     </h3>
-                    <p className="text-gray-700 bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400 ml-7">
-                      {familyDetails.anyComment}
-                    </p>
+                    <Textarea
+                      value={mainForm.anyComment}
+                      onChange={(e) => updateMainField("anyComment", e.target.value)}
+                      placeholder="सुझाव"
+                      className="ml-7"
+                    />
                   </div>
+                ) : (
+                  familyDetails.anyComment && (
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-purple-600" />
+                        समाज हित के लिए सुझाव (Suggestions for the welfare of the community)
+                      </h3>
+                      <p className="text-gray-700 bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400 ml-7">
+                        {familyDetails.anyComment}
+                      </p>
+                    </div>
+                  )
                 )}
               </div>
             </CardContent>
@@ -604,6 +1013,22 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
             >
               हां, हटाएं
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Main Info Save Success Modal */}
+      <AlertDialog open={mainSaveSuccessOpen} onOpenChange={setMainSaveSuccessOpen}>
+        <AlertDialogContent className="sm:max-w-[420px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="w-5 h-5" />
+              सफलता!
+            </AlertDialogTitle>
+            <AlertDialogDescription>परिवार की जानकारी सफलतापूर्वक अपडेट कर दी गई है।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setMainSaveSuccessOpen(false)}>ठीक है</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

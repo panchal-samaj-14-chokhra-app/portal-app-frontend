@@ -51,6 +51,11 @@ export const createVillage = async (payload: any) => {
   return data;
 }
 
+export const updateVillage = async (id: string, payload: any) => {
+  const { data } = await request.put(`/village/${id}`, payload);
+  return data;
+}
+
 export const getChokhlaDetails = async (id: string) => {
   const { data } = await request.get(`/chokhla/${id}`);
   return data;

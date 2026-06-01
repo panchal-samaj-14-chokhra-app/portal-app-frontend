@@ -418,7 +418,6 @@ function SuperAdmin() {
         onSubmit={handleUserSubmit}
         isSubmitting={creatingUser}
         chokhlaList={chokhlas || []}
-        villages={villages?.data || []}
       />
       <SuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} data={createdData} />
       <ErrorModal isOpen={showErrorModal} onClose={() => setShowErrorModal(false)} message={errorMessage} />
