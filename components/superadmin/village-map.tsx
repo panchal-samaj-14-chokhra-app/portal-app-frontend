@@ -39,14 +39,25 @@ function loadLeaflet(): Promise<any> {
   })
 }
 
-interface VillageLoc {
+interface MapLoc {
   name: string
   lat: number
   lng: number
   chokhla?: string
+  village?: string
 }
 
-export default function VillageMap({ locations, loading }: { locations: VillageLoc[]; loading?: boolean }) {
+export default function VillageMap({
+  locations,
+  loading,
+  pinColor = "#dc2626",
+  pinStroke = "#7f1d1d",
+}: {
+  locations: MapLoc[]
+  loading?: boolean
+  pinColor?: string
+  pinStroke?: string
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const layerRef = useRef<any>(null)
@@ -83,11 +94,11 @@ export default function VillageMap({ locations, loading }: { locations: VillageL
     const L = window.L
     const layer = layerRef.current
     layer.clearLayers()
-    // Red teardrop pin (inline SVG, no external image needed)
+    // Teardrop pin (inline SVG, no external image needed)
     const pinIcon = L.divIcon({
       className: "",
       html: `<svg width="26" height="36" viewBox="0 0 26 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M13 0C5.82 0 0 5.82 0 13c0 9.75 13 23 13 23s13-13.25 13-23C26 5.82 20.18 0 13 0z" fill="#dc2626" stroke="#7f1d1d" stroke-width="1"/>
+        <path d="M13 0C5.82 0 0 5.82 0 13c0 9.75 13 23 13 23s13-13.25 13-23C26 5.82 20.18 0 13 0z" fill="${pinColor}" stroke="${pinStroke}" stroke-width="1"/>
         <circle cx="13" cy="13" r="4.8" fill="#ffffff"/>
       </svg>`,
       iconSize: [26, 36],
@@ -97,7 +108,8 @@ export default function VillageMap({ locations, loading }: { locations: VillageL
     const pts: [number, number][] = []
     ;(locations || []).forEach((loc) => {
       if (loc.lat == null || loc.lng == null) return
-      const popup = `<b>${loc.name || "—"}</b>${loc.chokhla ? `<br/>चोखरा: ${loc.chokhla}` : ""}<br/>${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`
+      const sub = loc.village ? `गांव: ${loc.village}` : loc.chokhla ? `चोखरा: ${loc.chokhla}` : ""
+      const popup = `<b>${loc.name || "—"}</b>${sub ? `<br/>${sub}` : ""}<br/>${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`
       const marker = L.marker([loc.lat, loc.lng], { icon: pinIcon }).bindPopup(popup)
       layer.addLayer(marker)
       pts.push([loc.lat, loc.lng])

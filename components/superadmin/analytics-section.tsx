@@ -48,6 +48,27 @@ const StatCard = ({ label, value, sub, color = "orange" }: any) => {
   )
 }
 
+function MapStats({ total, pinned, unit }: { total: number; pinned: number; unit: string }) {
+  const missing = Math.max(0, (total || 0) - (pinned || 0))
+  const pct = total ? Math.round((pinned / total) * 1000) / 10 : 0
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+      <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
+        निर्देशांक उपलब्ध: <b>{num(pinned)}</b>
+      </span>
+      <span className="px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200">
+        अनुपलब्ध: <b>{num(missing)}</b>
+      </span>
+      <span className="px-3 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200">
+        कुल {unit}: <b>{num(total)}</b>
+      </span>
+      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+        कवरेज: <b>{pct}%</b>
+      </span>
+    </div>
+  )
+}
+
 const SectionCard = ({ icon: Icon, title, desc, children }: any) => (
   <Card className="bg-white/90 border-orange-200/50">
     <CardHeader className="pb-3">
@@ -186,6 +207,30 @@ export default function AnalyticsSection({ chokhlaId: scopeChokhlaId, villages }
         </CardHeader>
         <CardContent>
           <VillageMap locations={(d?.villageLocations as any) || []} loading={isLoading} />
+          {d && <MapStats total={d.scope.villages} pinned={(d.villageLocations || []).length} unit="गांव" />}
+        </CardContent>
+      </Card>
+
+      {/* Family location map (follows the scope filter) */}
+      <Card className="bg-white/90 border-orange-200/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-blue-700 text-lg">
+            <MapPin className="w-5 h-5 mr-2" />
+            परिवार मानचित्र (Family Map)
+          </CardTitle>
+          <CardDescription>
+            चयनित क्षेत्र के परिवारों की स्थिति मानचित्र पर (मुखिया के अनुसार)
+            {d ? ` — ${num((d.familyLocations || []).length)} स्थान दर्शाए गए` : ""}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <VillageMap
+            locations={(d?.familyLocations as any) || []}
+            loading={isLoading}
+            pinColor="#2563eb"
+            pinStroke="#1e3a8a"
+          />
+          {d && <MapStats total={d.scope.families} pinned={(d.familyLocations || []).length} unit="परिवार" />}
         </CardContent>
       </Card>
 
