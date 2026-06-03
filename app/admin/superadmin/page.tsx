@@ -11,7 +11,7 @@ import {
 } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, Home, Building2, BarChart3, Users, User, Menu, Vote } from "lucide-react"
+import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -31,7 +31,7 @@ import {
 import VillageManagement from "@/components/superadmin/village-management"
 import ChokhlaManagement from "@/components/superadmin/chokhla-management"
 import UserManagement from "@/components/superadmin/user-management"
-import StatisticsView from "@/components/superadmin/statistics-view"
+import ReportsView from "@/components/superadmin/reports-view"
 import ProfileView from "@/components/superadmin/profile-view"
 import AddChokhlaForm from "@/components/superadmin/add-chokhla-form"
 import SuccessModal from "@/components/superadmin/success-modal"
@@ -45,7 +45,7 @@ const SIDEBAR_TABS = [
   { key: "user", label: "यूज़र प्रबंधन", icon: Users, shortLabel: "यूज़र" },
   { key: "polls", label: "पोल्स", icon: Vote, shortLabel: "पोल्स", tab: "polls" },
   { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
-  { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
+  { key: "reports", label: "रिपोर्ट", icon: FileText, shortLabel: "रिपोर्ट" },
 
 ]
 
@@ -234,8 +234,8 @@ function SuperAdmin() {
         return <ProfileView userData={userData} />
       case "polls":
         return <Polls polls={pollsData?.data || []} isLoading={pollsLoading} error={pollsError} />
-      case "statics":
-        return <StatisticsView />
+      case "reports":
+        return <ReportsView />
       default:
         return null
     }

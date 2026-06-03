@@ -169,6 +169,28 @@ export const getExcelData = async (chokhlaId: string) => {
   }
 };
 
+export const getReportDashboard = async () => {
+  const { data } = await request.get(`/reports/dashboard`);
+  return data;
+};
+
+export const getReportAnalytics = async (params?: { chokhlaId?: string; villageId?: string }) => {
+  const p = new URLSearchParams()
+  if (params?.villageId) p.set("villageId", params.villageId)
+  else if (params?.chokhlaId && params.chokhlaId !== "all") p.set("chokhlaId", params.chokhlaId)
+  const qs = p.toString()
+  const { data } = await request.get(`/reports/analytics${qs ? `?${qs}` : ""}`);
+  return data;
+};
+
+export const getReportPdf = async (reportType: string, chokhlaId: string, query?: string) => {
+  const response = await request.get(
+    `/reports/${reportType}/${chokhlaId}/pdf${query ? `?${query}` : ""}`,
+    { responseType: "blob" }
+  );
+  return response.data;
+};
+
 export const getPdfData = async (chokhlaId: string) => {
   try {
     const response = await request.get(

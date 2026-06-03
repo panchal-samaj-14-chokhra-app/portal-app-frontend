@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, updateVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, updateVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, getReportPdf, getReportDashboard, getReportAnalytics, } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
 import { deletePoll } from '../requests/village-family';
@@ -308,4 +308,41 @@ export const useDownloadFamilyData = () => {
     downloadPdf,
     loadingType,
   };
+};
+
+export const useReportDashboard = () => {
+  return useQuery({
+    queryKey: ["report-dashboard"],
+    queryFn: getReportDashboard,
+  });
+};
+
+export const useReportAnalytics = (params?: { chokhlaId?: string; villageId?: string }) => {
+  return useQuery({
+    queryKey: ["report-analytics", params?.villageId || params?.chokhlaId || "all"],
+    queryFn: () => getReportAnalytics(params),
+  });
+};
+
+export const useDownloadReport = () => {
+  const [loadingReport, setLoadingReport] = useState<string | null>(null);
+
+  const download = async (reportType: string, chokhlaId: string, filename: string, query?: string) => {
+    try {
+      setLoadingReport(reportType);
+      const data = await getReportPdf(reportType, chokhlaId, query);
+      const url = window.URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setLoadingReport(null);
+    }
+  };
+
+  return { download, loadingReport };
 };

@@ -189,7 +189,7 @@ function Chokhla() {
       case "statics":
         return <StatisticsView chokhla={chokhla} />
       case "reports":
-        return <ReportsView />
+        return <ReportsView chokhlaId={chokhlaId} villages={villages} />
       case "profile":
         return (
           <ProfileManagement
