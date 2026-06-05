@@ -99,10 +99,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ userData }) => {
                   सुपर एडमिन
                 </Badge>
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-100">
-                <span className="text-gray-600 font-medium">यूज़र ID:</span>
-                <span className="font-mono text-sm text-gray-700">{user.id}</span>
-              </div>
             </div>
           </CardContent>
         </Card>

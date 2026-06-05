@@ -26,13 +26,14 @@ import {
   Heart,
   Smartphone,
   Globe,
+  FileSpreadsheet,
 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
 import { Badge } from "@/components/ui/badge/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs/tabs"
 import { Separator } from "@/components/ui/separator/separator"
-import { useGetFamilyDetails } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useGetFamilyDetails, useDownloadReport } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -354,6 +355,15 @@ export default function FamilyDetailPage() {
   }, [session, status, router])
 
   const userType = useMemo(() => session?.user?.role, [session?.user?.role])
+  // Super admin can edit but not delete.
+  const canEdit = userType === "VILLAGE_MEMBER" || userType === "SUPER_ADMIN"
+
+  const { download: downloadFamilyReport, loadingReport } = useDownloadReport()
+  const handleFamilyReport = (format: "pdf" | "excel") => {
+    const ext = format === "excel" ? "xlsx" : "pdf"
+    const name = (familyDetail?.mukhiyaName || "family").replace(/\s+/g, "_")
+    downloadFamilyReport("family", familyId, `family-${name}.${ext}`, format)
+  }
 
   const baseUrl =
     (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
@@ -434,7 +444,7 @@ export default function FamilyDetailPage() {
     // Prepare data for Excel
     const familySheet = [
       {
-        "परिवार ID": familyDetail.id,
+        "परिवार ID": familyDetail.displayId ?? "",
         मुखिया: familyDetail.mukhiyaName,
         "स्थायी पता": familyDetail.permanentAddress,
         "वर्तमान पता": familyDetail.currentAddress,
@@ -500,7 +510,7 @@ export default function FamilyDetailPage() {
     XLSX.utils.book_append_sheet(wb, wsMembers, "सदस्य")
 
     // Export to Excel file
-    XLSX.writeFile(wb, `family-report-${familyDetail.id}.xlsx`)
+    XLSX.writeFile(wb, `family-report-${familyDetail.displayId ?? familyId}.xlsx`)
   }
 
   // Get the mukhiya member
@@ -525,12 +535,12 @@ export default function FamilyDetailPage() {
                   परिवार विवरण - {familyDetail.mukhiyaName}
                 </h1>
                 <p className="text-orange-100 text-sm">
-                  {familyDetail.id} • {familyDetail.Person.length} सदस्य
+                  परिवार ID: {familyDetail.displayId ?? "—"} • {familyDetail.Person.length} सदस्य
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {userType === "VILLAGE_MEMBER" && (
+              {canEdit && (
                 <>
                   <Button
                     onClick={() =>
@@ -624,10 +634,38 @@ export default function FamilyDetailPage() {
                 <Separator />
 
                 <div className="flex flex-col space-y-2">
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600" onClick={handleDownloadReport}>
-                    <Download className="w-4 h-4 mr-2" />
-                    <span className="hindi-text">परिवार रिपोर्ट डाउनलोड</span>
-                  </Button>
+                  <p className="text-sm font-medium text-gray-600 hindi-text">परिवार रिपोर्ट डाउनलोड</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600"
+                      disabled={loadingReport === "family:pdf"}
+                      onClick={() => handleFamilyReport("pdf")}
+                    >
+                      {loadingReport === "family:pdf" ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-1.5" />
+                          PDF
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-green-300 text-green-700 hover:bg-green-50"
+                      disabled={loadingReport === "family:excel"}
+                      onClick={() => handleFamilyReport("excel")}
+                    >
+                      {loadingReport === "family:excel" ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+                          Excel
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

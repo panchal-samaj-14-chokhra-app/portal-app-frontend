@@ -19,13 +19,15 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card/card"
 import { Badge } from "@/components/ui/badge/badge"
 import { Input } from "@/components/ui/input/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table/table"
-import { useDeleteFamilyUsingID, useVillageDetails, useGetPollsByVillage, useSubmitVote } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useDeleteFamilyUsingID, useVillageDetails, useGetPollsByVillage, useSubmitVote, useDownloadReport } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { getPollsByVillage } from '@/data-hooks/requests/village-family'
 import {
   Dialog,
@@ -153,6 +155,12 @@ export default function VillageDetailPage() {
     })
   }
   const { mutate: deleteFamily } = useDeleteFamilyUsingID()
+  const { download: downloadVillageReport, loadingReport } = useDownloadReport()
+  const handleVillageReport = (format: "pdf" | "excel") => {
+    const name = (villageData?.name || "village").replace(/\s+/g, "_")
+    const ext = format === "excel" ? "xlsx" : "pdf"
+    downloadVillageReport("village", villageId, `village-${name}.${ext}`, format)
+  }
 
   const sessionUserId = (session as any)?.user?.id
   const { toast } = useToast()
@@ -239,6 +247,8 @@ export default function VillageDetailPage() {
   }, [villageData])
 
   const userType = useMemo(() => session?.user?.role, [session?.user?.role])
+  // Super admin can edit (family/person/village) but NOT delete; village member keeps full control.
+  const canEdit = userType === "VILLAGE_MEMBER" || userType === "SUPER_ADMIN"
 
   useEffect(() => {
     if (status === "loading") return
@@ -586,7 +596,7 @@ export default function VillageDetailPage() {
                             </Button>
 
                             {
-                              userType === "VILLAGE_MEMBER" && (<Button
+                              canEdit && (<Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() =>
@@ -668,11 +678,48 @@ export default function VillageDetailPage() {
 
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <CardTitle className="flex items-center text-blue-700">
-                <MapPin className="w-5 h-5 mr-2" />
-                गांव की जानकारी
-              </CardTitle>
-              <CardDescription>गांव के बारे में विस्तृत जानकारी</CardDescription>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center text-blue-700">
+                    <MapPin className="w-5 h-5 mr-2" />
+                    गांव की जानकारी
+                  </CardTitle>
+                  <CardDescription>गांव के बारे में विस्तृत जानकारी</CardDescription>
+                </div>
+                <div className="flex gap-2 shrink-0" title="गांव एवं सभी परिवारों के सदस्यों सहित पूरी रिपोर्ट">
+                  <Button
+                    size="sm"
+                    onClick={() => handleVillageReport("pdf")}
+                    disabled={loadingReport === "village:pdf"}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {loadingReport === "village:pdf" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-1.5" />
+                        PDF
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleVillageReport("excel")}
+                    disabled={loadingReport === "village:excel"}
+                    className="border-green-300 text-green-700 hover:bg-green-50"
+                  >
+                    {loadingReport === "village:excel" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+                        Excel
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
@@ -791,8 +838,7 @@ export default function VillageDetailPage() {
             <AlertDialogDescription>
               यह कार्रवाई पूर्ववत नहीं की जा सकती।{" "}
               <span className="font-medium">
-                {confirmTarget?.name ? `(${confirmTarget.name}) ` : ""}
-                {confirmTarget?.id ? `ID: ${confirmTarget.id}` : ""}
+                {confirmTarget?.name ? `(${confirmTarget.name})` : ""}
               </span>{" "}
               को हटाने पर सभी संबंधित डेटा भी हट सकता है।
             </AlertDialogDescription>

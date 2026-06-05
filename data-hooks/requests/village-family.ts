@@ -183,9 +183,14 @@ export const getReportAnalytics = async (params?: { chokhlaId?: string; villageI
   return data;
 };
 
-export const getReportPdf = async (reportType: string, chokhlaId: string, query?: string) => {
+export const getReportFile = async (
+  reportType: string,
+  chokhlaId: string,
+  format: "pdf" | "excel" = "pdf",
+  query?: string
+) => {
   const response = await request.get(
-    `/reports/${reportType}/${chokhlaId}/pdf${query ? `?${query}` : ""}`,
+    `/reports/${reportType}/${chokhlaId}/${format}${query ? `?${query}` : ""}`,
     { responseType: "blob" }
   );
   return response.data;

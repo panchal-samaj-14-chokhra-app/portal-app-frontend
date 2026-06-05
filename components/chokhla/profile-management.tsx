@@ -291,7 +291,7 @@ export function ProfileManagement({
                 <Shield className="w-5 h-5 text-blue-600 mr-2" />
                 <h4 className="font-semibold text-blue-800">चोखरा ID</h4>
               </div>
-              <p className="text-blue-700 font-mono text-sm">{chokhla?.id || "N/A"}</p>
+              <p className="text-blue-700 font-mono text-sm">{chokhla?.displayId ?? "N/A"}</p>
             </div>
 
             <div className="p-4 bg-green-50 rounded-lg">
@@ -300,7 +300,9 @@ export function ProfileManagement({
                 <h4 className="font-semibold text-green-800">बनाया गया</h4>
               </div>
               <p className="text-green-700 text-sm">
-                {chokhla?.createdAt ? new Date(chokhla.createdAt).toLocaleDateString("hi-IN") : "N/A"}
+                {chokhla?.createdDate || chokhla?.createdAt
+                  ? new Date(chokhla.createdDate || chokhla.createdAt).toLocaleDateString("hi-IN")
+                  : "N/A"}
               </p>
             </div>
 
@@ -310,7 +312,9 @@ export function ProfileManagement({
                 <h4 className="font-semibold text-purple-800">अंतिम अपडेट</h4>
               </div>
               <p className="text-purple-700 text-sm">
-                {chokhla?.updatedAt ? new Date(chokhla.updatedAt).toLocaleDateString("hi-IN") : "N/A"}
+                {chokhla?.updatedDate || chokhla?.updatedAt
+                  ? new Date(chokhla.updatedDate || chokhla.updatedAt).toLocaleDateString("hi-IN")
+                  : "N/A"}
               </p>
             </div>
           </div>

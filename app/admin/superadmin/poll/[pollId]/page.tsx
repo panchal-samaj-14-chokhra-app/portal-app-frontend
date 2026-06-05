@@ -106,12 +106,6 @@ export default function PollResultsClient({ pollId }: Props) {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6 w-full sm:w-auto">
-              {/* Poll ID */}
-              <div className="bg-slate-50 rounded-md px-3 py-2 text-center sm:min-w-[140px]">
-                <p className="text-xs text-slate-500 font-medium">Poll ID</p>
-                <p className="font-mono text-[13px] text-slate-700 truncate">{pollData.data.id}</p>
-              </div>
-
               {/* Questions */}
               <div className="bg-slate-50 rounded-md px-3 py-2 text-center sm:min-w-[140px]">
                 <p className="text-xs text-slate-500 font-medium">Questions</p>

@@ -3,7 +3,8 @@
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { useDeleteMember, useGetFamilyDetails, useUpdateFamily } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useDeleteMember, useGetFamilyDetails, useUpdateFamily, useAllChokhlas, useGetAllVillageswithChokhlaID } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { SelectInput } from "@/components/group-component/family-form/employment-info-section"
 import { useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, User, Home, MapPin, Users, FileText, AlertCircle, CheckCircle2, Info, Plus, Pencil, Save, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button/button"
@@ -48,8 +49,11 @@ const familyStatusOptions = [
 
 type MainInfoForm = {
   mukhiyaName: string
+  mukhiyaPhoneNumber: string
   economicStatus: string
   status: string
+  choklaId: string
+  villageId: string
   permanentFamilyState: string
   permanentFamilyDistrict: string
   permanentFamilyVillage: string
@@ -70,6 +74,8 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
   const { data: session, status } = useSession()
+  // Super admin can edit family/member details but cannot delete members.
+  const isSuperAdmin = (session?.user as any)?.role === "SUPER_ADMIN"
   const router = useRouter()
   const params = useParams()
   const { data: familyDetails, isLoading: isFetching } = useGetFamilyDetails(familyId || "")
@@ -115,8 +121,11 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const [mainSaveSuccessOpen, setMainSaveSuccessOpen] = useState(false)
   const [mainForm, setMainForm] = useState<MainInfoForm>({
     mukhiyaName: "",
+    mukhiyaPhoneNumber: "",
     economicStatus: "",
     status: "",
+    choklaId: "",
+    villageId: "",
     permanentFamilyState: "",
     permanentFamilyDistrict: "",
     permanentFamilyVillage: "",
@@ -134,12 +143,21 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
   const permDistricts = mainForm.permanentFamilyState ? statesAndDistricts[mainForm.permanentFamilyState] || [] : []
   const currDistricts = mainForm.currentFamilyState ? statesAndDistricts[mainForm.currentFamilyState] || [] : []
 
+  // Chokhra + village dropdowns (super admin can re-assign the family's chokhra/village)
+  const { data: chokhlaList } = useAllChokhlas()
+  const { data: chokhlaVillages } = useGetAllVillageswithChokhlaID(mainForm.choklaId)
+  const chokhlaOptions = (Array.isArray(chokhlaList) ? chokhlaList : []).map((c: any) => ({ label: c.name, value: c.id }))
+  const villageOptions = (Array.isArray(chokhlaVillages) ? chokhlaVillages : []).map((v: any) => ({ label: v.name, value: v.id }))
+
   const populateMainForm = () => {
     if (!familyDetails) return
     setMainForm({
       mukhiyaName: familyDetails.mukhiyaName || "",
+      mukhiyaPhoneNumber: familyDetails.mukhiyaPhoneNumber || "",
       economicStatus: familyDetails.economicStatus || "",
       status: familyDetails.status || "",
+      choklaId: familyDetails.chakolaId || familyDetails.village?.chakola?.id || "",
+      villageId: familyDetails.villageId || "",
       permanentFamilyState: familyDetails.permanentFamilyState || "",
       permanentFamilyDistrict: familyDetails.permanentFamilyDistrict || "",
       permanentFamilyVillage: familyDetails.permanentFamilyVillage || "",
@@ -160,6 +178,8 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       // Reset district when state changes
       if (field === "permanentFamilyState") next.permanentFamilyDistrict = ""
       if (field === "currentFamilyState") next.currentFamilyDistrict = ""
+      // Reset village when chokhra changes
+      if (field === "choklaId") next.villageId = ""
       return next
     })
   }
@@ -194,11 +214,17 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       setMainSaveError("मुखिया का नाम आवश्यक है।")
       return
     }
+    // Super admin may re-assign chokhra/village — both must be set.
+    if (isSuperAdmin && (!mainForm.choklaId || !mainForm.villageId)) {
+      setMainSaveError("कृपया चोखरा एवं गांव चुनें।")
+      return
+    }
     setMainSaveError("")
     setSavingMain(true)
     const submitData = {
       // editable family fields
       mukhiyaName: mainForm.mukhiyaName,
+      mukhiyaPhoneNumber: mainForm.mukhiyaPhoneNumber,
       status: mainForm.status,
       economicStatus: mainForm.economicStatus,
       permanentFamilyState: mainForm.permanentFamilyState,
@@ -212,9 +238,9 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
       currentFamilyPincode: mainForm.currentFamilyPincode,
       currentAddress: mainForm.currentAddress,
       anyComment: mainForm.anyComment,
-      // unchanged relations / location (preserve existing values)
-      villageId: familyDetails.villageId,
-      chakolaId: familyDetails.chakolaId,
+      // Super admin can re-assign chokhra/village; others keep existing values.
+      villageId: isSuperAdmin ? mainForm.villageId : familyDetails.villageId,
+      chakolaId: isSuperAdmin ? mainForm.choklaId : familyDetails.chakolaId,
       longitude: familyDetails.longitude ?? null,
       latitude: familyDetails.latitude ?? null,
       // do not touch members from this card
@@ -407,6 +433,22 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                    <User className="h-4 w-4" />
+                    मुखिया का मोबाइल नंबर
+                  </div>
+                  {isEditingMain ? (
+                    <Input
+                      type="tel"
+                      value={mainForm.mukhiyaPhoneNumber}
+                      onChange={(e) => updateMainField("mukhiyaPhoneNumber", e.target.value)}
+                      placeholder="मुखिया का मोबाइल नंबर"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{familyDetails.mukhiyaPhoneNumber || "—"}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
                     <FileText className="h-4 w-4" />
                     आर्थिक स्थिति
                   </div>
@@ -459,18 +501,44 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                     </Badge>
                   )}
                 </div>
-                {/* Village ID & Chakola ID — always read-only, show numeric displayId */}
+                {/* चोखरा — super admin can re-assign via dropdown; others see the name */}
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Village ID</div>
-                  <p className="text-gray-900 font-mono text-sm bg-gray-100 px-3 py-1 rounded">
-                    {familyDetails.village?.displayId ?? familyDetails.villageId ?? "—"}
-                  </p>
+                  {isEditingMain && isSuperAdmin ? (
+                    <SelectInput
+                      label="चोखरा"
+                      value={mainForm.choklaId}
+                      options={chokhlaOptions}
+                      onChange={(val) => updateMainField("choklaId", val)}
+                      placeholder="चोखरा चुनें"
+                    />
+                  ) : (
+                    <>
+                      <div className="text-sm font-medium text-gray-600">चोखरा</div>
+                      <p className="text-gray-900 text-sm bg-gray-100 px-3 py-1 rounded">
+                        {familyDetails.village?.chakola?.name || "—"}
+                      </p>
+                    </>
+                  )}
                 </div>
+                {/* गांव — super admin picks from the selected chokhra's villages */}
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Chakola ID</div>
-                  <p className="text-gray-900 font-mono text-sm bg-gray-100 px-3 py-1 rounded">
-                    {familyDetails.village?.chakola?.displayId ?? familyDetails.chakolaId ?? "—"}
-                  </p>
+                  {isEditingMain && isSuperAdmin ? (
+                    <SelectInput
+                      label="गांव"
+                      value={mainForm.villageId}
+                      options={villageOptions}
+                      onChange={(val) => updateMainField("villageId", val)}
+                      placeholder="गांव चुनें"
+                      disabled={!mainForm.choklaId}
+                    />
+                  ) : (
+                    <>
+                      <div className="text-sm font-medium text-gray-600">गांव</div>
+                      <p className="text-gray-900 text-sm bg-gray-100 px-3 py-1 rounded">
+                        {familyDetails.village?.name || "—"}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
@@ -840,15 +908,17 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                               >
                                 संपादित करें
                               </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => requestDeleteMember(person)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                हटाएं
-                              </Button>
+                              {!isSuperAdmin && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => requestDeleteMember(person)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  हटाएं
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -940,7 +1010,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        ID: {member.id}
+                        सदस्य {idx + 1}
                       </Badge>
                     </div>
 
@@ -985,8 +1055,7 @@ export default function FamilyForm({ mode, familyId }: FamilyFormProps) {
             <AlertDialogDescription>
               यह कार्रवाई पूर्ववत नहीं की जा सकती।
               <span className="font-medium">
-                {deleteTarget?.firstName ? ` (${deleteTarget.firstName} ${deleteTarget.lastName}) ` : ""}
-                {deleteTarget?.id ? `ID: ${deleteTarget.id}` : ""}
+                {deleteTarget?.firstName ? ` (${deleteTarget.firstName} ${deleteTarget.lastName})` : ""}
               </span>
               को हटाने पर सभी संबंधित डेटा भी हट सकता है।
             </AlertDialogDescription>

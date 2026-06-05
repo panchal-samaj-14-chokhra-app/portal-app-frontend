@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { useParams, useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, ArrowLeft, Home, BarChart3, FileText, User, Menu } from "lucide-react"
+import { LogOut, ArrowLeft, Home, FileText, User, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -24,7 +24,6 @@ import {
 // Import custom components
 import { VillageManagement } from "@/components/chokhla/village-management"
 import { ProfileManagement } from "@/components/chokhla/profile-management"
-import { StatisticsView } from "@/components/chokhla/statistics-view"
 import { ReportsView } from "@/components/chokhla/reports-view"
 import { SuccessModal } from "@/components/chokhla/success-modal"
 import { ErrorModal } from "@/components/chokhla/error-modal"
@@ -39,7 +38,6 @@ import {
 
 const SIDEBAR_TABS = [
   { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
-  { key: "statics", label: "आँकड़े", icon: BarChart3, shortLabel: "आँकड़े" },
   { key: "reports", label: "रिपोर्ट्स", icon: FileText, shortLabel: "रिपोर्ट" },
   { key: "profile", label: "चोखरा प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
 ]
@@ -186,8 +184,6 @@ function Chokhla() {
             isCreating={isCreating}
           />
         )
-      case "statics":
-        return <StatisticsView chokhla={chokhla} />
       case "reports":
         return <ReportsView chokhlaId={chokhlaId} villages={villages} />
       case "profile":

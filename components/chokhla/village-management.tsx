@@ -1,12 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, MapPin, Users, School, Heart, Building, Loader2, Phone, Mail, Hotel } from "lucide-react"
+import { Eye, MapPin, Users, School, Heart, Building, Loader2, Phone, Mail, Hotel, Pencil } from "lucide-react"
 import { AddVillageForm } from "./add-village-form"
 import type { UseFormReturn } from "react-hook-form"
+import { useUpdateVillage, useAllChokhlas } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { useToast } from "@/hooks/use-toast"
+import EditVillageForm from "@/components/superadmin/edit-village-form"
 
 interface Village {
   id: string
@@ -51,6 +55,35 @@ export function VillageManagement({
   onSubmit,
   isCreating,
 }: VillageManagementProps) {
+  const { toast } = useToast()
+  const { data: chokhlaList } = useAllChokhlas()
+  const updateVillageMutation = useUpdateVillage()
+  const [editVillage, setEditVillage] = useState<Village | null>(null)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  // Chokhla admin and super admin can edit village details (no delete).
+  const canEdit = userType === "CHOKHLA_MEMBER" || userType === "SUPER_ADMIN"
+
+  const handleEditVillage = (village: Village) => {
+    setEditVillage(village)
+    setIsEditOpen(true)
+  }
+
+  const handleEditSubmit = (villageId: string, data: any) => {
+    updateVillageMutation.mutate(
+      { villageId, payload: data },
+      {
+        onSuccess: () => {
+          toast({ title: "गांव अपडेट हुआ", description: "गांव की जानकारी सफलतापूर्वक अपडेट कर दी गई।", variant: "success" })
+          setIsEditOpen(false)
+          setEditVillage(null)
+        },
+        onError: (err: any) => {
+          toast({ title: "अपडेट त्रुटि", description: err?.message || "गांव अपडेट करने में समस्या हुई।", variant: "destructive" })
+        },
+      },
+    )
+  }
+
   if (isLoading) {
     return (
       <Card className="shadow-xl border-orange-100 bg-white/80 backdrop-blur-sm">
@@ -259,15 +292,26 @@ export function VillageManagement({
                           )}
                         </div>
 
-                        <div className="pt-3 mt-3 border-t border-gray-200">
+                        <div className="pt-3 mt-3 border-t border-gray-200 flex gap-2">
                           <Button
                             onClick={() => onVillageView(village.id)}
                             size="sm"
-                            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+                            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             विवरण देखें
                           </Button>
+                          {canEdit && (
+                            <Button
+                              onClick={() => handleEditVillage(village)}
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                            >
+                              <Pencil className="w-4 h-4 mr-1" />
+                              संपादित करें
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -380,15 +424,28 @@ export function VillageManagement({
                             </div>
                           </TableCell>
                           <TableCell className="px-4 py-4 whitespace-nowrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-orange-300 text-orange-600 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 transition-all duration-200 bg-transparent text-xs sm:text-sm"
-                              onClick={() => onVillageView(village.id)}
-                            >
-                              <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                              देखें
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-orange-300 text-orange-600 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 transition-all duration-200 bg-transparent text-xs sm:text-sm"
+                                onClick={() => onVillageView(village.id)}
+                              >
+                                <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                                देखें
+                              </Button>
+                              {canEdit && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-800 transition-all duration-200 bg-transparent text-xs sm:text-sm"
+                                  onClick={() => handleEditVillage(village)}
+                                >
+                                  <Pencil className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                                  संपादित करें
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -400,6 +457,20 @@ export function VillageManagement({
           )}
         </CardContent>
       </Card>
+
+      {editVillage && (
+        <EditVillageForm
+          isOpen={isEditOpen}
+          onClose={() => {
+            setIsEditOpen(false)
+            setEditVillage(null)
+          }}
+          onSubmit={handleEditSubmit}
+          isSubmitting={(updateVillageMutation as any).isLoading || (updateVillageMutation as any).isPending}
+          villageId={editVillage.id}
+          chakolaList={Array.isArray(chokhlaList) ? chokhlaList : []}
+        />
+      )}
     </div>
   )
 }

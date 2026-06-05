@@ -65,10 +65,7 @@ export function SuccessModal({ open, onOpenChange, successData }: SuccessModalPr
                 <strong>सदस्य:</strong> {successData.village?.villageMemberName}
               </p>
               <p>
-                <strong>गांव ID:</strong> {successData.village?.id}
-              </p>
-              <p>
-                <strong>यूज़र ID:</strong> {successData.user?.id}
+                <strong>गांव ID:</strong> {successData.village?.displayId ?? "—"}
               </p>
               <p>
                 <strong>भूमिका:</strong> {successData.user?.globalRole}

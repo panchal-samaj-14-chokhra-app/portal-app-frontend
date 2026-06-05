@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, Download, Loader2, Users, GraduationCap, HeartHandshake, BarChart3, BookOpenCheck, Briefcase, Store } from "lucide-react"
+import { FileText, Download, Loader2, Users, GraduationCap, BarChart3, BookOpenCheck, Briefcase, Store, FileSpreadsheet, Home, FileStack } from "lucide-react"
 import { useAllChokhlas, useDownloadReport } from "@/data-hooks/mutation-query/useQueryAndMutation"
 
 interface ReportDef {
@@ -17,11 +17,12 @@ interface ReportDef {
 }
 
 const REPORTS: ReportDef[] = [
+  { key: "detailed", title: "विस्तृत परिवार रिपोर्ट", description: "चयनित क्षेत्र की पूर्ण रिपोर्ट — गांव की जानकारी, सभी परिवार एवं उनके सदस्यों का विवरण (प्रत्येक परिवार अलग पृष्ठ / Excel शीट)।", icon: FileStack, color: "purple" },
+  { key: "families", title: "परिवारों की सूची", description: "सभी परिवारों की सूची — क्रम, परिवार ID, मुखिया का नाम, गांव, मोबाइल, चोखरा।", icon: Home, color: "blue" },
   { key: "age-sex", title: "आयु वर्ग एवं लिंग अनुपात", description: "आयु वर्ग (1-11, 11-21, 21-35, 35-50, 50-60, 60-80, 80-100) के अनुसार पुरुष/महिला संख्या एवं लिंग अनुपात।", icon: BarChart3, color: "blue" },
-  { key: "unmarried", title: "अविवाहित सदस्यों की सूची", description: "अविवाहित सदस्यों की सूची (नाम, गांव, मुखिया, गोत्र, मोबाइल)। लिंग चुनें।", icon: Users, color: "orange", genderSelect: true },
+  { key: "unmarried", title: "अविवाहित सदस्यों की सूची", description: "अविवाहित सूची — पुरुष 21+ वर्ष, महिला 18+ वर्ष (नाम, लिंग, गांव, मुखिया, मोबाइल)। लिंग चुनें।", icon: Users, color: "orange", genderSelect: true },
   { key: "job", title: "नौकरीपेशा व्यक्ति", description: "नौकरी (निजी एवं सरकारी) करने वाले व्यक्तियों की सूची — नाम, मोबाइल, पता, उद्योग/क्षेत्र।", icon: Briefcase, color: "blue" },
   { key: "business", title: "व्यापारी व्यक्ति", description: "व्यापार करने वाले व्यक्तियों की सूची — नाम, मोबाइल, पता, उद्योग/क्षेत्र।", icon: Store, color: "green" },
-  { key: "marriageable", title: "विवाह योग्य अविवाहित", description: "18 वर्ष से अधिक अविवाहित कन्याएं एवं 21 वर्ष से अधिक अविवाहित युवकों की सूची।", icon: HeartHandshake, color: "pink" },
   { key: "students", title: "विद्यार्थी (कक्षावार)", description: "वर्तमान में अध्ययनरत विद्यार्थियों की कक्षावार सूची (0-5, 6, 7, 8, 9, 10, 11, 12, कॉलेज)।", icon: GraduationCap, color: "green" },
   { key: "education", title: "शिक्षा रिपोर्ट", description: "शिक्षा में लिंग अनुपात तथा शिक्षा छोड़ने वाली कन्याओं एवं युवकों की सूची।", icon: BookOpenCheck, color: "purple" },
 ]
@@ -58,7 +59,7 @@ export default function ReportDownloadCards({ chokhlaId, villages }: ReportDownl
         ? chokhlas.find((c: any) => c.id === selected)?.name || ""
         : ""
 
-  const handleDownload = (report: ReportDef) => {
+  const handleDownload = (report: ReportDef, format: "pdf" | "excel") => {
     const safeName = (scopeName || "report").replace(/\s+/g, "_")
     // path segment + optional villageId query
     const pathId = villageMode ? chokhlaId || "all" : selected
@@ -67,7 +68,8 @@ export default function ReportDownloadCards({ chokhlaId, villages }: ReportDownl
     if (report.genderSelect) parts.push(`gender=${unmarriedGender}`)
     const query = parts.length ? parts.join("&") : undefined
     if (!pathId) return
-    download(report.key, pathId, `${report.key}-${safeName}.pdf`, query)
+    const ext = format === "excel" ? "xlsx" : "pdf"
+    download(report.key, pathId, `${report.key}-${safeName}.${ext}`, format, query)
   }
 
   return (
@@ -123,7 +125,8 @@ export default function ReportDownloadCards({ chokhlaId, villages }: ReportDownl
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {REPORTS.map((r) => {
           const Icon = r.icon
-          const isLoading = loadingReport === r.key
+          // The detailed report PDF is too large for "all chokhras" — disable that combo.
+          const detailedAllPdfDisabled = r.key === "detailed" && !villageMode && selected === "all"
           return (
             <Card key={r.key} className={`bg-gradient-to-br ${colorClasses[r.color]} flex flex-col`}>
               <CardContent className="p-5 flex flex-col flex-1">
@@ -149,23 +152,43 @@ export default function ReportDownloadCards({ chokhlaId, villages }: ReportDownl
                     </Select>
                   </div>
                 )}
-                <Button
-                  onClick={() => handleDownload(r)}
-                  disabled={isLoading}
-                  className="mt-4 w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      तैयार हो रहा है...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4 mr-2" />
-                      PDF डाउनलोड करें
-                    </>
-                  )}
-                </Button>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={() => handleDownload(r, "pdf")}
+                    disabled={loadingReport === `${r.key}:pdf` || detailedAllPdfDisabled}
+                    title={detailedAllPdfDisabled ? "सभी चोखरा के लिए PDF उपलब्ध नहीं — कृपया कोई एक चोखरा चुनें" : undefined}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loadingReport === `${r.key}:pdf` ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-1.5" />
+                        PDF
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => handleDownload(r, "excel")}
+                    disabled={loadingReport === `${r.key}:excel`}
+                    variant="outline"
+                    className="bg-white border-green-300 text-green-700 hover:bg-green-50"
+                  >
+                    {loadingReport === `${r.key}:excel` ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+                        Excel
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {detailedAllPdfDisabled && (
+                  <p className="mt-2 text-[11px] text-red-600">
+                    सभी चोखरा के लिए PDF उपलब्ध नहीं — कृपया कोई एक चोखरा चुनें।
+                  </p>
+                )}
               </CardContent>
             </Card>
           )

@@ -608,7 +608,6 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                     <AlertDialogTitle>क्या आप वाकई इस पोल को हटाना चाहते हैं?</AlertDialogTitle>
                     <AlertDialogDescription>
                         यह कार्रवाई पूर्ववत नहीं की जा सकती।
-                        {confirmTargetPollId ? <span className="block mt-2 font-medium">ID: {confirmTargetPollId}</span> : null}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

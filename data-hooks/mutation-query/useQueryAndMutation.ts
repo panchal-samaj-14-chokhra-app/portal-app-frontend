@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, updateVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, getReportPdf, getReportDashboard, getReportAnalytics, } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, updateVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, getReportFile, getReportDashboard, getReportAnalytics, } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
 import { deletePoll } from '../requests/village-family';
@@ -327,11 +327,21 @@ export const useReportAnalytics = (params?: { chokhlaId?: string; villageId?: st
 export const useDownloadReport = () => {
   const [loadingReport, setLoadingReport] = useState<string | null>(null);
 
-  const download = async (reportType: string, chokhlaId: string, filename: string, query?: string) => {
+  const download = async (
+    reportType: string,
+    chokhlaId: string,
+    filename: string,
+    format: "pdf" | "excel" = "pdf",
+    query?: string
+  ) => {
     try {
-      setLoadingReport(reportType);
-      const data = await getReportPdf(reportType, chokhlaId, query);
-      const url = window.URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
+      setLoadingReport(`${reportType}:${format}`);
+      const data = await getReportFile(reportType, chokhlaId, format, query);
+      const mime =
+        format === "excel"
+          ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          : "application/pdf";
+      const url = window.URL.createObjectURL(new Blob([data], { type: mime }));
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", filename);

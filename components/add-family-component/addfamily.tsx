@@ -35,6 +35,7 @@ export default function AddFamilyDialog({ isOpen, onClose, chakolaId, villageId 
         chakolaId: chakolaId,
         villageId: villageId,
         mukhiyaName: "",
+        mukhiyaPhoneNumber: "",
         economicStatus: "",
         anyComment: "",
         currentFamilyState: "",
@@ -67,10 +68,10 @@ export default function AddFamilyDialog({ isOpen, onClose, chakolaId, villageId 
         }
 
         const data = result
-        const familyId = data?.id || data?.familyId || data?.data?.id || data?.data?.familyId
+        const familyDisplayId = data?.displayId ?? data?.data?.displayId
         setSubmitStatus("success")
         setSubmitMessage(
-            `परिवार सफलतापूर्वक जोड़ा गया! (Family created successfully!)${familyId ? `\nFamily ID: ${familyId}` : ""}`,
+            `परिवार सफलतापूर्वक जोड़ा गया! (Family created successfully!)${familyDisplayId != null ? `\nपरिवार ID: ${familyDisplayId}` : ""}`,
         )
 
         setTimeout(() => {
@@ -427,6 +428,25 @@ export default function AddFamilyDialog({ isOpen, onClose, chakolaId, villageId 
                                                 {errors.mukhiyaName}
                                             </p>
                                         )}
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label
+                                            htmlFor="mukhiyaPhoneNumber"
+                                            className="text-base font-semibold text-gray-800 flex items-center gap-2"
+                                        >
+                                            <User className="h-4 w-4 text-orange-600" />
+                                            मुखिया का मोबाइल नंबर (Head's Mobile)
+                                        </Label>
+                                        <Input
+                                            id="mukhiyaPhoneNumber"
+                                            name="mukhiyaPhoneNumber"
+                                            type="tel"
+                                            value={formData.mukhiyaPhoneNumber}
+                                            onChange={handleChange}
+                                            className="h-12 text-base border-2 border-gray-200 focus:border-orange-500 hover:border-orange-300 transition-all duration-200"
+                                            placeholder="मुखिया का मोबाइल नंबर दर्ज करें"
+                                        />
                                     </div>
 
                                     <div className="space-y-3">

@@ -43,19 +43,6 @@ export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProp
           </div>
 
           <div className="space-y-3 text-sm">
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="font-medium text-gray-700 mb-1">चोखरा ID:</p>
-              <p className="text-gray-900 break-all text-xs sm:text-sm font-mono bg-white p-2 rounded border">
-                {data.chokhlaId}
-              </p>
-            </div>
-
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="font-medium text-gray-700 mb-1">यूज़र ID:</p>
-              <p className="text-gray-900 break-all text-xs sm:text-sm font-mono bg-white p-2 rounded border">
-                {data.userId}
-              </p>
-            </div>
 
             <div className="bg-gray-50 p-3 rounded-lg">
               <p className="font-medium text-gray-700 mb-1">ईमेल:</p>
