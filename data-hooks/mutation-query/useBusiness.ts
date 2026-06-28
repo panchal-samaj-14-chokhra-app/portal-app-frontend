@@ -1,8 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getAdminBusinesses, createBusiness, updateBusiness, deleteBusiness } from "@/data-hooks/requests/business"
+import { getAdminBusinesses, createBusiness, updateBusiness, deleteBusiness, getPersonsByVillage } from "@/data-hooks/requests/business"
 
-export const useBusinesses = () =>
-  useQuery({ queryKey: ["admin-businesses"], queryFn: getAdminBusinesses })
+export const useBusinesses = (chokhlaId?: string) =>
+  useQuery({ queryKey: ["admin-businesses", chokhlaId || "all"], queryFn: () => getAdminBusinesses(chokhlaId) })
+
+export const usePersonsByVillage = (villageId?: string) =>
+  useQuery({
+    queryKey: ["persons-by-village", villageId],
+    queryFn: () => getPersonsByVillage(villageId as string),
+    enabled: !!villageId,
+  })
 
 export const useCreateBusiness = () => {
   const qc = useQueryClient()

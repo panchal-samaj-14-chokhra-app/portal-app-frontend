@@ -15,43 +15,78 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Briefcase, Plus, Pencil, Trash2, Eye, Loader2, Search, Phone, Mail, MapPin, Users, Save } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Briefcase, Plus, Pencil, Trash2, Eye, Loader2, Search, Phone, Mail, MapPin, Users, Save, Calendar, FileSpreadsheet } from "lucide-react"
+import { exportBusinesses } from "@/data-hooks/requests/business"
 import { useToast } from "@/hooks/use-toast"
-import { useBusinesses, useCreateBusiness, useUpdateBusiness, useDeleteBusiness } from "@/data-hooks/mutation-query/useBusiness"
+import { useBusinesses, useCreateBusiness, useUpdateBusiness, useDeleteBusiness, usePersonsByVillage } from "@/data-hooks/mutation-query/useBusiness"
 import { useContent, useUpsertContent } from "@/data-hooks/mutation-query/useContent"
+import { useAllChokhlas, useGetAllVillageswithChokhlaID } from "@/data-hooks/mutation-query/useQueryAndMutation"
+
+const fmtDate = (d?: string) => {
+  if (!d) return "—"
+  try { return new Date(d).toLocaleDateString("hi-IN", { year: "numeric", month: "short", day: "numeric" }) } catch { return "—" }
+}
 
 const empty = {
   name: "", mobile: "", founderName: "", founderMobile: "", founderEmail: "",
   employees: "", type: "", address: "", isListed: false,
+  chokhlaId: "", chokhlaName: "", villageId: "", villageName: "", personId: "", personName: "",
 }
 
-function BusinessForm({ open, onClose, initial }: { open: boolean; onClose: () => void; initial?: any }) {
+function BusinessForm({ open, onClose, initial, chokhlaId, chokhlaName }: {
+  open: boolean; onClose: () => void; initial?: any; chokhlaId?: string; chokhlaName?: string
+}) {
   const { toast } = useToast()
   const create = useCreateBusiness()
   const update = useUpdateBusiness()
   const editing = !!initial?.id
+  const isChokhlaAdmin = !!chokhlaId
   const [form, setForm] = useState<any>(empty)
   const [key, setKey] = useState<string>("")
 
   // reseed the form whenever a different record opens
   const openKey = (initial?.id || "new") + ":" + String(open)
   if (open && key !== openKey) {
-    setForm(initial ? { ...empty, ...initial } : empty)
+    const seed = initial ? { ...empty, ...initial } : { ...empty }
+    // chokhla admin: chokhra is fixed to their own
+    if (isChokhlaAdmin) { seed.chokhlaId = chokhlaId!; seed.chokhlaName = chokhlaName || seed.chokhlaName }
+    setForm(seed)
     setKey(openKey)
   }
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
   const saving = (create as any).isPending || (update as any).isPending
 
+  // dropdown data (super admin picks chokhra; chokhla admin's is fixed)
+  const { data: chokhlas } = useAllChokhlas()
+  const { data: villages } = useGetAllVillageswithChokhlaID(form.chokhlaId)
+  const { data: persons } = usePersonsByVillage(form.villageId)
+
+  const onChokhla = (id: string) => {
+    const name = (chokhlas || []).find((c: any) => c.id === id)?.name || ""
+    setForm((f: any) => ({ ...f, chokhlaId: id, chokhlaName: name, villageId: "", villageName: "", personId: "", personName: "" }))
+  }
+  const onVillage = (id: string) => {
+    const name = (villages || []).find((v: any) => v.id === id)?.name || ""
+    setForm((f: any) => ({ ...f, villageId: id, villageName: name, personId: "", personName: "" }))
+  }
+  const onPerson = (id: string) => {
+    const p = (persons || []).find((x: any) => x.id === id)
+    const name = p ? `${p.firstName || ""} ${p.lastName || ""}`.trim() : ""
+    setForm((f: any) => ({ ...f, personId: id, personName: name }))
+  }
+
   const submit = () => {
     if (!form.name?.trim() || !form.mobile?.trim() || !form.founderName?.trim()) {
       toast({ title: "नाम, मोबाइल एवं संस्थापक नाम आवश्यक हैं", variant: "destructive" })
       return
     }
+    const payload = { ...form, isMember: !!form.personId }
     const done = (msg: string) => { toast({ title: msg, variant: "success" }); onClose() }
     const err = (e: any) => toast({ title: "त्रुटि", description: e?.response?.data?.message || e?.message, variant: "destructive" })
-    if (editing) update.mutate({ id: initial.id, payload: form }, { onSuccess: () => done("व्यापार अपडेट हुआ"), onError: err })
-    else create.mutate(form, { onSuccess: () => done("व्यापार जोड़ा गया"), onError: err })
+    if (editing) update.mutate({ id: initial.id, payload }, { onSuccess: () => done("व्यापार अपडेट हुआ"), onError: err })
+    else create.mutate(payload, { onSuccess: () => done("व्यापार जोड़ा गया"), onError: err })
   }
 
   const F = ({ label, k, type = "text", req }: any) => (
@@ -66,17 +101,54 @@ function BusinessForm({ open, onClose, initial }: { open: boolean; onClose: () =
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{editing ? "व्यापार संपादित करें" : "नया व्यापार जोड़ें"}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <F label="व्यापार का नाम" k="name" req />
-          <F label="व्यापार मोबाइल" k="mobile" req />
-          <F label="संस्थापक नाम" k="founderName" req />
-          <F label="संस्थापक मोबाइल" k="founderMobile" />
-          <F label="संस्थापक ईमेल" k="founderEmail" type="email" />
-          <F label="कर्मचारी संख्या" k="employees" />
-          <F label="व्यापार का प्रकार" k="type" />
+          {F({ label: "व्यापार का नाम", k: "name", req: true })}
+          {F({ label: "व्यापार मोबाइल", k: "mobile", req: true })}
+          {F({ label: "संस्थापक नाम", k: "founderName", req: true })}
+          {F({ label: "संस्थापक मोबाइल", k: "founderMobile" })}
+          {F({ label: "संस्थापक ईमेल", k: "founderEmail", type: "email" })}
+          {F({ label: "कर्मचारी संख्या", k: "employees" })}
+          {F({ label: "व्यापार का प्रकार", k: "type" })}
           <div className="sm:col-span-2">
             <Label className="text-xs">पता</Label>
             <Textarea value={form.address || ""} onChange={(e) => set("address", e.target.value)} rows={2} />
           </div>
+
+          {/* Associate a samaj person: chokhra (super only) -> village -> person */}
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg border border-orange-200/60 bg-orange-50/30 p-3">
+            <div className="sm:col-span-3 text-xs font-medium text-gray-600">समाज सदस्य जोड़ें (वैकल्पिक)</div>
+            {!isChokhlaAdmin && (
+              <div>
+                <Label className="text-xs">चोखरा</Label>
+                <Select value={form.chokhlaId} onValueChange={onChokhla}>
+                  <SelectTrigger><SelectValue placeholder="चोखरा चुनें" /></SelectTrigger>
+                  <SelectContent>
+                    {(chokhlas || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">गांव</Label>
+              <Select value={form.villageId} onValueChange={onVillage} disabled={!form.chokhlaId}>
+                <SelectTrigger><SelectValue placeholder={form.chokhlaId ? "गांव चुनें" : "पहले चोखरा"} /></SelectTrigger>
+                <SelectContent>
+                  {(villages || []).map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">व्यक्ति</Label>
+              <Select value={form.personId} onValueChange={onPerson} disabled={!form.villageId}>
+                <SelectTrigger><SelectValue placeholder={form.villageId ? "व्यक्ति चुनें" : "पहले गांव"} /></SelectTrigger>
+                <SelectContent>
+                  {(persons || []).map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>{`${p.firstName || ""} ${p.lastName || ""}`.trim()}{p.mobileNumber ? ` (${p.mobileNumber})` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="sm:col-span-2 flex items-center gap-2 pt-1">
             <Switch checked={!!form.isListed} onCheckedChange={(v) => set("isListed", v)} />
             <Label className="text-sm">सूची में दिखाएं (ऐप पर प्रकाशित)</Label>
@@ -150,15 +222,33 @@ function FooterContactEditor() {
   )
 }
 
-function BusinessDirectoryInner() {
+function BusinessDirectoryInner({ chokhlaId, chokhlaName }: { chokhlaId?: string; chokhlaName?: string }) {
   const { toast } = useToast()
-  const { data: businesses, isLoading } = useBusinesses()
+  const { data: businesses, isLoading } = useBusinesses(chokhlaId)
   const update = useUpdateBusiness()
   const del = useDeleteBusiness()
   const [q, setQ] = useState("")
   const [form, setForm] = useState<{ open: boolean; initial?: any }>({ open: false })
   const [view, setView] = useState<any | null>(null)
   const [confirm, setConfirm] = useState<any | null>(null)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+      const blob = await exportBusinesses(chokhlaId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = chokhlaId ? "businesses.xlsx" : "businesses_all.xlsx"
+      document.body.appendChild(a); a.click(); a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e: any) {
+      toast({ title: "एक्सपोर्ट त्रुटि", description: e?.message, variant: "destructive" })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const list = (businesses || []) as any[]
   const filtered = useMemo(() => {
@@ -189,9 +279,14 @@ function BusinessDirectoryInner() {
               {pending > 0 && <span className="ml-1 text-orange-600 font-medium">({pending} लंबित)</span>}
             </CardDescription>
           </div>
-          <Button onClick={() => setForm({ open: true })} className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
-            <Plus className="w-4 h-4 mr-1.5" />नया व्यापार
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={exporting} className="border-green-300 text-green-700 hover:bg-green-50">
+              {exporting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <FileSpreadsheet className="w-4 h-4 mr-1.5" />}एक्सेल डाउनलोड
+            </Button>
+            <Button onClick={() => setForm({ open: true })} className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+              <Plus className="w-4 h-4 mr-1.5" />नया व्यापार
+            </Button>
+          </div>
         </div>
         <div className="relative mt-2 max-w-sm">
           <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-gray-400" />
@@ -218,7 +313,12 @@ function BusinessDirectoryInner() {
                   </div>
                   <div className="text-xs text-gray-500 truncate mt-0.5">
                     {b.founderName} · {b.mobile}
-                    {b.isMember && (b.chokhlaName || b.villageName) ? ` · ${b.chokhlaName || ""}${b.villageName ? " / " + b.villageName : ""}` : ""}
+                    {b.personName ? ` · 👤 ${b.personName}` : ""}
+                    {(b.chokhlaName || b.villageName) ? ` · ${b.chokhlaName || ""}${b.villageName ? " / " + b.villageName : ""}` : ""}
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-gray-400 mt-0.5">
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />रिकॉर्ड: {fmtDate(b.createdAt)}</span>
+                    <span>अंतिम अपडेट: {fmtDate(b.updatedAt)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -236,7 +336,7 @@ function BusinessDirectoryInner() {
       </CardContent>
 
       {/* Add / Edit */}
-      <BusinessForm open={form.open} initial={form.initial} onClose={() => setForm({ open: false })} />
+      <BusinessForm open={form.open} initial={form.initial} onClose={() => setForm({ open: false })} chokhlaId={chokhlaId} chokhlaName={chokhlaName} />
 
       {/* View */}
       <Dialog open={!!view} onOpenChange={(o) => !o && setView(null)}>
@@ -252,9 +352,14 @@ function BusinessDirectoryInner() {
               {view.address && <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gray-400" />{view.address}</p>}
               <div className="pt-2 border-t mt-2">
                 <p><b>समाज सदस्य:</b> {view.isMember ? "हाँ" : "नहीं"}</p>
-                {view.isMember && (
+                {(view.chokhlaName || view.villageName) && (
                   <p className="text-gray-600">चोखरा: {view.chokhlaName || "—"} · गांव: {view.villageName || "—"}</p>
                 )}
+                {view.personName && <p className="text-gray-600">संबंधित व्यक्ति: {view.personName}</p>}
+              </div>
+              <div className="pt-2 border-t mt-2 text-xs text-gray-400">
+                <p>रिकॉर्ड दिनांक: {fmtDate(view.createdAt)}</p>
+                <p>अंतिम अपडेट: {fmtDate(view.updatedAt)}</p>
               </div>
             </div>
           )}
@@ -287,11 +392,12 @@ function BusinessDirectoryInner() {
   )
 }
 
-export default function BusinessDirectory() {
+// chokhlaId present => chokhla-admin mode (scoped list, chokhra fixed in the form, no footer editor).
+export default function BusinessDirectory({ chokhlaId, chokhlaName }: { chokhlaId?: string; chokhlaName?: string }) {
   return (
     <div className="space-y-4">
-      <FooterContactEditor />
-      <BusinessDirectoryInner />
+      {!chokhlaId && <FooterContactEditor />}
+      <BusinessDirectoryInner chokhlaId={chokhlaId} chokhlaName={chokhlaName} />
     </div>
   )
 }

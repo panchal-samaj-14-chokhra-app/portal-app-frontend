@@ -1,8 +1,20 @@
 import request from "@/config/request"
 
-export const getAdminBusinesses = async () => {
-  const { data } = await request.get(`/businesses?all=true`)
+export const getAdminBusinesses = async (chokhlaId?: string) => {
+  const qs = chokhlaId ? `&chokhlaId=${chokhlaId}` : ""
+  const { data } = await request.get(`/businesses?all=true${qs}`)
   return data as any[]
+}
+
+export const getPersonsByVillage = async (villageId: string) => {
+  const { data } = await request.get(`/person?villageId=${villageId}`)
+  return data as any[]
+}
+
+export const exportBusinesses = async (chokhlaId?: string) => {
+  const qs = chokhlaId ? `?chokhlaId=${chokhlaId}` : ""
+  const res = await request.get(`/businesses/export${qs}`, { responseType: "blob" })
+  return res.data as Blob
 }
 
 export const createBusiness = async (payload: any) => {
