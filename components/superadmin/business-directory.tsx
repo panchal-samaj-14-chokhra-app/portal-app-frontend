@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Briefcase, Plus, Pencil, Trash2, Eye, Loader2, Search, Phone, Mail, MapPin, Users, Save, Calendar, FileSpreadsheet } from "lucide-react"
+import { Briefcase, Plus, Pencil, Trash2, Eye, Loader2, Search, Phone, Mail, MapPin, Users, Save, Calendar, FileSpreadsheet, CheckCircle2, Clock } from "lucide-react"
 import { exportBusinesses } from "@/data-hooks/requests/business"
 import { useToast } from "@/hooks/use-toast"
 import { useBusinesses, useCreateBusiness, useUpdateBusiness, useDeleteBusiness, usePersonsByVillage } from "@/data-hooks/mutation-query/useBusiness"
@@ -256,7 +256,10 @@ function BusinessDirectoryInner({ chokhlaId, chokhlaName }: { chokhlaId?: string
     if (!s) return list
     return list.filter((b) => (b.name || "").toLowerCase().includes(s) || (b.type || "").toLowerCase().includes(s) || (b.founderName || "").toLowerCase().includes(s))
   }, [list, q])
-  const pending = list.filter((b) => !b.isListed).length
+  const total = list.length
+  const listed = list.filter((b) => b.isListed).length
+  const pending = total - listed
+  const members = list.filter((b) => b.isMember).length
 
   const toggleListed = (b: any) => {
     update.mutate(
@@ -268,8 +271,28 @@ function BusinessDirectoryInner({ chokhlaId, chokhlaName }: { chokhlaId?: string
     )
   }
 
-  return (
+  const KPI = ({ icon: Icon, label, value, color }: any) => (
     <Card className="bg-white/90 border-orange-200/50">
+      <CardContent className="flex items-center gap-3 p-4">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color}`}><Icon className="w-5 h-5" /></div>
+        <div>
+          <div className="text-2xl font-bold text-gray-900 leading-none">{value}</div>
+          <div className="text-xs text-gray-500 mt-1">{label}</div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPI icon={Briefcase} label="कुल व्यापार" value={total} color="bg-orange-100 text-orange-600" />
+        <KPI icon={CheckCircle2} label="सूची में (प्रकाशित)" value={listed} color="bg-green-100 text-green-600" />
+        <KPI icon={Clock} label="लंबित" value={pending} color="bg-yellow-100 text-yellow-600" />
+        <KPI icon={Users} label="समाज सदस्य" value={members} color="bg-blue-100 text-blue-600" />
+      </div>
+
+      <Card className="bg-white/90 border-orange-200/50">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -388,7 +411,8 @@ function BusinessDirectoryInner({ chokhlaId, chokhlaName }: { chokhlaId?: string
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+      </Card>
+    </div>
   )
 }
 
