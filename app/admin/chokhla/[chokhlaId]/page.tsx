@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { useParams, useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, ArrowLeft, Home, FileText, User, Menu } from "lucide-react"
+import { LogOut, ArrowLeft, Home, FileText, User, Menu, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -27,6 +27,7 @@ import { ProfileManagement } from "@/components/chokhla/profile-management"
 import { ReportsView } from "@/components/chokhla/reports-view"
 import { SuccessModal } from "@/components/chokhla/success-modal"
 import { ErrorModal } from "@/components/chokhla/error-modal"
+import BusinessDirectory from "@/components/superadmin/business-directory"
 
 // Import hooks
 import {
@@ -39,6 +40,7 @@ import {
 const SIDEBAR_TABS = [
   { key: "village", label: "गांव प्रबंधन", icon: Home, shortLabel: "गांव" },
   { key: "reports", label: "रिपोर्ट्स", icon: FileText, shortLabel: "रिपोर्ट" },
+  { key: "business", label: "व्यापार निर्देशिका", icon: Briefcase, shortLabel: "व्यापार" },
   { key: "profile", label: "चोखरा प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
 ]
 
@@ -186,6 +188,8 @@ function Chokhla() {
         )
       case "reports":
         return <ReportsView chokhlaId={chokhlaId} villages={villages} />
+      case "business":
+        return <BusinessDirectory chokhlaId={chokhlaId} chokhlaName={chokhla?.name} />
       case "profile":
         return (
           <ProfileManagement
