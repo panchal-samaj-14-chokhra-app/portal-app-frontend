@@ -11,7 +11,8 @@ import {
 } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase } from "lucide-react"
+import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -34,6 +35,7 @@ import UserManagement from "@/components/superadmin/user-management"
 import ReportsView from "@/components/superadmin/reports-view"
 import MandirManagement from "@/components/superadmin/mandir-management"
 import BusinessDirectory from "@/components/superadmin/business-directory"
+import MatrimonialManagement from "@/components/superadmin/matrimonial-management"
 import ProfileView from "@/components/superadmin/profile-view"
 import AddChokhlaForm from "@/components/superadmin/add-chokhla-form"
 import SuccessModal from "@/components/superadmin/success-modal"
@@ -50,6 +52,7 @@ const SIDEBAR_TABS = [
   { key: "reports", label: "रिपोर्ट", icon: FileText, shortLabel: "रिपोर्ट" },
   { key: "mandir", label: "मंदिर प्रबंधन", icon: Landmark, shortLabel: "मंदिर" },
   { key: "business", label: "व्यापार निर्देशिका", icon: Briefcase, shortLabel: "व्यापार" },
+  { key: "matrimonial", label: "वैवाहिक", icon: Heart, shortLabel: "वैवाहिक" },
 
 ]
 
@@ -63,7 +66,8 @@ interface CreatedData {
 }
 
 function SuperAdmin() {
-  const [activeTab, setActiveTab] = useState("chokhla")
+  const initialTab = useSearchParams().get("tab") || "chokhla"
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [openChokhlaModal, setOpenChokhlaModal] = useState(false)
   const [openAddUserModal, setOpenAddUserModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -244,6 +248,8 @@ function SuperAdmin() {
         return <MandirManagement />
       case "business":
         return <BusinessDirectory />
+      case "matrimonial":
+        return <MatrimonialManagement />
       default:
         return null
     }
