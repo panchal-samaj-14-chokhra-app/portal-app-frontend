@@ -15,6 +15,11 @@ export const getSubscribers = async () => {
   return data
 }
 
+export const getContactMessages = async () => {
+  const { data } = await request.get(`/subscriber/contact`)
+  return data
+}
+
 export const broadcastEmail = async (payload: { subject: string; html: string }) => {
   const { data } = await request.post(`/subscriber/broadcast`, payload)
   return data

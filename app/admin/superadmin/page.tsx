@@ -12,9 +12,8 @@ import {
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
 import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart } from "lucide-react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 import {
@@ -33,7 +32,7 @@ import VillageManagement from "@/components/superadmin/village-management"
 import ChokhlaManagement from "@/components/superadmin/chokhla-management"
 import UserManagement from "@/components/superadmin/user-management"
 import ReportsView from "@/components/superadmin/reports-view"
-import MandirManagement from "@/components/superadmin/mandir-management"
+import MandirContent from "@/components/superadmin/mandir-content"
 import BusinessDirectory from "@/components/superadmin/business-directory"
 import MatrimonialManagement from "@/components/superadmin/matrimonial-management"
 import ProfileView from "@/components/superadmin/profile-view"
@@ -66,8 +65,10 @@ interface CreatedData {
 }
 
 function SuperAdmin() {
-  const initialTab = useSearchParams().get("tab") || "chokhla"
-  const [activeTab, setActiveTab] = useState(initialTab)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const activeTab = searchParams.get("tab") || "chokhla"
   const [openChokhlaModal, setOpenChokhlaModal] = useState(false)
   const [openAddUserModal, setOpenAddUserModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -186,7 +187,9 @@ function SuperAdmin() {
   }
 
   const handleTabChange = (tabKey: string) => {
-    setActiveTab(tabKey)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", tabKey)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
     setMobileMenuOpen(false)
   }
 
@@ -245,7 +248,7 @@ function SuperAdmin() {
       case "reports":
         return <ReportsView />
       case "mandir":
-        return <MandirManagement />
+        return <MandirContent />
       case "business":
         return <BusinessDirectory />
       case "matrimonial":
@@ -361,39 +364,35 @@ function SuperAdmin() {
         </div>
       </header>
 
-      {/* Desktop Tab Navigation */}
-      <div className="hidden md:block bg-white border-b shadow-sm">
-        <div className="w-full px-4 lg:px-6">
-          <Card className="bg-white/90 backdrop-blur-sm shadow-none border-0 rounded-none">
-            <CardContent className="p-0">
-              <nav className="flex overflow-x-auto">
-                {SIDEBAR_TABS.map((tab) => {
-                  const Icon = tab.icon
-                  return (
-                    <Button
-                      key={tab.key}
-                      variant="ghost"
-                      onClick={() => handleTabChange(tab.key)}
-                      className={`flex-shrink-0 min-w-[140px] justify-center text-sm font-semibold transition-all duration-200 px-6 py-4 rounded-none border-b-2 ${activeTab === tab.key
-                        ? "border-orange-500 text-orange-600 bg-orange-50"
-                        : "border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50"
-                        }`}
-                    >
-                      <Icon className="w-4 h-4 mr-2" />
-                      {tab.label}
-                    </Button>
-                  )
-                })}
-              </nav>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <div className="flex items-start">
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:flex md:flex-col w-64 shrink-0 bg-white border-r shadow-sm min-h-[calc(100vh-6rem)] sticky top-0">
+          <nav className="flex-1 p-4 space-y-1.5">
+            {SIDEBAR_TABS.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <Button
+                  key={tab.key}
+                  variant={activeTab === tab.key ? "default" : "ghost"}
+                  onClick={() => handleTabChange(tab.key)}
+                  className={`w-full justify-start text-left font-medium transition-all duration-200 ${activeTab === tab.key
+                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
+                    : "text-gray-700 hover:bg-orange-50 hover:text-orange-800"
+                    }`}
+                >
+                  <Icon className="w-5 h-5 mr-3" />
+                  {tab.label}
+                </Button>
+              )
+            })}
+          </nav>
+        </aside>
 
-      {/* Main Content */}
-      <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
-        <div className="w-full max-w-full">{renderActiveTab()}</div>
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+          <div className="w-full max-w-full">{renderActiveTab()}</div>
+        </main>
+      </div>
 
       {/* Logout Confirmation Dialog */}
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>

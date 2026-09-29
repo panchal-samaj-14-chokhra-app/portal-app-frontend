@@ -16,8 +16,6 @@ import { useToast } from "@/hooks/use-toast"
 import RichTextEditor from "./rich-text-editor"
 import { useBlogs, useBlog, useCreateBlog, useUpdateBlog, useDeleteBlog } from "@/data-hooks/mutation-query/useBlog"
 import { uploadBlogImage } from "@/data-hooks/requests/blog"
-import MandirContent from "./mandir-content"
-import MandirSubscribers from "./mandir-subscribers"
 
 type View = { mode: "list" } | { mode: "new" } | { mode: "edit"; id: string }
 
@@ -228,39 +226,9 @@ function BlogList({ onNew, onEdit }: { onNew: () => void; onEdit: (id: string) =
   )
 }
 
-function BlogsTab() {
+export default function BlogsTab() {
   const [view, setView] = useState<View>({ mode: "list" })
   if (view.mode === "new") return <BlogEditor onBack={() => setView({ mode: "list" })} />
   if (view.mode === "edit") return <BlogEditor id={view.id} onBack={() => setView({ mode: "list" })} />
   return <BlogList onNew={() => setView({ mode: "new" })} onEdit={(id) => setView({ mode: "edit", id })} />
-}
-
-const TABS = [
-  { key: "content", label: "वेबसाइट सामग्री" },
-  { key: "blogs", label: "ब्लॉग" },
-  { key: "subscribers", label: "सदस्य एवं ईमेल" },
-]
-
-export default function MandirManagement() {
-  const [tab, setTab] = useState("content")
-  return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-wrap gap-2 border-b border-orange-200 pb-2">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              tab === t.key ? "bg-orange-500 text-white" : "text-orange-700 hover:bg-orange-100"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      {tab === "content" && <MandirContent />}
-      {tab === "blogs" && <BlogsTab />}
-      {tab === "subscribers" && <MandirSubscribers />}
-    </div>
-  )
 }

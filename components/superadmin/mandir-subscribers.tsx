@@ -5,20 +5,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Mail, Send, Loader2, Users } from "lucide-react"
+import { Mail, Send, Loader2, Users, MessageSquare, Phone } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import RichTextEditor from "./rich-text-editor"
-import { useSubscribers, useBroadcast } from "@/data-hooks/mutation-query/useContent"
+import { useSubscribers, useContactMessages, useBroadcast } from "@/data-hooks/mutation-query/useContent"
 
 export default function MandirSubscribers() {
   const { toast } = useToast()
   const { data, isLoading } = useSubscribers()
+  const { data: contactData, isLoading: contactLoading } = useContactMessages()
   const broadcast = useBroadcast()
   const [subject, setSubject] = useState("")
   const [html, setHtml] = useState("")
 
   const subs = data?.data || []
   const activeCount = subs.filter((s: any) => s.isActive).length
+  const messages = contactData?.data || []
 
   const send = () => {
     if (!subject.trim() || !html.trim()) {
@@ -63,10 +65,11 @@ export default function MandirSubscribers() {
         </CardContent>
       </Card>
 
-      {/* Subscriber list */}
+      {/* Newsletter subscriber list (News and updates + Reach Out opt-ins) */}
       <Card className="bg-white/90 border-orange-200/50">
         <CardHeader>
-          <CardTitle className="flex items-center text-orange-700"><Users className="w-5 h-5 mr-2" />सदस्य ({subs.length})</CardTitle>
+          <CardTitle className="flex items-center text-orange-700"><Users className="w-5 h-5 mr-2" />न्यूज़लेटर सदस्य ({subs.length})</CardTitle>
+          <CardDescription>वे सभी जिन्होंने ईमेल अपडेट्स की सदस्यता ली है — News and updates से या Reach Out फ़ॉर्म से।</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -82,9 +85,49 @@ export default function MandirSubscribers() {
                     <div className="text-sm font-medium text-gray-900 truncate">{s.email}</div>
                     <div className="text-xs text-gray-500">{s.name || "—"} · {new Date(s.createdAt).toLocaleDateString("hi-IN")}</div>
                   </div>
+                  {s.source && (
+                    <Badge variant="outline" className="text-gray-500 border-gray-300 shrink-0">
+                      {s.source === "mandir-contact" ? "Reach Out" : s.source === "mandir-newsletter" ? "Newsletter" : s.source}
+                    </Badge>
+                  )}
                   <Badge variant={s.isActive ? "default" : "secondary"} className={s.isActive ? "bg-green-100 text-green-700" : ""}>
                     {s.isActive ? "सक्रिय" : "निष्क्रिय"}
                   </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Reach Out messages — separate table with name/phone/comment, not part of the newsletter list */}
+      <Card className="bg-white/90 border-orange-200/50">
+        <CardHeader>
+          <CardTitle className="flex items-center text-orange-700"><MessageSquare className="w-5 h-5 mr-2" />Reach Out संदेश ({messages.length})</CardTitle>
+          <CardDescription>वेबसाइट के "Reach Out" फ़ॉर्म से प्राप्त संदेश, नाम व फ़ोन सहित।</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {contactLoading ? (
+            <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-orange-600" /></div>
+          ) : messages.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">अभी तक कोई संदेश नहीं।</p>
+          ) : (
+            <div className="divide-y">
+              {messages.map((m: any) => (
+                <div key={m.id} className="py-3 space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-medium text-gray-900">{m.name || "—"}</div>
+                    <div className="text-xs text-gray-500 shrink-0">{new Date(m.createdAt).toLocaleDateString("hi-IN")}</div>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                    {m.email && (
+                      <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{m.email}</span>
+                    )}
+                    {m.phone && (
+                      <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{m.phone}</span>
+                    )}
+                  </div>
+                  {m.message && <p className="text-sm text-gray-700 whitespace-pre-line">{m.message}</p>}
                 </div>
               ))}
             </div>
