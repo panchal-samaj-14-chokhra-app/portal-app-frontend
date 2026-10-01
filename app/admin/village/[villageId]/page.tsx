@@ -90,7 +90,6 @@ export default function VillageDetailPage() {
   const [viewIndex, setViewIndex] = useState(0)
   const [voteSelections, setVoteSelections] = useState<Record<string, string[]>>({})
   const [disabledQuestions, setDisabledQuestions] = useState<Record<string, boolean>>({})
-  const [submittedPolls, setSubmittedPolls] = useState<Record<string, boolean>>({})
 
   const submitVoteMutation = useSubmitVote()
 
@@ -101,11 +100,12 @@ export default function VillageDetailPage() {
 
     if (poll && poll.questions) {
       ; (poll.questions || []).forEach((q: any) => {
-        if (q.villageVotedOptionId) {
-          initialSelections[q.id] = [q.villageVotedOptionId]
-          initialDisabled[q.id] = true
-        } else if (q.villageVotedOptionIds && Array.isArray(q.villageVotedOptionIds) && q.villageVotedOptionIds.length) {
+        if (q.villageVotedOptionIds && Array.isArray(q.villageVotedOptionIds) && q.villageVotedOptionIds.length) {
+          // all options this village picked (a multiple-choice answer can have several)
           initialSelections[q.id] = [...q.villageVotedOptionIds]
+          initialDisabled[q.id] = true
+        } else if (q.villageVotedOptionId) {
+          initialSelections[q.id] = [q.villageVotedOptionId]
           initialDisabled[q.id] = true
         } else if (q.votedByVillage) {
           const votedOpt = (q.options || []).find((o: any) => o.votedByVillage || o.villageVoted)
@@ -125,10 +125,6 @@ export default function VillageDetailPage() {
 
     setVoteSelections(initialSelections)
     setDisabledQuestions(initialDisabled)
-    if (poll && poll.id) {
-      const anyDisabled = Object.values(initialDisabled).some(Boolean)
-      setSubmittedPolls((s) => ({ ...s, [poll.id]: anyDisabled }))
-    }
   }
 
   const openView = (idx: number) => {
@@ -162,7 +158,6 @@ export default function VillageDetailPage() {
     downloadVillageReport("village", villageId, `village-${name}.${ext}`, format)
   }
 
-  const sessionUserId = (session as any)?.user?.id
   const { toast } = useToast()
 
   const toggleSelection = (questionId: string, optionId: string, multiple: boolean) => {
@@ -181,60 +176,45 @@ export default function VillageDetailPage() {
   const handleSubmitVotesForCurrent = async () => {
     const poll = polls[viewIndex]
     if (!poll) return
-    if (!sessionUserId) {
-      // no user
+    if (!session) {
       toast({ title: 'लॉगिन आवश्यक', description: 'कृपया पहले लॉगिन करें।', variant: 'destructive' })
       return
     }
+    if (poll.canVote === false) {
+      toast({ title: 'वोटिंग बंद है', description: 'यह पोल अब वोट स्वीकार नहीं कर रहा।', variant: 'destructive' })
+      return
+    }
 
-    const submissions: any[] = []
-      ; (poll.questions || []).forEach((q: any) => {
-        const selected = voteSelections[q.id] || []
-        selected.forEach((optionId) => {
-          submissions.push({
-            villageId: villageId,
-            userId: sessionUserId,
-            pollId: poll.id,
-            questionId: q.id,
-            optionId,
-          })
-        })
-      })
+    // Only the questions this village has not answered yet; an answered question is final.
+    const answers = (poll.questions || [])
+      .filter((q: any) => !disabledQuestions[q.id])
+      .map((q: any) => ({ questionId: q.id, optionIds: voteSelections[q.id] || [] }))
+      .filter((a: any) => a.optionIds.length > 0)
 
-    if (submissions.length === 0) {
+    if (answers.length === 0) {
       toast({ title: 'चुनाव आवश्यक', description: 'कृपया कम से कम एक विकल्प चुनें', variant: 'destructive' })
       return
     }
 
     try {
-      // submit each vote sequentially (could be parallel)
-      await Promise.all(submissions.map((p) => submitVoteMutation.mutateAsync(p)))
-      // fetch fresh polls from server for this village so we derive submitted state from server response
+      // One request for the whole ballot: it is saved completely or not at all
+      await submitVoteMutation.mutateAsync({ villageId, pollId: poll.id, answers })
       try {
-        const fresh: any = await queryClient.fetchQuery({ queryKey: ['polls', villageId], queryFn: () => getPollsByVillage(villageId) })
+        const fresh: any = await queryClient.fetchQuery({ queryKey: ['polls', villageId], queryFn: () => getPollsByVillage(villageId), staleTime: 0 })
         const freshPolls: any[] = (fresh && (fresh.data || fresh)) || []
-        // reset selections for this poll
-        const newSel = { ...voteSelections }
-          ; (poll.questions || []).forEach((q: any) => delete newSel[q.id])
-        setVoteSelections(newSel)
-
-        const updatedPoll = freshPolls[viewIndex]
-        if (updatedPoll) {
-          initializeFromPoll(updatedPoll)
-        } else if (poll?.id) {
-          setSubmittedPolls((s) => ({ ...s, [poll.id]: true }))
-        }
+        const updatedPoll = freshPolls.find((p: any) => p.id === poll.id)
+        if (updatedPoll) initializeFromPoll(updatedPoll)
       } catch (fetchErr) {
-        // fallback: mark as submitted locally
-        if (poll?.id) setSubmittedPolls((s) => ({ ...s, [poll.id]: true }))
+        // the next load of the list shows the saved votes
       }
 
       toast({ title: 'वोट सफल', description: 'वोट सफलतापूर्वक सबमिट किया गया।', variant: 'success' })
-      // close the poll view dialog after successful submission
       setViewOpen(false)
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
-      toast({ title: 'त्रुटि', description: 'वोट सबमिट करने में त्रुटि', variant: 'destructive' })
+      toast({ title: 'त्रुटि', description: e?.response?.data?.message || 'वोट सबमिट करने में त्रुटि', variant: 'destructive' })
+      // the list may have changed under us (e.g. someone from this village already voted): refresh it
+      queryClient.invalidateQueries({ queryKey: ['polls', villageId] })
     }
   }
 
@@ -955,7 +935,11 @@ export default function VillageDetailPage() {
                     <div>
                       <h3 className="text-lg font-semibold">{poll.title}</h3>
                       <p className="text-sm text-gray-600 mb-3">{poll.description}</p>
-                      <div className="text-xs text-gray-500 mb-3">Created: {poll.createdAt ? new Date(poll.createdAt).toLocaleDateString('hi-IN') : '-'}</div>
+                      <div className="text-xs text-gray-500 mb-3">Created: {poll.createdAt ? new Date(poll.createdAt).toLocaleDateString('hi-IN') : '-'}
+                        {poll.expiresAt ? ` • समाप्ति: ${new Date(poll.expiresAt).toLocaleDateString('hi-IN', { timeZone: 'UTC' })}` : ''}</div>
+                      {poll.canVote === false && (
+                        <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">यह पोल समाप्त हो चुका है — अब वोट नहीं दिया जा सकता।</div>
+                      )}
                       <div className="space-y-4">
                         {(poll.questions || []).map((q: any) => {
                           // build vote counts
@@ -1035,9 +1019,14 @@ export default function VillageDetailPage() {
                           <Button
                             onClick={handleSubmitVotesForCurrent}
                             className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
-                            disabled={Boolean((submitVoteMutation as any).isLoading || (polls[viewIndex] && submittedPolls[polls[viewIndex].id]))}
+                            disabled={
+                              submitVoteMutation.isPending ||
+                              poll.canVote === false ||
+                              // nothing left to answer: this village has already voted on every question
+                              (poll.questions || []).every((q: any) => disabledQuestions[q.id])
+                            }
                           >
-                            {(submitVoteMutation as any).isLoading ? 'सबमिट कर रहे हैं...' : 'वोट सबमिट करें'}
+                            {submitVoteMutation.isPending ? 'सबमिट कर रहे हैं...' : (poll.questions || []).every((q: any) => disabledQuestions[q.id]) ? 'वोट दिया जा चुका है' : 'वोट सबमिट करें'}
                           </Button>
                         </div>
                       </div>

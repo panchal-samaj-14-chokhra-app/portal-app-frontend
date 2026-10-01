@@ -29,6 +29,7 @@ interface PollOption {
     questionId: string
     optionText: string
     createdAt: string
+    votesCount?: number
 }
 
 interface PollQuestion {
@@ -46,10 +47,20 @@ interface Poll {
     description?: string
     createdById?: string
     isActive?: boolean
+    isExpired?: boolean
     createdAt?: string
     expiresAt?: string | null
     questions?: PollQuestion[]
 }
+
+type FormOption = { id?: string; optionText: string; votesCount?: number }
+type FormQuestion = { id?: string; questionText: string; questionType: string; options: FormOption[] }
+
+// The API sends a readable (Hindi) reason for every rejected request; show that instead of "Request failed with status 409"
+const apiMessage = (err: any, fallback: string) => err?.response?.data?.message || fallback
+
+const questionVotes = (q: { options: FormOption[] }) => q.options.reduce((n, o) => n + (o.votesCount || 0), 0)
+const pollVotes = (poll?: Poll) => (poll?.questions || []).reduce((n, q) => n + (q.options || []).reduce((m, o) => m + (o.votesCount || 0), 0), 0)
 
 interface PollsProps {
     polls?: Poll[]
@@ -59,6 +70,8 @@ interface PollsProps {
 
 function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
     const [createOpen, setCreateOpen] = useState(false)
+    const [viewOpen, setViewOpen] = useState(false)
+    const [viewIndex, setViewIndex] = useState(0)
 
     const [editingPollId, setEditingPollId] = useState<string | null>(null)
 
@@ -68,7 +81,7 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
         isActive: true,
         expiresAt: '' as string | null,
         // questions contain optional id and options are objects (may include id when editing)
-        questions: [] as { id?: string; questionText: string; questionType: string; options: { id?: string; optionText: string }[] }[],
+        questions: [] as FormQuestion[],
     })
     const [errors, setErrors] = useState<{
         title?: string
@@ -114,10 +127,18 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
     }
 
     const handleRemoveQuestion = (qIdx: number) => {
+        if (questionVotes(form.questions[qIdx]) > 0) {
+            toast({ title: 'प्रश्न हटाया नहीं जा सकता', description: 'इस प्रश्न पर वोट दर्ज हैं, इसलिए इसे हटाया नहीं जा सकता।', variant: 'destructive' })
+            return
+        }
         setForm((s) => ({ ...s, questions: s.questions.filter((_, i) => i !== qIdx) }))
     }
 
     const handleRemoveOption = (qIdx: number, oIdx: number) => {
+        if ((form.questions[qIdx].options[oIdx].votesCount || 0) > 0) {
+            toast({ title: 'विकल्प हटाया नहीं जा सकता', description: 'इस विकल्प पर वोट दर्ज हैं, इसलिए इसे हटाया नहीं जा सकता।', variant: 'destructive' })
+            return
+        }
         setForm((s) => {
             const questions = [...s.questions]
             const options = [...questions[qIdx].options]
@@ -141,8 +162,14 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                 const qErr: any = {}
                 if (!q.questionText || !q.questionText.trim()) qErr.questionText = 'प्रश्न आवश्यक है'
                 const opts = q.options || []
-                if (opts.length === 0 || opts.every((o) => !o.optionText || !o.optionText.trim())) {
+                const filled = opts.filter((o) => o.optionText && o.optionText.trim())
+                const distinct = new Set(filled.map((o) => o.optionText.trim().toLowerCase()))
+                if (filled.length === 0) {
                     qErr.options = ['कम से कम एक विकल्प आवश्यक है']
+                } else if (!q.id && filled.length < 2) {
+                    qErr.options = ['कम से कम 2 विकल्प आवश्यक हैं']
+                } else if (distinct.size !== filled.length) {
+                    qErr.options = ['विकल्प अलग-अलग होने चाहिए (एक जैसे विकल्प नहीं)']
                 } else {
                     // per-option placeholders (null means ok)
                     qErr.options = opts.map((o) => (o.optionText && o.optionText.trim() ? null : 'खाली विकल्प'))
@@ -179,11 +206,18 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
             id: q.id,
             questionText: q.questionText || '',
             questionType: q.questionType || 'SINGLE_CHOICE',
-            options: (q.options || []).map((o) => ({ id: o.id, optionText: o.optionText || '' })),
+            options: (q.options || []).map((o) => ({ id: o.id, optionText: o.optionText || '', votesCount: o.votesCount || 0 })),
         }))
 
         setEditingPollId(poll.id)
         setForm({ title: poll.title || '', description: poll.description || '', isActive: poll.isActive ?? true, expiresAt: expiresAt as string | null, questions })
+        setErrors({})
+        setCreateOpen(true)
+    }
+
+    const openCreate = () => {
+        setEditingPollId(null)
+        setForm({ title: '', description: '', isActive: true, expiresAt: null, questions: [] })
         setErrors({})
         setCreateOpen(true)
     }
@@ -203,7 +237,7 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
             },
             onError: (err: any) => {
                 console.error('Delete poll failed', err)
-                toast({ title: 'हटाने में त्रुटि', description: err?.message || 'पोल हटाने में समस्या हुई', variant: 'destructive' })
+                toast({ title: 'हटाने में त्रुटि', description: apiMessage(err, 'पोल हटाने में समस्या हुई'), variant: 'destructive' })
             },
             onSettled: () => {
                 setDeletingPollId(null)
@@ -225,7 +259,8 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
             title: form.title,
             description: form.description,
             isActive: form.isActive,
-            expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
+            // null (not undefined) so that clearing the date while editing really removes the expiry
+            expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
         }
 
         if (isEditing && editingPollId) {
@@ -250,7 +285,7 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                 },
                 onError: (err: any) => {
                     console.error('Update poll failed', err)
-                    toast({ title: 'पोल अपडेट करते समय त्रुटि', description: err?.message || 'पोल अपडेट करने में समस्या हुई।', variant: 'destructive' })
+                    toast({ title: 'पोल अपडेट करते समय त्रुटि', description: apiMessage(err, 'पोल अपडेट करने में समस्या हुई।'), variant: 'destructive' })
                 },
             })
         } else {
@@ -277,7 +312,8 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                     console.error('Create poll failed', err)
                     toast({
                         title: 'पोल बनाते समय त्रुटि',
-                        description: err?.message || 'पोल बनाने में समस्या हुई। कृपया बाद में पुनः प्रयास करें।',
+                        description: apiMessage(err, 'पोल बनाने में समस्या हुई। कृपया बाद में पुनः प्रयास करें।'),
+                        variant: 'destructive',
                     })
                 },
             })
@@ -290,7 +326,13 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
     const activePolls = polls.filter((p) => p.isActive).length
     const inactivePolls = totalPolls - activePolls
 
-    const formatDate = (iso?: string) => {
+    const statusOf = (poll: Poll) =>
+        !poll.isActive ? <span className="text-red-600">Inactive</span> : poll.isExpired ? <span className="text-amber-600">Expired</span> : <span className="text-green-600">Active</span>
+    // the expiry is a calendar date stored as midnight UTC, so read it back in UTC to show the date that was picked
+    const formatExpiry = (poll: Poll) => (poll.expiresAt ? new Date(poll.expiresAt).toLocaleDateString('hi-IN', { timeZone: 'UTC' }) : 'कोई सीमा नहीं')
+    const deleteTarget = polls.find((p) => p.id === confirmTargetPollId)
+
+    const formatDate = (iso?: string | null) => {
         if (!iso) return '-'
         try {
             return new Date(iso).toLocaleDateString('hi-IN')
@@ -298,9 +340,6 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
             return iso
         }
     }
-
-    const [viewOpen, setViewOpen] = useState(false)
-    const [viewIndex, setViewIndex] = useState(0)
 
     const openView = (idx: number) => {
         const poll = polls[idx]
@@ -346,6 +385,11 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                             </div>
                         </div>
 
+                        {isEditing && form.questions.some((q) => questionVotes(q) > 0) && (
+                            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                इस पोल पर वोट दर्ज हैं। वोट सुरक्षित रहेंगे — जिन विकल्पों पर वोट हैं उन्हें हटाया नहीं जा सकता। ध्यान दें: किसी विकल्प का शब्द बदलने पर पुराने वोट उसी (बदले हुए) विकल्प के माने जाएंगे।
+                            </div>
+                        )}
                         <div>
                             <div className="flex items-center justify-between">
                                 <h4 className="font-semibold">प्रश्न</h4>
@@ -378,10 +422,11 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                                             </div>
                                             <div className="mb-3">
                                                 <label className="block text-sm text-gray-700 mb-1">प्रश्न प्रकार</label>
-                                                <select value={q.questionType} onChange={(e) => handleQuestionTypeChange(qi, e.target.value)} className="w-full max-w-xs border rounded-md px-2 py-1 text-sm">
+                                                <select value={q.questionType} disabled={questionVotes(q) > 0} onChange={(e) => handleQuestionTypeChange(qi, e.target.value)} className="w-full max-w-xs border rounded-md px-2 py-1 text-sm disabled:opacity-60">
                                                     <option value="SINGLE_CHOICE">SINGLE_CHOICE</option>
                                                     <option value="MULTIPLE_CHOICE">MULTIPLE_CHOICE</option>
                                                 </select>
+                                                {questionVotes(q) > 0 && <p className="text-xs text-gray-500 mt-1">इस प्रश्न पर {questionVotes(q)} वोट दर्ज हैं — प्रकार बदला नहीं जा सकता और प्रश्न हटाया नहीं जा सकता।</p>}
                                             </div>
 
                                             <div className="grid gap-2">
@@ -390,8 +435,11 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                                                         <div className="flex items-center gap-2 w-full">
                                                             <span className="inline-flex items-center justify-center  text-sm text-gray-700 bg-gray-50 border border-gray-100 rounded-md px-2 py-1">{oi + 1}</span>
                                                             <Input className="flex-1" value={opt.optionText} onChange={(e) => handleOptionChange(qi, oi, e.target.value)} />
-                                                            <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveOption(qi, oi)} aria-label={`विकल्प ${oi + 1} हटाएँ`}>
-                                                                <Trash className="w-4 h-4 text-red-600" />
+                                                            {isEditing && (opt.votesCount || 0) > 0 && (
+                                                                <span className="whitespace-nowrap text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-full px-2 py-1">{opt.votesCount} वोट</span>
+                                                            )}
+                                                            <Button type="button" variant="ghost" size="sm" disabled={(opt.votesCount || 0) > 0} onClick={() => handleRemoveOption(qi, oi)} aria-label={`विकल्प ${oi + 1} हटाएँ`}>
+                                                                <Trash className={`w-4 h-4 ${(opt.votesCount || 0) > 0 ? 'text-gray-300' : 'text-red-600'}`} />
                                                             </Button>
                                                         </div>
                                                         {errors.questions && errors.questions[qi] && errors.questions[qi].options && errors.questions[qi].options[oi] && (
@@ -418,8 +466,8 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                             >
                                 रद्द करें
                             </Button>
-                            <Button type="submit" disabled={isEditing ? (updatePollMutation as any).isLoading : (createPollMutation as any).isLoading} className="w-full sm:w-auto">
-                                {isEditing ? ((updatePollMutation as any).isLoading ? 'सहेजा जा रहा है...' : 'सहेजें') : ((createPollMutation as any).isLoading ? 'बना रहे हैं...' : 'बनाएं')}
+                            <Button type="submit" disabled={isEditing ? updatePollMutation.isPending : createPollMutation.isPending} className="w-full sm:w-auto">
+                                {isEditing ? (updatePollMutation.isPending ? 'सहेजा जा रहा है...' : 'सहेजें') : (createPollMutation.isPending ? 'बना रहे हैं...' : 'बनाएं')}
                             </Button>
                         </div>
                     </form>
@@ -525,8 +573,9 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                             <CardContent>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="text-sm text-gray-600">Created: {formatDate(poll.createdAt)}</div>
-                                    <div className="text-sm">Status: {poll.isActive ? 'Active' : 'Inactive'}</div>
+                                    <div className="text-sm">Status: {statusOf(poll)}</div>
                                 </div>
+                                <div className="text-sm text-gray-600 mb-2">समाप्ति: {formatExpiry(poll)}</div>
                                 <div className="text-sm text-gray-700 mb-3">Questions: {poll.questions?.length || 0}</div>
                                 <div className="flex gap-2">
                                     <Button variant="outline" size="sm" onClick={() => openView(idx)}>
@@ -552,7 +601,7 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                         <CardTitle className="flex items-center text-orange-700">Polls</CardTitle>
                         <CardDescription>List of polls and brief details</CardDescription>
                         <div className="flex items-center justify-end">
-                            <Button onClick={() => setCreateOpen(true)} className="bg-orange-600 hover:bg-orange-700 text-white">
+                            <Button onClick={openCreate} className="bg-orange-600 hover:bg-orange-700 text-white">
                                 नया पोल बनाएं
                             </Button>
                         </div>
@@ -567,6 +616,7 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                                     <TableHead>Description</TableHead>
                                     <TableHead>Created Date</TableHead>
                                     <TableHead>Questions</TableHead>
+                                    <TableHead>Expires</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-center">Actions</TableHead>
                                 </TableRow>
@@ -579,7 +629,8 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                                         <TableCell className="text-sm text-gray-600">{poll.description || '-'}</TableCell>
                                         <TableCell className="text-sm text-gray-600">{formatDate(poll.createdAt)}</TableCell>
                                         <TableCell className="text-sm">{poll.questions?.length || 0}</TableCell>
-                                        <TableCell>{poll.isActive ? <span className="text-green-600">Active</span> : <span className="text-red-600">Inactive</span>}</TableCell>
+                                        <TableCell className="text-sm text-gray-600">{formatExpiry(poll)}</TableCell>
+                                        <TableCell>{statusOf(poll)}</TableCell>
                                         <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Button variant="outline" size="sm" onClick={() => openView(idx)}>
@@ -607,7 +658,9 @@ function Polls({ polls = [], isLoading = false, error = null }: PollsProps) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>क्या आप वाकई इस पोल को हटाना चाहते हैं?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        यह कार्रवाई पूर्ववत नहीं की जा सकती।
+                        {pollVotes(deleteTarget) > 0
+                            ? `इस पोल पर दर्ज सभी ${pollVotes(deleteTarget)} वोट भी हमेशा के लिए हट जाएंगे। यह कार्रवाई पूर्ववत नहीं की जा सकती। (सिर्फ़ वोट रोकने के लिए पोल को "सक्रिय" बंद करें।)`
+                            : 'यह कार्रवाई पूर्ववत नहीं की जा सकती।'}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
