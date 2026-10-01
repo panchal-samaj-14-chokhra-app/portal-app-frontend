@@ -7,16 +7,18 @@ import { MANDIR_SECTIONS, SECTION_CATEGORIES, type SectionDef } from "@/lib/mand
 import ContentSectionEditor from "./content-section-editor"
 import BlogsTab from "./mandir-management"
 import MandirSubscribers from "./mandir-subscribers"
+import ShringarBookings from "./shringar-bookings"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
-type SpecialKey = "blogs" | "subscribers"
+type SpecialKey = "blogs" | "subscribers" | "shringar"
 
 const SPECIAL_SECTIONS: { key: SpecialKey; title: string; note: string }[] = [
   { key: "blogs", title: "ब्लॉग", note: "सूची" },
   { key: "subscribers", title: "सदस्य एवं ईमेल", note: "सूची" },
+  { key: "shringar", title: "श्रृंगार बुकिंग", note: "कैलेंडर व सूची" },
 ]
 
-const BLOG_CATEGORY = "ब्लॉग एवं सदस्य"
+const BLOG_CATEGORY = "ब्लॉग, सदस्य एवं बुकिंग"
 
 function SpecialSectionView({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
   return (
@@ -63,6 +65,14 @@ export default function MandirContent() {
     return (
       <SpecialSectionView title="सदस्य एवं ईमेल" onBack={closeSection}>
         <MandirSubscribers />
+      </SpecialSectionView>
+    )
+  }
+
+  if (activeSpecial?.key === "shringar") {
+    return (
+      <SpecialSectionView title="श्रृंगार बुकिंग" onBack={closeSection}>
+        <ShringarBookings />
       </SpecialSectionView>
     )
   }
