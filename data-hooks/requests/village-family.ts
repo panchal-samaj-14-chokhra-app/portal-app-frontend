@@ -1,5 +1,6 @@
 import Chokhla from "@/app/admin/chokhla/[chokhlaId]/page";
 import request from "@/config/request";
+import { getSession } from "next-auth/react";
 
 export const getApiCall = async () => {
   const { data } = await request.get('/')
@@ -120,38 +121,45 @@ export const updatePerson = async ({ id, payload }: { id: string; payload: any }
   return data;
 }
 
-// polls
+// polls — every poll call carries the logged-in user's token (the API checks who is voting / managing)
+const pollAuth = async () => {
+  const session: any = await getSession()
+  const token = session?.user?.token
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+}
+
 export const getPolls = async () => {
-  const { data } = await request.get('/polls/getpolls');
+  const { data } = await request.get('/polls/getpolls', await pollAuth());
   return data;
 }
 
 export const getPollsByVillage = async (villageId: string) => {
-  const { data } = await request.get(`/polls/getpolls/${villageId}`)
+  const { data } = await request.get(`/polls/getpolls/${villageId}`, await pollAuth())
   return data
 }
 
 export const createPoll = async (payload: any) => {
-  const { data } = await request.post('/polls/create', payload);
+  const { data } = await request.post('/polls/create', payload, await pollAuth());
   return data;
 }
 export const updatePoll = async (pollId: string, payload: any) => {
-  const { data } = await request.put(`/polls/edit/${pollId}`, payload)
+  const { data } = await request.put(`/polls/edit/${pollId}`, payload, await pollAuth())
   return data
 }
 
+// payload: { villageId, pollId, answers: [{ questionId, optionIds: string[] }] } — one request saves the whole ballot
 export const submitVote = async (payload: any) => {
-  const { data } = await request.post('/polls/vote', payload)
+  const { data } = await request.post('/polls/vote', payload, await pollAuth())
   return data
 }
 
 export const deletePoll = async (pollId: string) => {
-  const { data } = await request.delete(`/polls/delete/${pollId}`)
+  const { data } = await request.delete(`/polls/delete/${pollId}`, await pollAuth())
   return data
 }
 
 export const getPollResultsById = async (pollId: string) => {
-  const { data } = await request.get(`/polls/results/${pollId}`)
+  const { data } = await request.get(`/polls/results/${pollId}`, await pollAuth())
   return data
 }
 

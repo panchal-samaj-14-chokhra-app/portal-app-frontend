@@ -2,8 +2,8 @@
 import React from 'react'
 import DonutChart, { DEFAULT_COLORS } from '@/components/ui/donut'
 type PollOption = { id: string; optionText: string; votesCount?: number }
-type Question = { id: string; questionText: string; options: PollOption[] }
-type Poll = { id: string; title: string; description?: string; questions: Question[], votes: VoteData[] }
+type Question = { id: string; questionText: string; questionType?: string; votersCount?: number; options: PollOption[] }
+type Poll = { id: string; title: string; description?: string; questions: Question[] }
 
 export default function PollResults({ poll }: { poll: Poll }) {
   return (
@@ -23,6 +23,9 @@ export default function PollResults({ poll }: { poll: Poll }) {
         {poll.questions.map((q, qi) => {
           const options = q.options || []
           const total = options.reduce((s, o) => s + (o.votesCount || 0), 0)
+          // Percentages are "share of the villages that answered this question" so a multiple-choice question
+          // (where one village can pick several options) never adds up to more than 100% per option.
+          const voters = q.votersCount ?? total
           const donutData = options.map((o, i) => ({ label: o.optionText, value: o.votesCount || 0, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length] }))
 
           return (
@@ -30,7 +33,7 @@ export default function PollResults({ poll }: { poll: Poll }) {
               <div className="flex flex-col md:flex-row md:items-start gap-4">
                 <div className="md:w-48 flex-shrink-0 flex flex-col items-center">
                   <DonutChart data={donutData} size={140} strokeWidth={20} showCenterPercent />
-                  <div className="mt-2 text-sm text-slate-600 text-center">Total votes: <span className="font-semibold">{total}</span></div>
+                  <div className="mt-2 text-sm text-slate-600 text-center">Villages voted: <span className="font-semibold">{voters}</span>{q.questionType === 'MULTIPLE_CHOICE' && <span className="block text-xs text-slate-400">(एक से अधिक विकल्प चुने जा सकते हैं)</span>}</div>
                 </div>
 
                 <div className="flex-1">
@@ -41,7 +44,7 @@ export default function PollResults({ poll }: { poll: Poll }) {
                   <div className="space-y-3">
                     {options.map((opt, i) => {
                       const count = opt.votesCount || 0
-                      const pct = total ? Math.round((count / total) * 100) : 0
+                      const pct = voters ? Math.round((count / voters) * 100) : 0
                       const color = DEFAULT_COLORS[i % DEFAULT_COLORS.length]
                       return (
                         <div key={opt.id} className="flex items-center gap-4">

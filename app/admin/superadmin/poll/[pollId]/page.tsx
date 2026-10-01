@@ -48,6 +48,7 @@ interface PollData {
   title: string
   description: string
   questions: any[]
+  votersCount?: number
 }
 interface ApiResponse {
   success: boolean
@@ -73,11 +74,8 @@ export default function PollResultsClient({ pollId }: Props) {
 
 
   const apiResponse: ApiResponse = pollData
-  const totalVotes = (apiResponse.data.questions || []).reduce(
-    (acc: number, q: any) =>
-      acc + (q.options || []).reduce((s: number, o: any) => s + (o.votesCount || 0), 0),
-    0
-  )
+  // Number of villages that took part (a village answering several questions, or picking several options, counts once)
+  const villagesVoted = apiResponse.data.votersCount ?? 0
 
   return (
     <div className="">
@@ -116,8 +114,8 @@ export default function PollResultsClient({ pollId }: Props) {
 
               {/* Total Votes */}
               <div className="bg-slate-50 rounded-md px-3 py-2 text-center sm:min-w-[140px]">
-                <p className="text-xs text-slate-500 font-medium">Total Votes</p>
-                <p className="text-sm font-semibold text-slate-700">{totalVotes}</p>
+                <p className="text-xs text-slate-500 font-medium">Villages Voted</p>
+                <p className="text-sm font-semibold text-slate-700">{villagesVoted}</p>
               </div>
             </div>
           </div>
@@ -162,6 +160,7 @@ const PollResultsAccordion = ({ votes }: { votes: VoteData[] }) => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-left">गाँव का नाम</TableHead>
+                      <TableHead className="text-left">प्रश्न</TableHead>
                       <TableHead className="text-left">चयनित विकल्प</TableHead>
                       <TableHead className="text-left">वोटर का नाम</TableHead>
                       <TableHead className="text-left">वोट की तिथि</TableHead>
@@ -172,6 +171,7 @@ const PollResultsAccordion = ({ votes }: { votes: VoteData[] }) => {
                       village.votes.map((vote, i) => (
                         <TableRow key={i}>
                           <TableCell>{village.villageName}</TableCell>
+                          <TableCell>{vote.questionText}</TableCell>
                           <TableCell>{vote.selectedOption}</TableCell>
                           <TableCell>{vote.voterName}</TableCell>
                           <TableCell>
