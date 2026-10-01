@@ -32,6 +32,7 @@ export const SECTION_CATEGORIES = [
   "लाइव व समय",
   "सूचियाँ",
   "नियम व संपर्क",
+  "ई-स्टोर व दान",
 ] as const
 
 export const MANDIR_SECTIONS: SectionDef[] = [
@@ -143,6 +144,62 @@ export const MANDIR_SECTIONS: SectionDef[] = [
           { key: "phone", label: "फ़ोन (वैकल्पिक)" },
         ],
       },
+    ],
+  },
+  {
+    key: "estore", title: "ई-स्टोर उत्पाद (E-Store Products)", type: "items", itemLabel: "उत्पाद", category: "ई-स्टोर व दान",
+    fields: [
+      { key: "name", label: "उत्पाद का नाम" },
+      { key: "price", label: "मूल्य (जैसे: ₹251)" },
+      { key: "availability", label: "उपलब्धता", type: "select", options: [{ value: "available", label: "उपलब्ध" }, { value: "out", label: "स्टॉक में नहीं" }] },
+      { key: "description", label: "विवरण", type: "textarea" },
+      { key: "image", label: "उत्पाद की इमेज", type: "image" },
+    ],
+  },
+  {
+    key: "estore-contact", title: "ई-स्टोर संपर्क विवरण (E-Store Contact)", type: "fields", category: "ई-स्टोर व दान",
+    fields: [
+      { key: "intro", label: "परिचय / ऑर्डर कैसे करें", type: "textarea" },
+      {
+        key: "contacts", label: "संपर्क व्यक्ति", type: "rows",
+        rowFields: [
+          { key: "label", label: "पद / नाम (जैसे: प्रभारी)" },
+          { key: "value", label: "जानकारी (जैसे: श्री ... पंचाल)" },
+          { key: "phone", label: "फ़ोन" },
+        ],
+      },
+      { key: "whatsapp", label: "ऑर्डर के लिए WhatsApp नंबर (जैसे: 9876543210)" },
+      { key: "email", label: "ईमेल" },
+      { key: "address", label: "पता / पिकअप स्थान", type: "textarea" },
+      { key: "timings", label: "समय (जैसे: सुबह 9 – शाम 7)" },
+    ],
+  },
+  {
+    key: "donation", title: "दान खाता विवरण (Donation Accounts)", type: "items", itemLabel: "खाता", category: "ई-स्टोर व दान",
+    fields: [
+      { key: "title", label: "खाते का शीर्षक (जैसे: सामान्य दान / गौशाला)" },
+      { key: "accountName", label: "खाताधारक का नाम (Account Name)" },
+      { key: "bankName", label: "बैंक का नाम" },
+      { key: "accountNumber", label: "खाता संख्या (Account Number)" },
+      { key: "ifsc", label: "IFSC कोड" },
+      { key: "branch", label: "शाखा (Branch)" },
+      { key: "upiId", label: "UPI ID (जैसे: mandir@sbi)" },
+      { key: "qrImage", label: "UPI / भुगतान QR कोड इमेज", type: "image" },
+    ],
+  },
+  {
+    key: "donation-contact", title: "दान संपर्क विवरण (Donation Contact)", type: "fields", category: "ई-स्टोर व दान",
+    fields: [
+      { key: "intro", label: "अपील / परिचय संदेश", type: "textarea" },
+      {
+        key: "contacts", label: "संपर्क व्यक्ति", type: "rows",
+        rowFields: [
+          { key: "label", label: "पद (जैसे: अध्यक्ष)" },
+          { key: "value", label: "नाम" },
+          { key: "phone", label: "फ़ोन" },
+        ],
+      },
+      { key: "note", label: "विशेष सूचना (जैसे: दान के बाद रसीद अवश्य लें)", type: "textarea" },
     ],
   },
 ]
