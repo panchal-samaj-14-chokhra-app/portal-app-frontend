@@ -1,4 +1,22 @@
-export type SectionField = { key: string; label: string; type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "date" | "images" }
+export type SectionField = {
+  key: string
+  label: string
+  type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "date" | "images" | "select" | "rows"
+  // select: dropdown choices
+  options?: { value: string; label: string }[]
+  // rows: a repeatable list of small records (e.g. label / value / phone)
+  rowFields?: { key: string; label: string }[]
+}
+
+export const PLATFORM_OPTIONS = [
+  { value: "facebook", label: "Facebook" },
+  { value: "instagram", label: "Instagram" },
+  { value: "youtube", label: "YouTube" },
+  { value: "whatsapp", label: "WhatsApp (चैनल / समुदाय)" },
+  { value: "twitter", label: "X (Twitter)" },
+  { value: "telegram", label: "Telegram" },
+  { value: "website", label: "वेबसाइट / अन्य" },
+]
 export type SectionDef = {
   key: string
   title: string
@@ -52,6 +70,17 @@ export const MANDIR_SECTIONS: SectionDef[] = [
     ],
   },
   {
+    key: "events", title: "कार्यक्रम (Events)", type: "items", itemLabel: "कार्यक्रम", category: "सूचियाँ",
+    fields: [
+      { key: "name", label: "कार्यक्रम का नाम" },
+      { key: "date", label: "दिनांक", type: "date" },
+      { key: "venue", label: "स्थान (Venue)" },
+      { key: "contact", label: "संपर्क (नाम / फ़ोन नंबर)" },
+      { key: "description", label: "विवरण", type: "textarea" },
+      { key: "images", label: "इमेज (एक से अधिक — पहली इमेज कवर बनेगी)", type: "images" },
+    ],
+  },
+  {
     key: "festivals", title: "त्योहार (Festivals)", type: "items", itemLabel: "त्योहार", category: "सूचियाँ",
     fields: [
       { key: "title", label: "शीर्षक" },
@@ -72,8 +101,12 @@ export const MANDIR_SECTIONS: SectionDef[] = [
     fields: [{ key: "image", label: "इमेज", type: "image" }, { key: "caption", label: "कैप्शन" }],
   },
   {
-    key: "media-handlers", title: "मीडिया हैंडलर (Media Handlers)", type: "items", itemLabel: "हैंडलर", category: "सूचियाँ",
-    fields: [{ key: "name", label: "नाम" }, { key: "role", label: "भूमिका" }, { key: "contact", label: "संपर्क" }],
+    key: "media-handlers", title: "मीडिया लिंक (Media / Social Links)", type: "items", itemLabel: "लिंक", category: "सूचियाँ",
+    fields: [
+      { key: "label", label: "नाम (जैसे: Facebook, YouTube चैनल)" },
+      { key: "platform", label: "प्लेटफ़ॉर्म", type: "select", options: PLATFORM_OPTIONS },
+      { key: "url", label: "लिंक (URL)" },
+    ],
   },
   {
     key: "press-release", title: "प्रेस विज्ञप्ति (Press Release)", type: "items", itemLabel: "विज्ञप्ति", category: "सूचियाँ",
@@ -99,7 +132,17 @@ export const MANDIR_SECTIONS: SectionDef[] = [
     ],
   },
   {
-    key: "contact", title: "संपर्क (Contact)", type: "fields", category: "नियम व संपर्क",
-    fields: [{ key: "address", label: "पता", type: "textarea" }, { key: "phone", label: "फ़ोन" }, { key: "email", label: "ईमेल" }, { key: "mapUrl", label: "मैप लिंक (embed URL)" }],
+    key: "contact", title: "संपर्क कार्ड (Contact Cards)", type: "items", itemLabel: "कार्ड", category: "नियम व संपर्क",
+    fields: [
+      { key: "title", label: "कार्ड का शीर्षक (जैसे: मंदिर ट्रस्ट मण्डल)" },
+      {
+        key: "rows", label: "विवरण पंक्तियाँ", type: "rows",
+        rowFields: [
+          { key: "label", label: "नाम (जैसे: अध्यक्ष)" },
+          { key: "value", label: "जानकारी (जैसे: श्री ... पंचाल)" },
+          { key: "phone", label: "फ़ोन (वैकल्पिक)" },
+        ],
+      },
+    ],
   },
 ]

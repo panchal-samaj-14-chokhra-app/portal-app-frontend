@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Save, Loader2, Plus, Trash2, Upload, ImageIcon } from "lucide-react"
+import { ArrowLeft, Save, Loader2, Plus, Trash2, Upload, ImageIcon, ChevronUp, ChevronDown } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import RichTextEditor from "./rich-text-editor"
 import { useContent, useUpsertContent } from "@/data-hooks/mutation-query/useContent"
@@ -117,7 +117,59 @@ function MultiImageField({ value, onChange }: { value: string[]; onChange: (v: s
   )
 }
 
+function SelectField({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+  return (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <option value="">— चुनें —</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  )
+}
+
+function RowsField({ field, value, onChange }: { field: SectionField; value: any[]; onChange: (v: any[]) => void }) {
+  const rows = Array.isArray(value) ? value : []
+  const cols = field.rowFields || []
+  const setCell = (i: number, k: string, v: string) => onChange(rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)))
+  const move = (i: number, d: number) => {
+    const j = i + d
+    if (j < 0 || j >= rows.length) return
+    const next = [...rows]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onChange(next)
+  }
+  return (
+    <div className="space-y-2">
+      {rows.length === 0 && <p className="text-xs text-gray-400">कोई पंक्ति नहीं — नीचे "पंक्ति जोड़ें" दबाएँ।</p>}
+      {rows.map((r, i) => (
+        <div key={i} className="flex items-start gap-2 rounded-md border border-gray-200 bg-white p-2">
+          <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
+            {cols.map((c) => (
+              <Input key={c.key} value={r?.[c.key] || ""} onChange={(e) => setCell(i, c.key, e.target.value)} placeholder={c.label} aria-label={c.label} />
+            ))}
+          </div>
+          <div className="flex shrink-0 flex-col">
+            <Button type="button" size="sm" variant="ghost" className="h-6 px-1" onClick={() => move(i, -1)} disabled={i === 0} aria-label="ऊपर"><ChevronUp className="w-4 h-4" /></Button>
+            <Button type="button" size="sm" variant="ghost" className="h-6 px-1" onClick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label="नीचे"><ChevronDown className="w-4 h-4" /></Button>
+          </div>
+          <Button type="button" size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => onChange(rows.filter((_, idx) => idx !== i))} aria-label="पंक्ति हटाएँ">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      ))}
+      <Button type="button" size="sm" variant="outline" onClick={() => onChange([...rows, {}])}><Plus className="w-4 h-4 mr-1" />पंक्ति जोड़ें</Button>
+    </div>
+  )
+}
+
 function FieldInput({ field, value, onChange }: { field: SectionField; value: any; onChange: (v: any) => void }) {
+  if (field.type === "select") return <SelectField value={value} options={field.options || []} onChange={onChange} />
+  if (field.type === "rows") return <RowsField field={field} value={value} onChange={onChange} />
   if (field.type === "richtext") return <RichTextEditor initialValue={value || ""} onChange={onChange} />
   if (field.type === "image") return <ImageField value={value} onChange={onChange} />
   if (field.type === "pdf") return <PdfField value={value} onChange={onChange} />
@@ -168,6 +220,14 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null)
 
   const addItem = () => setItems((p) => [...p, {}])
+  const moveItem = (i: number, d: number) =>
+    setItems((p) => {
+      const j = i + d
+      if (j < 0 || j >= p.length) return p
+      const next = [...p]
+      ;[next[i], next[j]] = [next[j], next[i]]
+      return next
+    })
   const setItemField = (i: number, k: string, v: any) =>
     setItems((p) => p.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)))
 
@@ -228,7 +288,7 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
                 <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
                 <FieldInput
                   field={f}
-                  value={fields[f.key] ?? (f.type === "images" ? [] : "")}
+                  value={fields[f.key] ?? (f.type === "images" || f.type === "rows" ? [] : "")}
                   onChange={(v) => setFields((p) => ({ ...p, [f.key]: v }))}
                 />
               </div>
@@ -247,6 +307,9 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
               <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2 relative bg-gray-50/50">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-500">{section.itemLabel} {i + 1}</span>
+                  <div className="flex items-center">
+                    <Button type="button" size="sm" variant="ghost" className="h-7 px-1.5" onClick={() => moveItem(i, -1)} disabled={i === 0} aria-label="ऊपर ले जाएँ"><ChevronUp className="w-4 h-4" /></Button>
+                    <Button type="button" size="sm" variant="ghost" className="h-7 px-1.5" onClick={() => moveItem(i, 1)} disabled={i === items.length - 1} aria-label="नीचे ले जाएँ"><ChevronDown className="w-4 h-4" /></Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -256,19 +319,20 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
                   >
                     {deletingIndex === i ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(section.fields || []).map((f) => (
                     <div
                       key={f.key}
                       className={
-                        f.type === "textarea" || f.type === "image" || f.type === "pdf" || f.type === "images"
+                        f.type === "textarea" || f.type === "image" || f.type === "pdf" || f.type === "images" || f.type === "rows"
                           ? "sm:col-span-2"
                           : ""
                       }
                     >
                       <label className="block text-xs text-gray-600 mb-0.5">{f.label}</label>
-                      <FieldInput field={f} value={f.type === "images" ? it[f.key] || [] : it[f.key] || ""} onChange={(v) => setItemField(i, f.key, v)} />
+                      <FieldInput field={f} value={f.type === "images" || f.type === "rows" ? it[f.key] || [] : it[f.key] || ""} onChange={(v) => setItemField(i, f.key, v)} />
                     </div>
                   ))}
                 </div>
