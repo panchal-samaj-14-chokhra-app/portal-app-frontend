@@ -118,6 +118,7 @@ function MultiImageField({ value, onChange }: { value: string[]; onChange: (v: s
 }
 
 function FieldInput({ field, value, onChange }: { field: SectionField; value: any; onChange: (v: any) => void }) {
+  if (field.type === "richtext") return <RichTextEditor initialValue={value || ""} onChange={onChange} />
   if (field.type === "image") return <ImageField value={value} onChange={onChange} />
   if (field.type === "pdf") return <PdfField value={value} onChange={onChange} />
   if (field.type === "images") return <MultiImageField value={value} onChange={onChange} />
@@ -134,7 +135,7 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
   const [title, setTitle] = useState("")
   const [html, setHtml] = useState("")
   const [items, setItems] = useState<any[]>([])
-  const [fields, setFields] = useState<Record<string, string>>({})
+  const [fields, setFields] = useState<Record<string, any>>({})
 
   // Seed the form exactly once when the content first loads — synchronously during render
   // (not in a useEffect). RichTextEditor is uncontrolled and copies `initialValue` into the
@@ -225,7 +226,11 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
             {(section.fields || []).map((f) => (
               <div key={f.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
-                <FieldInput field={f} value={fields[f.key] || ""} onChange={(v) => setFields((p) => ({ ...p, [f.key]: v }))} />
+                <FieldInput
+                  field={f}
+                  value={fields[f.key] ?? (f.type === "images" ? [] : "")}
+                  onChange={(v) => setFields((p) => ({ ...p, [f.key]: v }))}
+                />
               </div>
             ))}
           </div>

@@ -1,4 +1,4 @@
-export type SectionField = { key: string; label: string; type?: "text" | "textarea" | "image" | "pdf" | "date" | "images" }
+export type SectionField = { key: string; label: string; type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "date" | "images" }
 export type SectionDef = {
   key: string
   title: string
@@ -17,6 +17,14 @@ export const SECTION_CATEGORIES = [
 ] as const
 
 export const MANDIR_SECTIONS: SectionDef[] = [
+  {
+    key: "about-mandir", title: "मंदिर परिचय (About Mandir)", type: "fields", category: "सामान्य जानकारी",
+    fields: [
+      { key: "subtitle", label: "उपशीर्षक" },
+      { key: "body", label: "विवरण (रिच-टेक्स्ट)", type: "richtext" },
+      { key: "images", label: "मंदिर की इमेज (एक से अधिक — स्टोरेज सर्विस पर अपलोड होंगी)", type: "images" },
+    ],
+  },
   { key: "history", title: "इतिहास (History)", type: "html", category: "सामान्य जानकारी" },
   { key: "about-panchal-samaj", title: "पंचाल समाज (Panchal Samaj)", type: "html", category: "सामान्य जानकारी" },
   { key: "about-banswara", title: "बांसवाड़ा के बारे में (About Banswara)", type: "html", category: "सामान्य जानकारी" },
