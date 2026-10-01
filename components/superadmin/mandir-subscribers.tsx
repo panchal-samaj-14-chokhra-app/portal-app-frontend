@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Mail, Send, Loader2, Users, MessageSquare, Phone } from "lucide-react"
+import { Mail, Send, Loader2, Users, MessageSquare, Phone, Download, Search } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import RichTextEditor from "./rich-text-editor"
 import { useSubscribers, useContactMessages, useBroadcast } from "@/data-hooks/mutation-query/useContent"
@@ -18,7 +18,35 @@ export default function MandirSubscribers() {
   const [subject, setSubject] = useState("")
   const [html, setHtml] = useState("")
 
+  const [query, setQuery] = useState("")
+  const [source, setSource] = useState("all")
+
   const subs = data?.data || []
+  const sourceLabel = (src?: string) =>
+    src === "mandir-contact" ? "Reach Out" : src === "mandir-newsletter" ? "Newsletter" : src || "—"
+  const sources: string[] = Array.from(new Set<string>(subs.map((s: any) => s.source).filter(Boolean)))
+  const filtered = subs.filter((s: any) => {
+    if (source !== "all" && s.source !== source) return false
+    const q = query.trim().toLowerCase()
+    return !q || `${s.email} ${s.name || ""}`.toLowerCase().includes(q)
+  })
+
+  const exportCsv = () => {
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`
+    const lines = [
+      ["Email", "Name", "Source", "Status", "Subscribed on"].map(esc).join(","),
+      ...filtered.map((s: any) =>
+        [s.email, s.name, sourceLabel(s.source), s.isActive ? "Active" : "Inactive", new Date(s.createdAt).toISOString().slice(0, 10)].map(esc).join(","),
+      ),
+    ]
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `subscribers-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
   const activeCount = subs.filter((s: any) => s.isActive).length
   const messages = contactData?.data || []
 
@@ -72,13 +100,37 @@ export default function MandirSubscribers() {
           <CardDescription>वे सभी जिन्होंने ईमेल अपडेट्स की सदस्यता ली है — News and updates से या Reach Out फ़ॉर्म से।</CardDescription>
         </CardHeader>
         <CardContent>
+          {subs.length > 0 && (
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ईमेल या नाम से खोजें" className="pl-8" />
+              </div>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                aria-label="स्रोत"
+              >
+                <option value="all">सभी स्रोत</option>
+                {sources.map((src) => (
+                  <option key={src} value={src}>{sourceLabel(src)}</option>
+                ))}
+              </select>
+              <Button type="button" variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+                <Download className="w-4 h-4 mr-1.5" />CSV ({filtered.length})
+              </Button>
+            </div>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-orange-600" /></div>
           ) : subs.length === 0 ? (
             <p className="text-center text-gray-500 py-8">अभी तक कोई सदस्य नहीं।</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">कोई परिणाम नहीं मिला।</p>
           ) : (
             <div className="divide-y">
-              {subs.map((s: any) => (
+              {filtered.map((s: any) => (
                 <div key={s.id} className="flex items-center gap-3 py-2">
                   <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -87,7 +139,7 @@ export default function MandirSubscribers() {
                   </div>
                   {s.source && (
                     <Badge variant="outline" className="text-gray-500 border-gray-300 shrink-0">
-                      {s.source === "mandir-contact" ? "Reach Out" : s.source === "mandir-newsletter" ? "Newsletter" : s.source}
+                      {sourceLabel(s.source)}
                     </Badge>
                   )}
                   <Badge variant={s.isActive ? "default" : "secondary"} className={s.isActive ? "bg-green-100 text-green-700" : ""}>
