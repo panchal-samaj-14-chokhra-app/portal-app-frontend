@@ -1,12 +1,11 @@
-import { getSession } from "next-auth/react"
+import { endSession, forceRefresh, getAccessToken } from "@/lib/auth/client"
 
 // Booking data contains names and phone numbers, so every call carries the admin's login token.
 // A dedicated helper (not the shared axios client) so an expired login shows a clear message.
 export class SessionExpiredError extends Error {}
 
-async function call(method: string, path: string, body?: unknown) {
-  const session: any = await getSession()
-  const token = session?.user?.token
+async function call(method: string, path: string, body?: unknown, retried = false): Promise<any> {
+  const token = await getAccessToken()
   if (!token) throw new SessionExpiredError("सत्र समाप्त हो गया है, कृपया फिर से लॉगिन करें")
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_URL}/shringar/admin${path}`, {
@@ -16,7 +15,12 @@ async function call(method: string, path: string, body?: unknown) {
     cache: "no-store",
   })
   const json: any = await res.json().catch(() => ({}))
-  if (res.status === 401 || res.status === 403) throw new SessionExpiredError(json.message || "सत्र समाप्त हो गया है, कृपया फिर से लॉगिन करें")
+  if (res.status === 401 && !retried && (await forceRefresh())) return call(method, path, body, true)
+  if (res.status === 401) {
+    endSession(json.code === "ACCOUNT_DISABLED" ? "disabled" : "expired")
+    throw new SessionExpiredError(json.message || "सत्र समाप्त हो गया है, कृपया फिर से लॉगिन करें")
+  }
+  if (res.status === 403) throw new SessionExpiredError(json.message || "इस काम की अनुमति नहीं है")
   if (!res.ok || json.success === false) throw new Error(json.message || "कुछ गड़बड़ हुई")
   return json
 }
