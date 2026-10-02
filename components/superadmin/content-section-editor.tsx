@@ -9,7 +9,7 @@ import { ArrowLeft, Save, Loader2, Plus, Trash2, Upload, ImageIcon, ChevronUp, C
 import { useToast } from "@/hooks/use-toast"
 import RichTextEditor from "./rich-text-editor"
 import { useContent, useUpsertContent } from "@/data-hooks/mutation-query/useContent"
-import { uploadBlogImage } from "@/data-hooks/requests/blog"
+import { uploadBlogImage, uploadVideo } from "@/data-hooks/requests/blog"
 import type { SectionDef, SectionField } from "@/lib/mandir-sections"
 
 function ImageField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -167,12 +167,50 @@ function RowsField({ field, value, onChange }: { field: SectionField; value: any
   )
 }
 
+const MAX_VIDEO_SIZE = 15 * 1024 * 1024 // 15MB: it is downloaded by every visitor, so keep it small
+
+function VideoField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { toast } = useToast()
+  const [percent, setPercent] = useState<number | null>(null)
+  const up = async (f?: File) => {
+    if (!f) return
+    if (!/^video\/(mp4|webm)$/.test(f.type)) {
+      toast({ title: "अमान्य फ़ाइल", description: "कृपया MP4 (या WebM) वीडियो चुनें", variant: "destructive" })
+      return
+    }
+    if (f.size > MAX_VIDEO_SIZE) {
+      toast({ title: "वीडियो बहुत बड़ा है", description: `आकार ${(f.size / 1048576).toFixed(1)}MB है; अधिकतम 15MB। कृपया इसे छोटा/कंप्रेस करके अपलोड करें।`, variant: "destructive" })
+      return
+    }
+    try { setPercent(0); onChange(await uploadVideo(f, setPercent)) }
+    catch (e: any) { toast({ title: "अपलोड त्रुटि", description: e?.message, variant: "destructive" }) }
+    finally { setPercent(null) }
+  }
+  return (
+    <div>
+      <div className="flex gap-2">
+        <Input value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="वीडियो URL या अपलोड करें (MP4)" className="flex-1" />
+        <label className="inline-flex items-center px-3 py-2 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 cursor-pointer text-sm whitespace-nowrap">
+          {percent !== null ? <><Loader2 className="w-4 h-4 animate-spin mr-1" />{percent}%</> : <Upload className="w-4 h-4" />}
+          <input type="file" accept="video/mp4,video/webm" className="hidden" disabled={percent !== null} onChange={(e) => { up(e.target.files?.[0]); e.target.value = "" }} />
+        </label>
+        {value && <Button type="button" variant="outline" size="sm" onClick={() => onChange("")}><Trash2 className="w-4 h-4" /></Button>}
+      </div>
+      {value && (
+        <video src={value} muted loop playsInline controls preload="metadata" className="mt-2 h-32 rounded border bg-black" />
+      )}
+      <p className="mt-1 text-xs text-gray-500">खाली छोड़ने पर होम पेज पर पहले जैसी मंदिर की फ़ोटो ही दिखेगी। वीडियो धीमे इंटरनेट / डेटा सेवर पर अपने-आप नहीं चलता।</p>
+    </div>
+  )
+}
+
 function FieldInput({ field, value, onChange }: { field: SectionField; value: any; onChange: (v: any) => void }) {
   if (field.type === "select") return <SelectField value={value} options={field.options || []} onChange={onChange} />
   if (field.type === "rows") return <RowsField field={field} value={value} onChange={onChange} />
   if (field.type === "richtext") return <RichTextEditor initialValue={value || ""} onChange={onChange} />
   if (field.type === "image") return <ImageField value={value} onChange={onChange} />
   if (field.type === "pdf") return <PdfField value={value} onChange={onChange} />
+  if (field.type === "video") return <VideoField value={value} onChange={onChange} />
   if (field.type === "images") return <MultiImageField value={value} onChange={onChange} />
   if (field.type === "date") return <DateField value={value} onChange={onChange} />
   if (field.type === "textarea") return <Textarea value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.label} />
@@ -326,7 +364,7 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
                     <div
                       key={f.key}
                       className={
-                        f.type === "textarea" || f.type === "image" || f.type === "pdf" || f.type === "images" || f.type === "rows"
+                        f.type === "textarea" || f.type === "image" || f.type === "pdf" || f.type === "video" || f.type === "images" || f.type === "rows"
                           ? "sm:col-span-2"
                           : ""
                       }

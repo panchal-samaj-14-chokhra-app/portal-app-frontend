@@ -1,7 +1,7 @@
 export type SectionField = {
   key: string
   label: string
-  type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "date" | "images" | "select" | "rows"
+  type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "video" | "date" | "images" | "select" | "rows"
   // select: dropdown choices
   options?: { value: string; label: string }[]
   // rows: a repeatable list of small records (e.g. label / value / phone)
@@ -42,6 +42,12 @@ export const MANDIR_SECTIONS: SectionDef[] = [
       { key: "subtitle", label: "उपशीर्षक" },
       { key: "body", label: "विवरण (रिच-टेक्स्ट)", type: "richtext" },
       { key: "images", label: "मंदिर की इमेज (एक से अधिक — स्टोरेज सर्विस पर अपलोड होंगी)", type: "images" },
+    ],
+  },
+  {
+    key: "hero-video", title: "होम पेज बैकग्राउंड वीडियो (Home Background Video)", type: "fields", category: "सामान्य जानकारी",
+    fields: [
+      { key: "video", label: "बैकग्राउंड वीडियो — होम पेज के ऊपरी हिस्से में बिना आवाज़ के चलेगा (MP4, 10–30 सेकंड, अधिकतम 15MB)", type: "video" },
     ],
   },
   { key: "history", title: "इतिहास (History)", type: "html", category: "सामान्य जानकारी" },
