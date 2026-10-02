@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { getSession, signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { homeFor, safeCallbackPath } from "@/lib/auth/client";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff, Mail, Lock, HelpCircle } from "lucide-react";
@@ -12,30 +13,102 @@ import { Input } from "@/components/ui/input/input";
 import { Label } from "@/components/ui/label/label";
 import { Alert, AlertDescription } from "@/components/ui/alert/alert";
 
-export default function LoginForm() {
+// What the person sees for each reason the login did not (or could not) work
+const SIGN_IN_ERRORS: Record<string, string> = {
+  InvalidCredentials: "गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।",
+  CredentialsSignin: "गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।",
+  AccountDisabled: "आपका खाता निष्क्रिय है। कृपया प्रशासक से संपर्क करें।",
+  TooManyAttempts: "बहुत अधिक गलत प्रयास हुए। कृपया कुछ देर बाद पुनः प्रयास करें।",
+  ServerUnavailable: "सर्वर से संपर्क नहीं हो पा रहा। कृपया कुछ देर बाद पुनः प्रयास करें।",
+};
+const GENERIC_ERROR = "लॉगिन में समस्या हुई। कृपया पुनः प्रयास करें।";
+
+export default function LoginForm({ hasStoredLogin = false }: { hasStoredLogin?: boolean }) {
   const [formData, setFormData] = useState({ email: "", password: "", showPassword: false });
-  const [error, setError] = useState("");
+  const params = useSearchParams();
+  const reason = params.get("reason");
+  const urlError = params.get("error");
+  const [error, setError] = useState(
+    urlError ? SIGN_IN_ERRORS[urlError] || GENERIC_ERROR : ""
+  );
   const [loading, setLoading] = useState(false);
+  // The form only works once the page is interactive. Before that a click would be a plain browser form
+  // submit, which could put the e-mail and password into the address bar.
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  // while an existing login is being checked/renewed, don't flash the form
+  const [checking, setChecking] = useState(hasStoredLogin);
   const router = useRouter();
+
+  const goHome = (user: any) => {
+    const target = safeCallbackPath(params.get("callbackUrl")) || homeFor(user);
+    if (!target) return false;
+    router.replace(target);
+    router.refresh();
+    return true;
+  };
+
+  // A login cookie is present: if it still works (or can be renewed) continue straight into the portal,
+  // otherwise clear it so the user can sign in again.
+  useEffect(() => {
+    if (!hasStoredLogin) return;
+    let cancelled = false;
+    (async () => {
+      const session: any = await getSession().catch(() => null);
+      if (cancelled) return;
+      if (session && !session.error && session.user?.token && goHome(session.user)) return;
+      await signOut({ redirect: false }).catch(() => null);
+      if (!cancelled) setChecking(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasStoredLogin]);
+
+  const notice =
+    reason === "expired"
+      ? "आपका सत्र समाप्त हो गया है। कृपया फिर से लॉगिन करें।"
+      : reason === "disabled"
+        ? "आपका खाता निष्क्रिय कर दिया गया है। कृपया प्रशासक से संपर्क करें।"
+        : "";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     const result = await signIn("credentials", {
-      email: formData.email,
+      email: formData.email.trim(),
       password: formData.password,
       redirect: false,
     });
 
     if (result?.error) {
-      setError("गलत ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।");
-    } else {
-      // Let the server-side page handle the redirect on reload
-      router.refresh();
+      setError(SIGN_IN_ERRORS[result.error] || GENERIC_ERROR);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    const session: any = await getSession();
+    if (!goHome(session?.user)) {
+      setError("इस खाते के लिए कोई पोर्टल पेज उपलब्ध नहीं है। कृपया प्रशासक से संपर्क करें।");
+      await signOut({ redirect: false });
+      setLoading(false);
+    }
+    // on success the page navigates away, so the button stays disabled
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600 mx-auto mb-3"></div>
+          <p className="text-orange-700 text-sm">सत्र जाँचा जा रहा है...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
@@ -69,7 +142,7 @@ export default function LoginForm() {
               <CardDescription>जनगणना प्रबंधन प्रणाली में प्रवेश के लिए साइन इन करें</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} method="post" className="space-y-4">
                 <div>
                   <Label htmlFor="email" className="text-orange-700 font-medium">
                     ईमेल पता *
@@ -117,6 +190,11 @@ export default function LoginForm() {
                     </Button>
                   </div>
                 </div>
+                {notice && !error && (
+                  <Alert className="border-amber-200 bg-amber-50">
+                    <AlertDescription className="text-amber-800">{notice}</AlertDescription>
+                  </Alert>
+                )}
                 {error && (
                   <Alert className="border-red-200 bg-red-50">
                     <AlertDescription className="text-red-800">{error}</AlertDescription>
@@ -124,7 +202,7 @@ export default function LoginForm() {
                 )}
                 <Button
                   type="submit"
-                  disabled={loading || !formData.email || !formData.password}
+                  disabled={!ready || loading || !formData.email || !formData.password}
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
                 >
                   {loading ? "लॉगिन हो रहा है..." : "लॉगिन करें"}

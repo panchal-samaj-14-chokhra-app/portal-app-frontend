@@ -1,5 +1,5 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { getSession, signIn } from 'next-auth/react';
+import { endSession, forceRefresh, getAccessToken } from '@/lib/auth/client';
 
 const request = axios.create({
   baseURL: process.env.NEXT_PUBLIC_REQUEST_URL,
@@ -8,21 +8,13 @@ const request = axios.create({
   },
 });
 
-// request.interceptors.request.use(
-//   async (config: InternalAxiosRequestConfig) => {
-//     if (config.headers.Authorization) {
-//       return config;
-//     } else {
-//       await getSession().then((res) => {
-//         return res?.user ? (config.headers.Authorization = `Bearer ${res?.user.token}`) : delete config.headers.Authorization;
-//       });
-//       return config;
-//     }
-//   },
-//   (error) => {
-//     return Promise.reject(error);
-//   }
-// );
+// Every call carries the logged-in user's access token (renewed in the background, see lib/auth/client.ts).
+request.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  if (typeof window === 'undefined' || config.headers.Authorization) return config;
+  const token = await getAccessToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 request.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -54,7 +46,6 @@ request.interceptors.response.use(
           console.error('Bad Request:', data);
           break;
         case 401:
-          signIn(process.env.NEXT_PUBLIC_AUTH_AAD_B2C_PROVIDER_ID);
           console.error('Unauthorized:', data);
           break;
         case 404:
@@ -66,6 +57,25 @@ request.interceptors.response.use(
       }
     } else {
       console.error('Error:', error.message);
+    }
+
+    // 401 = the access token was refused. Ask for a fresh one once and repeat the call; if the login
+    // cannot be renewed any more, go to the login page (once) instead of leaving a broken screen.
+    const config = error.config as (InternalAxiosRequestConfig & { _authRetried?: boolean }) | undefined;
+    if (error.response?.status === 401 && config && typeof window !== 'undefined' && !config._authRetried) {
+      config._authRetried = true;
+      const code = error.response.data?.code;
+      if (code !== 'ACCOUNT_DISABLED') {
+        const token = await forceRefresh();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+          return request(config);
+        }
+      }
+      endSession(code === 'ACCOUNT_DISABLED' ? 'disabled' : 'expired');
+    } else if (error.response?.status === 401 && config?._authRetried && typeof window !== 'undefined') {
+      // even a freshly renewed token was refused: the login is no longer valid
+      endSession(error.response.data?.code === 'ACCOUNT_DISABLED' ? 'disabled' : 'expired');
     }
     return Promise.reject(error);
   }
