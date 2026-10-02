@@ -148,10 +148,36 @@ function RowsField({ field, value, onChange }: { field: SectionField; value: any
       {rows.length === 0 && <p className="text-xs text-gray-400">कोई पंक्ति नहीं — नीचे "पंक्ति जोड़ें" दबाएँ।</p>}
       {rows.map((r, i) => (
         <div key={i} className="flex items-start gap-2 rounded-md border border-gray-200 bg-white p-2">
-          <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
-            {cols.map((c) => (
-              <Input key={c.key} value={r?.[c.key] || ""} onChange={(e) => setCell(i, c.key, e.target.value)} placeholder={c.label} aria-label={c.label} />
-            ))}
+          <div className={`grid flex-1 grid-cols-1 gap-2 ${cols.length >= 3 ? "sm:grid-cols-3" : cols.length === 2 ? "sm:grid-cols-2" : ""}`}>
+            {cols.map((c) =>
+              c.options ? (
+                <select
+                  key={c.key}
+                  value={r?.[c.key] || ""}
+                  onChange={(e) => setCell(i, c.key, e.target.value)}
+                  aria-label={c.label}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">{c.label}</option>
+                  {c.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              ) : (
+                <div key={c.key}>
+                  <Input
+                    value={r?.[c.key] || ""}
+                    onChange={(e) => setCell(i, c.key, e.target.value)}
+                    placeholder={c.label}
+                    aria-label={c.label}
+                    list={c.suggestions ? `${field.key}-${c.key}-list` : undefined}
+                  />
+                  {c.suggestions && (
+                    <datalist id={`${field.key}-${c.key}-list`}>
+                      {c.suggestions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </datalist>
+                  )}
+                </div>
+              )
+            )}
           </div>
           <div className="flex shrink-0 flex-col">
             <Button type="button" size="sm" variant="ghost" className="h-6 px-1" onClick={() => move(i, -1)} disabled={i === 0} aria-label="ऊपर"><ChevronUp className="w-4 h-4" /></Button>
@@ -237,7 +263,10 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
     setTitle(content.title || "")
     setHtml(content.html || "")
     setItems(Array.isArray(content.items) ? content.items : [])
-    setFields(content.items && !Array.isArray(content.items) ? content.items : {})
+    // Nothing saved yet: start from what the website shows by default, so editing means changing real text
+    // (a saved record is shown exactly as saved, even for fields that were cleared on purpose)
+    const saved = content.items && !Array.isArray(content.items) ? content.items : null
+    setFields(saved ?? (!content.id && section.defaults ? JSON.parse(JSON.stringify(section.defaults)) : {}))
   }
 
   const saving = (upsert as any).isPending
