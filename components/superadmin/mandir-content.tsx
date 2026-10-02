@@ -8,14 +8,17 @@ import ContentSectionEditor from "./content-section-editor"
 import BlogsTab from "./mandir-management"
 import MandirSubscribers from "./mandir-subscribers"
 import ShringarBookings from "./shringar-bookings"
+import SubmissionsList from "./submissions-list"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
-type SpecialKey = "blogs" | "subscribers" | "shringar"
+type SpecialKey = "blogs" | "subscribers" | "shringar" | "grievances" | "testimonials"
 
 const SPECIAL_SECTIONS: { key: SpecialKey; title: string; note: string }[] = [
   { key: "blogs", title: "ब्लॉग", note: "सूची" },
   { key: "subscribers", title: "सदस्य एवं ईमेल", note: "सूची" },
   { key: "shringar", title: "श्रृंगार बुकिंग", note: "कैलेंडर व सूची" },
+  { key: "grievances", title: "शिकायत निवारण", note: "वेबसाइट से आई शिकायतें" },
+  { key: "testimonials", title: "भक्तों के अनुभव", note: "वेबसाइट से आए प्रशंसा-पत्र / फ़ोटो" },
 ]
 
 const BLOG_CATEGORY = "ब्लॉग, सदस्य एवं बुकिंग"
@@ -73,6 +76,21 @@ export default function MandirContent() {
     return (
       <SpecialSectionView title="श्रृंगार बुकिंग" onBack={closeSection}>
         <ShringarBookings />
+      </SpecialSectionView>
+    )
+  }
+
+  if (activeSpecial?.key === "grievances") {
+    return (
+      <SpecialSectionView title="शिकायत निवारण — दर्ज शिकायतें" onBack={closeSection}>
+        <SubmissionsList kind="grievance" />
+      </SpecialSectionView>
+    )
+  }
+  if (activeSpecial?.key === "testimonials") {
+    return (
+      <SpecialSectionView title="भक्तों के अनुभव (Testimonials)" onBack={closeSection}>
+        <SubmissionsList kind="testimonial" />
       </SpecialSectionView>
     )
   }
