@@ -77,3 +77,17 @@ export const uploadBlogImage = async (file: File) => {
   })
   return data.url as string
 }
+
+// Video for the home page background. Same storage upload as images, but with progress (files are bigger).
+export const uploadVideo = async (file: File, onProgress?: (percent: number) => void) => {
+  const form = new FormData()
+  form.append("file", file)
+  const { data } = await request.post(`/blog/upload`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 5 * 60 * 1000,
+    onUploadProgress: (e) => {
+      if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+    },
+  })
+  return data.url as string
+}
