@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession, signOut } from "next-auth/react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, useSearchParams, usePathname } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import {
@@ -55,6 +55,8 @@ import DonutChart, { DEFAULT_COLORS } from '@/components/ui/donut'
 export default function VillageDetailPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const params = useParams()
   const villageId = params.villageId as string
 
@@ -86,8 +88,22 @@ export default function VillageDetailPage() {
 
   const polls = (pollsResponse && (pollsResponse.data || pollsResponse)) || []
 
-  const [viewOpen, setViewOpen] = useState(false)
-  const [viewIndex, setViewIndex] = useState(0)
+  // Which poll is open lives in the address (?poll=<id>), so a refresh, the back button and a shared link all
+  // come back to the same poll instead of starting again from the first one.
+  const pollParam = searchParams.get("poll")
+  const viewIndex = pollParam ? polls.findIndex((p: any) => p.id === pollParam) : -1
+  const viewOpen = viewIndex >= 0
+  const currentPoll = viewOpen ? polls[viewIndex] : null
+
+  const setPollParam = (id: string | null, mode: "push" | "replace" = "replace") => {
+    const next = new URLSearchParams(searchParams.toString())
+    if (id) next.set("poll", id)
+    else next.delete("poll")
+    const qs = next.toString()
+    const url = qs ? `${pathname}?${qs}` : pathname
+    if (mode === "push") router.push(url, { scroll: false })
+    else router.replace(url, { scroll: false })
+  }
   const [voteSelections, setVoteSelections] = useState<Record<string, string[]>>({})
   const [disabledQuestions, setDisabledQuestions] = useState<Record<string, boolean>>({})
 
@@ -127,29 +143,39 @@ export default function VillageDetailPage() {
     setDisabledQuestions(initialDisabled)
   }
 
-  const openView = (idx: number) => {
-    const poll = polls[idx]
-    initializeFromPoll(poll)
-    setViewIndex(idx)
-    setViewOpen(true)
+  const isAnswered = (q: any) => !!(q.hasVoted || q.votedByVillage || q.villageVotedOptionId || (Array.isArray(q.villageVotedOptionIds) && q.villageVotedOptionIds.length))
+  // a poll this village can still vote on
+  const needsVote = (p: any) => p && p.canVote !== false && (p.questions || []).some((q: any) => !isAnswered(q))
+
+  // Opening from the button starts at the first poll that still needs this village's vote
+  const openView = (idx?: number) => {
+    const list = polls as any[]
+    if (list.length === 0) return
+    const first = typeof idx === "number" ? idx : Math.max(0, list.findIndex(needsVote))
+    setPollParam(list[first].id, "push")
   }
 
-  const prevView = () => {
-    if (!polls || polls.length === 0) return
-    setViewIndex((i) => {
-      const nextIdx = (i - 1 + polls.length) % polls.length
-      openView(nextIdx)
-      return nextIdx
-    })
+  const goToIndex = (idx: number) => {
+    const list = polls as any[]
+    if (list.length === 0) return
+    setPollParam(list[(idx + list.length) % list.length].id)
   }
-  const nextView = () => {
-    if (!polls || polls.length === 0) return
-    setViewIndex((i) => {
-      const nextIdx = (i + 1) % polls.length
-      openView(nextIdx)
-      return nextIdx
-    })
-  }
+  const prevView = () => goToIndex(viewIndex - 1)
+  const nextView = () => goToIndex(viewIndex + 1)
+
+  // Fill the form from what the server says (answered questions are locked). Runs when another poll is shown and
+  // when the server's voted state for the shown poll changes - not on every refetch, so unsaved choices survive.
+  const pollSignature = currentPoll
+    ? `${currentPoll.id}|${(currentPoll.questions || []).map((q: any) => `${q.id}:${isAnswered(q) ? (q.villageVotedOptionIds || [q.villageVotedOptionId]).join(",") : "-"}`).join(";")}`
+    : ""
+  useEffect(() => {
+    if (currentPoll) initializeFromPoll(currentPoll)
+    else {
+      setVoteSelections({})
+      setDisabledQuestions({})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pollSignature])
   const { mutate: deleteFamily } = useDeleteFamilyUsingID()
   const { download: downloadVillageReport, loadingReport } = useDownloadReport()
   const handleVillageReport = (format: "pdf" | "excel") => {
@@ -199,17 +225,31 @@ export default function VillageDetailPage() {
     try {
       // One request for the whole ballot: it is saved completely or not at all
       await submitVoteMutation.mutateAsync({ villageId, pollId: poll.id, answers })
+      let freshPolls: any[] = polls
       try {
         const fresh: any = await queryClient.fetchQuery({ queryKey: ['polls', villageId], queryFn: () => getPollsByVillage(villageId), staleTime: 0 })
-        const freshPolls: any[] = (fresh && (fresh.data || fresh)) || []
-        const updatedPoll = freshPolls.find((p: any) => p.id === poll.id)
-        if (updatedPoll) initializeFromPoll(updatedPoll)
+        freshPolls = (fresh && (fresh.data || fresh)) || polls
       } catch (fetchErr) {
         // the next load of the list shows the saved votes
       }
 
       toast({ title: 'वोट सफल', description: 'वोट सफलतापूर्वक सबमिट किया गया।', variant: 'success' })
-      setViewOpen(false)
+
+      // Stay on this poll if some of its questions are still open; otherwise show the next poll that needs a vote
+      const here = freshPolls.findIndex((p: any) => p.id === poll.id)
+      const updated = freshPolls[here]
+      if (updated && needsVote(updated)) return
+      let target: any = null
+      for (let step = 1; step < freshPolls.length; step++) {
+        const candidate = freshPolls[(here + step) % freshPolls.length]
+        if (needsVote(candidate)) { target = candidate; break }
+      }
+      if (target) {
+        setPollParam(target.id)
+      } else {
+        toast({ title: 'सभी पोल पूरे', description: 'आपके गाँव ने सभी उपलब्ध पोल में वोट दे दिया है।', variant: 'success' })
+        setPollParam(null)
+      }
     } catch (e: any) {
       console.error(e)
       toast({ title: 'त्रुटि', description: e?.response?.data?.message || 'वोट सबमिट करने में त्रुटि', variant: 'destructive' })
@@ -802,7 +842,7 @@ export default function VillageDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">कुल पोल्स: {polls?.length || 0}</div>
                 <div>
-                  <Button onClick={() => openView(0)} className="bg-orange-500 hover:bg-orange-600 text-white">View Polls / पोल देखें</Button>
+                  <Button onClick={() => openView()} className="bg-orange-500 hover:bg-orange-600 text-white">View Polls / पोल देखें</Button>
                 </div>
               </div>
             </CardContent>
@@ -902,17 +942,8 @@ export default function VillageDetailPage() {
       />
       {/* Polls View Dialog (carousel) */}
       <Dialog open={viewOpen} onOpenChange={(open) => {
-        setViewOpen(open)
-        if (!open) {
-          // clear selections/disabled state when dialog closes
-          setVoteSelections({})
-          setDisabledQuestions({})
-        } else {
-          // if opening and a poll is currently selected, re-init from that poll
-          if (typeof viewIndex === 'number' && polls && polls[viewIndex]) {
-            openView(viewIndex)
-          }
-        }
+        if (!open) setPollParam(null) // closing removes ?poll=; the form is cleared by the effect above
+        else if (!viewOpen) openView()
       }}>
         <DialogContent className="w-full sm:w-[95vw] sm:max-w-5xl h-[100vh] sm:h-auto sm:max-h-[90vh] p-4 sm:p-6 rounded-none sm:rounded-lg">
           <DialogHeader>
@@ -931,6 +962,7 @@ export default function VillageDetailPage() {
               ) : (
                 (() => {
                   const poll = polls[viewIndex]
+                  if (!poll) return null // closing: the address no longer names a poll
                   return (
                     <div>
                       <h3 className="text-lg font-semibold">{poll.title}</h3>
