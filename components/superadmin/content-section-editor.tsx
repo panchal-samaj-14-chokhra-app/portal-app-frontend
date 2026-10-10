@@ -72,15 +72,22 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
   return <Input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} />
 }
 
-function MultiImageField({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+function MultiImageField({ value, onChange, max }: { value: string[]; onChange: (v: string[]) => void; max?: number }) {
   const { toast } = useToast()
   const [busy, setBusy] = useState(false)
   const list = Array.isArray(value) ? value : []
   const addFiles = async (files: FileList | null) => {
     if (!files || !files.length) return
+    const room = max ? max - list.length : files.length
+    if (room <= 0) {
+      toast({ title: `अधिकतम ${max} इमेज`, description: "पहले कोई इमेज हटाएँ।", variant: "destructive" })
+      return
+    }
+    const chosen = Array.from(files).slice(0, room)
+    if (chosen.length < files.length) toast({ title: `केवल ${chosen.length} इमेज जोड़ी गईं`, description: `अधिकतम ${max} इमेज की अनुमति है।` })
     try {
       setBusy(true)
-      const uploaded = await Promise.all(Array.from(files).map((f) => uploadBlogImage(f)))
+      const uploaded = await Promise.all(chosen.map((f) => uploadBlogImage(f)))
       onChange([...list, ...uploaded])
     } catch (e: any) {
       toast({ title: "अपलोड त्रुटि", description: e?.message, variant: "destructive" })
@@ -111,8 +118,9 @@ function MultiImageField({ value, onChange }: { value: string[]; onChange: (v: s
       <label className="inline-flex items-center px-3 py-2 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 cursor-pointer text-sm whitespace-nowrap w-fit">
         {busy ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Upload className="w-4 h-4 mr-1.5" />}
         इमेज जोड़ें
-        <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+        <input type="file" accept="image/*" multiple className="hidden" disabled={busy || (!!max && list.length >= max)} onChange={(e) => { addFiles(e.target.files); e.target.value = "" }} />
       </label>
+      {max ? <p className="text-xs text-gray-500">{list.length} / {max} इमेज</p> : null}
     </div>
   )
 }
@@ -237,7 +245,7 @@ function FieldInput({ field, value, onChange }: { field: SectionField; value: an
   if (field.type === "image") return <ImageField value={value} onChange={onChange} />
   if (field.type === "pdf") return <PdfField value={value} onChange={onChange} />
   if (field.type === "video") return <VideoField value={value} onChange={onChange} />
-  if (field.type === "images") return <MultiImageField value={value} onChange={onChange} />
+  if (field.type === "images") return <MultiImageField value={value} onChange={onChange} max={field.max} />
   if (field.type === "date") return <DateField value={value} onChange={onChange} />
   if (field.type === "textarea") return <Textarea value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.label} />
   return <Input value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.label} />

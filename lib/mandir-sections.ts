@@ -4,6 +4,8 @@ export type SectionField = {
   type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "video" | "date" | "images" | "select" | "rows"
   // select: dropdown choices
   options?: { value: string; label: string }[]
+  // images: most pictures allowed in this field (the uploader stops there)
+  max?: number
   // rows: a repeatable list of small records (e.g. label / value / phone).
   // options = dropdown for that cell; suggestions = free text with a list of ready-made choices.
   rowFields?: { key: string; label: string; options?: { value: string; label: string }[]; suggestions?: { value: string; label: string }[] }[]
@@ -137,6 +139,20 @@ export const MANDIR_SECTIONS: SectionDef[] = [
   { key: "about-panchal-samaj", title: "पंचाल समाज (Panchal Samaj)", type: "html", category: "सामान्य जानकारी" },
   { key: "about-banswara", title: "बांसवाड़ा के बारे में (About Banswara)", type: "html", category: "सामान्य जानकारी" },
   { key: "about-rajasthan", title: "राजस्थान के बारे में (About Rajasthan)", type: "html", category: "सामान्य जानकारी" },
+  {
+    key: "aaj-ke-darshan", title: "आज के दर्शन (Today's Darshan)", type: "fields", category: "लाइव व समय",
+    fields: [
+      { key: "images", label: "आज के दर्शन की इमेज (3 से 5) — रोज़ पुरानी इमेज हटाकर नई जोड़ें; वेबसाइट पर सबसे ताज़ा सेट अपने-आप दिखता है", type: "images", max: 5 },
+      { key: "verse", label: "श्लोक", type: "textarea" },
+      { key: "caption", label: "परिचय पंक्ति (इमेज के ऊपर)", type: "textarea" },
+      { key: "closing", label: "अंतिम पंक्ति" },
+    ],
+    defaults: {
+      verse: "त्रिपुरे त्वं जगन्माता त्रिपुरे त्वं जगत्पिता।\nत्रिपुरे त्वं जगत् धात्री त्रिपुरायै नमोनमः।।",
+      caption: "श्री राजराजेश्वरी जगज्जननी आद्या शक्ति माँ त्रिपुरा सुंदरी के आज के आरती-श्रृंगार दर्शन",
+      closing: "जय माँ त्रिपुरे",
+    },
+  },
   {
     key: "live-darshan", title: "लाइव दर्शन (Live Darshan)", type: "fields", category: "लाइव व समय",
     fields: [
