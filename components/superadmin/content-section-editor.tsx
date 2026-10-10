@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Save, Loader2, Plus, Trash2, Upload, ImageIcon, ChevronUp, ChevronDown } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import RichTextEditor from "./rich-text-editor"
@@ -238,8 +239,19 @@ function VideoField({ value, onChange }: { value: string; onChange: (v: string) 
   )
 }
 
+function ToggleField({ value, onChange }: { value: any; onChange: (v: string) => void }) {
+  const on = value !== "off" // a new item starts switched on
+  return (
+    <div className="flex h-10 items-center gap-3">
+      <Switch checked={on} onCheckedChange={(v) => onChange(v ? "on" : "off")} />
+      <span className={`text-sm font-medium ${on ? "text-green-700" : "text-gray-500"}`}>{on ? "चालू — वेबसाइट पर दिख रही है" : "बंद — वेबसाइट पर नहीं दिखेगी"}</span>
+    </div>
+  )
+}
+
 function FieldInput({ field, value, onChange }: { field: SectionField; value: any; onChange: (v: any) => void }) {
   if (field.type === "select") return <SelectField value={value} options={field.options || []} onChange={onChange} />
+  if (field.type === "toggle") return <ToggleField value={value} onChange={onChange} />
   if (field.type === "rows") return <RowsField field={field} value={value} onChange={onChange} />
   if (field.type === "richtext") return <RichTextEditor initialValue={value || ""} onChange={onChange} />
   if (field.type === "image") return <ImageField value={value} onChange={onChange} />
@@ -401,7 +413,7 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
                     <div
                       key={f.key}
                       className={
-                        f.type === "textarea" || f.type === "image" || f.type === "pdf" || f.type === "video" || f.type === "images" || f.type === "rows"
+                        f.type === "textarea" || f.type === "toggle" || f.type === "image" || f.type === "pdf" || f.type === "video" || f.type === "images" || f.type === "rows"
                           ? "sm:col-span-2"
                           : ""
                       }

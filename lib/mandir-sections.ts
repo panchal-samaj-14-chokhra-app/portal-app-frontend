@@ -1,9 +1,10 @@
 export type SectionField = {
   key: string
   label: string
-  type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "video" | "date" | "images" | "select" | "rows"
+  type?: "text" | "textarea" | "richtext" | "image" | "pdf" | "video" | "date" | "images" | "select" | "rows" | "toggle"
   // select: dropdown choices
   options?: { value: string; label: string }[]
+  // toggle: on/off switch, saved as "on" / "off" (a new item starts "on")
   // images: most pictures allowed in this field (the uploader stops there)
   max?: number
   // rows: a repeatable list of small records (e.g. label / value / phone).
@@ -139,6 +140,14 @@ export const MANDIR_SECTIONS: SectionDef[] = [
   { key: "about-panchal-samaj", title: "पंचाल समाज (Panchal Samaj)", type: "html", category: "सामान्य जानकारी" },
   { key: "about-banswara", title: "बांसवाड़ा के बारे में (About Banswara)", type: "html", category: "सामान्य जानकारी" },
   { key: "about-rajasthan", title: "राजस्थान के बारे में (About Rajasthan)", type: "html", category: "सामान्य जानकारी" },
+  {
+    key: "notices", title: "सूचना पट्टी (Notices)", type: "items", itemLabel: "सूचना", category: "लाइव व समय",
+    fields: [
+      { key: "text", label: "सूचना (वेबसाइट के हेडर के नीचे चलती पट्टी में दिखेगी — जैसे: मंदिर परिसर में सड़क कार्य के कारण आज दर्शन बंद रहेंगे।)", type: "textarea" },
+      { key: "status", label: "वेबसाइट पर दिखाएँ (चालू / बंद)", type: "toggle" },
+      { key: "until", label: "इस तिथि तक दिखाएँ (खाली = जब तक बंद न करें)", type: "date" },
+    ],
+  },
   {
     key: "aaj-ke-darshan", title: "आज के दर्शन (Today's Darshan)", type: "fields", category: "लाइव व समय",
     fields: [
