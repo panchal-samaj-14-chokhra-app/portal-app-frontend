@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronRight, ArrowLeft } from "lucide-react"
 import { MANDIR_SECTIONS, SECTION_CATEGORIES, type SectionDef } from "@/lib/mandir-sections"
 import ContentSectionEditor from "./content-section-editor"
+import AartiManager from "./aarti-manager"
 import BlogsTab from "./mandir-management"
 import MandirSubscribers from "./mandir-subscribers"
 import ShringarBookings from "./shringar-bookings"
@@ -56,6 +57,7 @@ export default function MandirContent() {
     router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
+  if (activeCms?.key === "aarti-stuti") return <AartiManager onBack={closeSection} />
   if (activeCms) return <ContentSectionEditor section={activeCms} onBack={closeSection} />
   if (activeSpecial?.key === "blogs") {
     return (
@@ -112,7 +114,7 @@ export default function MandirContent() {
                     <div>
                       <p className="font-medium text-gray-900">{s.title}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {s.type === "html" ? "रिच-टेक्स्ट" : s.type === "items" ? "सूची" : "विवरण"}
+                        {s.type === "html" ? "रिच-टेक्स्ट" : s.type === "items" || s.type === "custom" ? "सूची" : "विवरण"}
                       </p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-orange-400" />
