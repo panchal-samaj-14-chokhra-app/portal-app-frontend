@@ -55,6 +55,8 @@ export type SectionDef = {
   type: "html" | "items" | "fields"
   fields?: SectionField[]
   itemLabel?: string
+  // items: give every new item a short permanent id (used for the item's own web page address)
+  autoId?: boolean
   category: string
   // shown (and saved) the first time, so the editor starts from what the website currently displays
   defaults?: Record<string, any>
@@ -67,6 +69,14 @@ export const SECTION_CATEGORIES = [
   "नियम व संपर्क",
   "ई-स्टोर व दान",
 ] as const
+
+const AARTI_CATEGORY_OPTIONS = [
+  { value: "आरती", label: "आरती" },
+  { value: "मंत्र", label: "मंत्र" },
+  { value: "साधना", label: "साधना" },
+  { value: "स्तोत्र", label: "स्तोत्र" },
+  { value: "भक्ति", label: "भक्ति" },
+]
 
 export const MANDIR_SECTIONS: SectionDef[] = [
   {
@@ -193,6 +203,30 @@ export const MANDIR_SECTIONS: SectionDef[] = [
       { key: "contact", label: "संपर्क (नाम / फ़ोन नंबर)" },
       { key: "description", label: "विवरण", type: "textarea" },
       { key: "images", label: "इमेज (एक से अधिक — पहली इमेज कवर बनेगी)", type: "images" },
+    ],
+  },
+  {
+    key: "aarti-videos", title: "आरती एवं स्तुति — YouTube वीडियो", type: "items", itemLabel: "वीडियो", autoId: true, category: "सूचियाँ",
+    fields: [
+      { key: "title", label: "वीडियो का शीर्षक" },
+      { key: "url", label: "YouTube वीडियो का लिंक (जैसे: https://www.youtube.com/watch?v=… या https://youtu.be/…)" },
+      { key: "category", label: "श्रेणी", type: "select", options: AARTI_CATEGORY_OPTIONS },
+      { key: "topic", label: "विषय विवरण (जैसे: माँ त्रिपुरा सुंदरी की संध्या आरती)" },
+      { key: "description", label: "विवरण", type: "textarea" },
+      { key: "date", label: "प्रकाशन तिथि (भरने पर नई सामग्री सबसे ऊपर दिखती है)", type: "date" },
+      { key: "status", label: "वेबसाइट पर दिखाएँ (चालू / बंद)", type: "toggle" },
+    ],
+  },
+  {
+    key: "aarti-articles", title: "आरती एवं स्तुति — लेख (आरती, मंत्र, साधना, स्तोत्र, भक्ति)", type: "items", itemLabel: "लेख", autoId: true, category: "सूचियाँ",
+    fields: [
+      { key: "title", label: "शीर्षक" },
+      { key: "category", label: "श्रेणी", type: "select", options: AARTI_CATEGORY_OPTIONS },
+      { key: "image", label: "मुख्य इमेज", type: "image" },
+      { key: "topic", label: "विषय विवरण (छोटा परिचय — कार्ड और शेयर में दिखेगा)", type: "textarea" },
+      { key: "body", label: "विस्तृत सामग्री (रिच-टेक्स्ट)", type: "richtext" },
+      { key: "date", label: "प्रकाशन तिथि (भरने पर नई सामग्री सबसे ऊपर दिखती है)", type: "date" },
+      { key: "status", label: "वेबसाइट पर दिखाएँ (चालू / बंद)", type: "toggle" },
     ],
   },
   {

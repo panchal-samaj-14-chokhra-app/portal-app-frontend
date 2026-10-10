@@ -306,7 +306,8 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
 
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null)
 
-  const addItem = () => setItems((p) => [...p, {}])
+  const addItem = () =>
+    setItems((p) => [...p, section.autoId ? { id: Math.random().toString(36).slice(2, 10) } : {}])
   const moveItem = (i: number, d: number) =>
     setItems((p) => {
       const j = i + d
@@ -391,7 +392,7 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
             </div>
             {items.length === 0 && <p className="text-sm text-gray-400">कोई आइटम नहीं — "जोड़ें" से शुरू करें।</p>}
             {items.map((it, i) => (
-              <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2 relative bg-gray-50/50">
+              <div key={it.id ?? i} className="border border-gray-200 rounded-lg p-3 space-y-2 relative bg-gray-50/50">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-500">{section.itemLabel} {i + 1}</span>
                   <div className="flex items-center">
