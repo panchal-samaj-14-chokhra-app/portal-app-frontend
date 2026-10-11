@@ -249,6 +249,15 @@ function ToggleField({ value, onChange }: { value: any; onChange: (v: string) =>
   )
 }
 
+// a field can depend on another field of the same record (see SectionField.showWhen)
+const isShown = (f: SectionField, record: Record<string, any>) => {
+  if (!f.showWhen) return true
+  const v = record?.[f.showWhen.key] || ""
+  if (f.showWhen.is !== undefined) return v === f.showWhen.is
+  if (f.showWhen.not !== undefined) return v !== f.showWhen.not
+  return true
+}
+
 function FieldInput({ field, value, onChange }: { field: SectionField; value: any; onChange: (v: any) => void }) {
   if (field.type === "select") return <SelectField value={value} options={field.options || []} onChange={onChange} />
   if (field.type === "toggle") return <ToggleField value={value} onChange={onChange} />
@@ -371,7 +380,7 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
 
         {section.type === "fields" && (
           <div className="grid grid-cols-1 gap-3">
-            {(section.fields || []).map((f) => (
+            {(section.fields || []).filter((f) => isShown(f, fields)).map((f) => (
               <div key={f.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
                 <FieldInput
@@ -410,7 +419,7 @@ export default function ContentSectionEditor({ section, onBack }: { section: Sec
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {(section.fields || []).map((f) => (
+                  {(section.fields || []).filter((f) => isShown(f, it)).map((f) => (
                     <div
                       key={f.key}
                       className={

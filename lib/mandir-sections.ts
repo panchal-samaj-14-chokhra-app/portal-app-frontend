@@ -5,6 +5,8 @@ export type SectionField = {
   // select: dropdown choices
   options?: { value: string; label: string }[]
   // toggle: on/off switch, saved as "on" / "off" (a new item starts "on")
+  // shown only for some values of another field of the same item: { key: "type", is: "video" } or { key: "type", not: "video" }
+  showWhen?: { key: string; is?: string; not?: string }
   // images: most pictures allowed in this field (the uploader stops there)
   max?: number
   // rows: a repeatable list of small records (e.g. label / value / phone).
@@ -218,8 +220,17 @@ export const MANDIR_SECTIONS: SectionDef[] = [
     fields: [{ key: "name", label: "नाम" }, { key: "role", label: "पद" }, { key: "phone", label: "फ़ोन" }, { key: "photo", label: "फ़ोटो", type: "image" }],
   },
   {
-    key: "gallery", title: "गैलरी (Gallery)", type: "items", itemLabel: "इमेज", category: "सूचियाँ",
-    fields: [{ key: "image", label: "इमेज", type: "image" }, { key: "caption", label: "कैप्शन" }],
+    key: "gallery", title: "गैलरी (फ़ोटो एवं वीडियो)", type: "items", itemLabel: "फ़ोटो / वीडियो", category: "सूचियाँ",
+    fields: [
+      {
+        key: "type", label: "प्रकार", type: "select",
+        options: [{ value: "image", label: "फ़ोटो" }, { value: "video", label: "वीडियो (YouTube / Instagram Reel लिंक)" }],
+      },
+      { key: "image", label: "इमेज", type: "image", showWhen: { key: "type", not: "video" } },
+      { key: "url", label: "वीडियो का लिंक — YouTube वीडियो / Shorts या Instagram Reel / Post (जैसे: https://www.instagram.com/reel/…)", showWhen: { key: "type", is: "video" } },
+      { key: "thumb", label: "कवर इमेज (वैकल्पिक — Instagram रील के लिए ज़रूर जोड़ें, YouTube में अपने-आप आती है)", type: "image", showWhen: { key: "type", is: "video" } },
+      { key: "caption", label: "कैप्शन" },
+    ],
   },
   {
     key: "media-handlers", title: "मीडिया लिंक (Media / Social Links)", type: "items", itemLabel: "लिंक", category: "सूचियाँ",
