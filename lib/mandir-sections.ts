@@ -230,8 +230,14 @@ export const MANDIR_SECTIONS: SectionDef[] = [
     ],
   },
   {
-    key: "press-release", title: "प्रेस विज्ञप्ति (Press Release)", type: "items", itemLabel: "विज्ञप्ति", category: "सूचियाँ",
-    fields: [{ key: "title", label: "शीर्षक" }, { key: "date", label: "दिनांक" }, { key: "summary", label: "सारांश", type: "textarea" }, { key: "link", label: "लिंक / PDF (अधिकतम 2MB)", type: "pdf" }],
+    key: "press-release", title: "प्रेस विज्ञप्ति (Press Release)", type: "items", itemLabel: "विज्ञप्ति", autoId: true, category: "सूचियाँ",
+    fields: [
+      { key: "title", label: "शीर्षक" },
+      { key: "date", label: "दिनांक (वेबसाइट पर सबसे नई विज्ञप्ति सबसे ऊपर दिखती है)", type: "date" },
+      { key: "summary", label: "सारांश", type: "textarea" },
+      { key: "image", label: "इमेज (वैकल्पिक — शेयर करने पर लिंक के साथ दिखेगी)", type: "image" },
+      { key: "link", label: "लिंक / PDF (अधिकतम 2MB)", type: "pdf" },
+    ],
   },
   {
     key: "recent-visits", title: "हाल की विज़िट (Recent Visits)", type: "items", itemLabel: "विज़िट", category: "सूचियाँ",
