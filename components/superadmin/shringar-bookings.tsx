@@ -116,11 +116,21 @@ export default function ShringarBookings() {
     URL.revokeObjectURL(url)
   }
 
+  // what the server did about e-mailing the person whose booking changed
+  const mailNote = (res: any): string | undefined =>
+    ({
+      sent: "बुकिंग करने वाले को ईमेल से सूचित कर दिया गया।",
+      failed: "बदलाव सहेजा गया, पर ईमेल नहीं भेजा जा सका।",
+      no_email: "इस बुकिंग में ईमेल दर्ज नहीं है, इसलिए ईमेल नहीं भेजा गया।",
+      not_configured: "बदलाव सहेजा गया, पर ईमेल सेवा चालू नहीं है।",
+    } as Record<string, string>)[res?.notification]
+
   const quickStatus = (b: Booking, status: Booking["status"]) =>
     updateM.mutate(
       { id: b.id, payload: { status } },
       {
-        onSuccess: () => toast({ title: status === "confirmed" ? "बुकिंग पुष्ट की गई" : "बुकिंग रद्द की गई", variant: "success" }),
+        onSuccess: (res: any) =>
+          toast({ title: status === "confirmed" ? "बुकिंग पुष्ट की गई" : "बुकिंग रद्द की गई", description: mailNote(res), variant: res?.notification === "failed" ? "destructive" : "success" }),
         onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
       },
     )
@@ -354,8 +364,8 @@ export default function ShringarBookings() {
         saving={createM.isPending || updateM.isPending || deleteM.isPending || blockM.isPending}
         onCreate={(p) =>
           createM.mutate(p, {
-            onSuccess: () => {
-              toast({ title: "सहेजा गया", variant: "success" })
+            onSuccess: (res: any) => {
+              toast({ title: "सहेजा गया", description: mailNote(res), variant: res?.notification === "failed" ? "destructive" : "success" })
               setDlg({ mode: "closed" })
             },
             onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
@@ -365,8 +375,8 @@ export default function ShringarBookings() {
           updateM.mutate(
             { id, payload: p },
             {
-              onSuccess: () => {
-                toast({ title: "सहेजा गया", variant: "success" })
+              onSuccess: (res: any) => {
+                toast({ title: "सहेजा गया", description: mailNote(res), variant: res?.notification === "failed" ? "destructive" : "success" })
                 setDlg({ mode: "closed" })
               },
               onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
