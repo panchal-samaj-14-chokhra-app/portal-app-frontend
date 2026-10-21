@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   useAllVillages,
   useAllChokhlas,
@@ -68,7 +68,17 @@ function SuperAdmin() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
-  const activeTab = searchParams.get("tab") || "chokhla"
+  const { data: userData } = useSession()
+  const role = (userData?.user?.role as string) || ""
+  const isMandirAdmin = role === "MANDIR_ADMIN"
+
+  // MANDIR_ADMIN sees only the Mandir Prabandhan tab; everyone else sees all tabs
+  const visibleTabs = isMandirAdmin
+    ? SIDEBAR_TABS.filter((t) => t.key === "mandir")
+    : SIDEBAR_TABS
+
+  const activeTab = searchParams.get("tab") || (isMandirAdmin ? "mandir" : "chokhla")
+
   const [openChokhlaModal, setOpenChokhlaModal] = useState(false)
   const [openAddUserModal, setOpenAddUserModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -99,8 +109,16 @@ function SuperAdmin() {
   const toggleUserStatusMutation = useToggleUserStatus()
   const mutate = toggleUserStatusMutation.mutate
   const loading = (toggleUserStatusMutation as any).isLoading
-  const { data: userData } = useSession()
 
+
+  // Redirect MANDIR_ADMIN away from tabs they can't see
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isMandirAdmin && activeTab !== "mandir") {
+      const p = new URLSearchParams(); p.set("tab", "mandir")
+      router.replace(`${pathname}?${p.toString()}`, { scroll: false })
+    }
+  }, [isMandirAdmin, activeTab])
 
   const handleChokhlaSubmit = (formData: any) => {
     setIsSubmitting(true)
@@ -302,7 +320,7 @@ function SuperAdmin() {
                     </div>
                     <nav className="flex-1 p-4">
                       <div className="space-y-2">
-                        {SIDEBAR_TABS.map((tab) => {
+                        {visibleTabs.map((tab) => {
                           const Icon = tab.icon
                           return (
                             <Button
@@ -344,7 +362,9 @@ function SuperAdmin() {
               />
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">
-                  <span className="hidden md:inline">पंचाल समाज 14 चोखरा - सुपर एडमिन</span>
+                  <span className="hidden md:inline">
+                    {isMandirAdmin ? "श्री त्रिपुरा सुंदरी मंदिर - मंदिर एडमिन" : "पंचाल समाज 14 चोखरा - सुपर एडमिन"}
+                  </span>
                   <span className="md:hidden">{getCurrentTabLabel()}</span>
                 </h1>
                 <p className="text-orange-100 text-xs sm:text-sm truncate">स्वागत है, {userData?.user?.name}</p>
@@ -368,7 +388,7 @@ function SuperAdmin() {
         {/* Desktop Sidebar */}
         <aside className="hidden md:flex md:flex-col w-64 shrink-0 bg-white border-r shadow-sm min-h-[calc(100vh-6rem)] sticky top-0">
           <nav className="flex-1 p-4 space-y-1.5">
-            {SIDEBAR_TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon
               return (
                 <Button
