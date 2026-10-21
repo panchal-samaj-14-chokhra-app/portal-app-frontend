@@ -78,6 +78,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users,
     switch (role) {
       case "SUPER_ADMIN":
         return <Badge className="bg-red-100 text-red-700 border-red-200">सुपर एडमिन</Badge>
+      case "MANDIR_ADMIN":
+        return <Badge className="bg-purple-100 text-purple-700 border-purple-200">मंदिर एडमिन</Badge>
       case "CHOKHLA_MEMBER":
         return <Badge className="bg-blue-100 text-blue-700 border-blue-200">चोखरा एडमिन</Badge>
       case "VILLAGE_MEMBER":
@@ -90,6 +92,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users,
   const roleList = [
     { role: "", text: "सभी भूमिकाएँ" },
     { role: "SUPER_ADMIN", text: "सुपर एडमिन" },
+    { role: "MANDIR_ADMIN", text: "मंदिर एडमिन" },
     { role: "CHOKHLA_MEMBER", text: "चोखरा एडमिन" },
     { role: "VILLAGE_MEMBER", text: "गांव सदस्य" },
     { role: "MATRIMONIAL_USER", text: "मेट्रिमोनियल सदस्य" }

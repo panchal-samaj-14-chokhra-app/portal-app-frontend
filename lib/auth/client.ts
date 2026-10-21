@@ -69,6 +69,7 @@ export function endSession(reason: "expired" | "disabled" = "expired") {
 export function homeFor(user: { role?: string; villageId?: string | null; choklaId?: string | null } | undefined | null): string | null {
   if (!user) return null
   if (user.role === "SUPER_ADMIN") return "/admin/superadmin"
+  if (user.role === "MANDIR_ADMIN") return "/admin/superadmin?tab=mandir"
   if (user.role === "VILLAGE_MEMBER" && user.villageId) return `/admin/village/${user.villageId}`
   if (user.role === "CHOKHLA_MEMBER" && user.choklaId) return `/admin/chokhla/${user.choklaId}`
   return null

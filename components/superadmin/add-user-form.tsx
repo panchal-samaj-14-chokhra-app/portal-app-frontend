@@ -18,6 +18,7 @@ interface AddUserFormProps {
 
 const GLOBAL_ROLES = [
   { label: "SUPER_ADMIN", value: "SUPER_ADMIN" },
+  { label: "MANDIR_ADMIN", value: "MANDIR_ADMIN" },
   { label: "CHOKHLA_MEMBER", value: "CHOKHLA_MEMBER" },
   { label: "VILLAGE_MEMBER", value: "VILLAGE_MEMBER" },
 ]
@@ -90,11 +91,10 @@ export default function AddUserForm({
       newErrors.globalRole = "भूमिका आवश्यक है"
     } else {
       // Role-based validation
-      if (formData.globalRole === "CHOKHLA_MEMBER") {
+      if (["MANDIR_ADMIN", "CHOKHLA_MEMBER", "VILLAGE_MEMBER"].includes(formData.globalRole)) {
         if (!formData.choklaId) newErrors.choklaId = "चोखरा चुनें आवश्यक है"
       }
       if (formData.globalRole === "VILLAGE_MEMBER") {
-        if (!formData.choklaId) newErrors.choklaId = "चोखरा चुनें आवश्यक है"
         if (!formData.villageId) newErrors.villageId = "गांव चुनें आवश्यक है"
       }
     }
@@ -244,7 +244,8 @@ export default function AddUserForm({
                 )}
               </div>
 
-              {(formData.globalRole === "CHOKHLA_MEMBER" ||
+              {(formData.globalRole === "MANDIR_ADMIN" ||
+                formData.globalRole === "CHOKHLA_MEMBER" ||
                 formData.globalRole === "VILLAGE_MEMBER") && (
                   <div className="mt-4">
                     <SelectInput
