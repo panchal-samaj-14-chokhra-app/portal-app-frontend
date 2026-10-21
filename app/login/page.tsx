@@ -8,6 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_REQUE
 
 function homeFor(t: { role?: string; villageId?: string | null; choklaId?: string | null }) {
   if (t.role === "SUPER_ADMIN") return "/admin/superadmin"
+  if (t.role === "MANDIR_ADMIN") return "/admin/superadmin?tab=mandir"
   if (t.role === "VILLAGE_MEMBER" && t.villageId) return `/admin/village/${t.villageId}`
   if (t.role === "CHOKHLA_MEMBER" && t.choklaId) return `/admin/chokhla/${t.choklaId}`
   return null
