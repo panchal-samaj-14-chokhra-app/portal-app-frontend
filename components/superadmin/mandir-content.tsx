@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, ArrowLeft } from "lucide-react"
+import { ChevronRight, ArrowLeft, Heart } from "lucide-react"
 import { MANDIR_SECTIONS, SECTION_CATEGORIES, type SectionDef } from "@/lib/mandir-sections"
 import ContentSectionEditor from "./content-section-editor"
 import AartiManager from "./aarti-manager"
@@ -11,6 +11,47 @@ import MandirSubscribers from "./mandir-subscribers"
 import ShringarBookings from "./shringar-bookings"
 import SubmissionsList from "./submissions-list"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+import { getAccessToken } from "@/lib/auth/client"
+
+const API_URL = process.env.NEXT_PUBLIC_REQUEST_URL || process.env.NEXT_PUBLIC_API_URL
+
+function DarshanLikeCount() {
+  const [count, setCount] = useState<number | null>(null)
+  const [lastLikedAt, setLastLikedAt] = useState<string | null>(null)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const token = await getAccessToken()
+        const res = await fetch(`${API_URL}/darshan/likes/admin`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        })
+        const d = await res.json()
+        if (d.count !== undefined) setCount(d.count)
+        if (d.lastLikedAt) setLastLikedAt(new Date(d.lastLikedAt).toLocaleString("hi-IN"))
+      } catch {}
+    })()
+  }, [])
+
+  return (
+    <Card className="border-red-200/60 bg-red-50/40">
+      <CardContent className="p-4 flex items-center gap-4">
+        <div className="flex items-center justify-center rounded-full bg-red-100 p-3">
+          <Heart className="w-5 h-5 fill-red-500 stroke-red-500" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">आज के दर्शन — पसंद</p>
+          <p className="text-2xl font-bold text-red-600">
+            {count === null ? "…" : count.toLocaleString("hi-IN")}
+          </p>
+          {lastLikedAt && <p className="text-xs text-gray-400 mt-0.5">अंतिम: {lastLikedAt}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 type SpecialKey = "blogs" | "subscribers" | "shringar" | "grievances" | "testimonials"
 
@@ -99,6 +140,7 @@ export default function MandirContent() {
 
   return (
     <div className="space-y-6">
+      <DarshanLikeCount />
       <p className="text-sm text-gray-600">किसी अनुभाग को संपादित करने के लिए उस पर क्लिक करें। यह सामग्री मंदिर वेबसाइट पर दिखेगी।</p>
 
       {SECTION_CATEGORIES.map((category) => {
