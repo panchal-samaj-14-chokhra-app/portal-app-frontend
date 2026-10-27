@@ -10,7 +10,6 @@ import BlogsTab from "./mandir-management"
 import MandirSubscribers from "./mandir-subscribers"
 import ShringarBookings from "./shringar-bookings"
 import SubmissionsList from "./submissions-list"
-import DutyRegisterView from "./duty-register"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { getAccessToken } from "@/lib/auth/client"
@@ -54,13 +53,12 @@ function DarshanLikeCount() {
   )
 }
 
-type SpecialKey = "blogs" | "subscribers" | "shringar" | "grievances" | "testimonials" | "duty-register"
+type SpecialKey = "blogs" | "subscribers" | "shringar" | "grievances" | "testimonials"
 
 const SPECIAL_SECTIONS: { key: SpecialKey; title: string; note: string }[] = [
   { key: "blogs", title: "ब्लॉग", note: "सूची" },
   { key: "subscribers", title: "सदस्य एवं ईमेल", note: "सूची" },
   { key: "shringar", title: "श्रृंगार बुकिंग", note: "कैलेंडर व सूची" },
-  { key: "duty-register", title: "ड्यूटी रजिस्टर", note: "कर्मचारी / स्वयंसेवक ड्यूटी" },
   { key: "grievances", title: "शिकायत निवारण", note: "वेबसाइट से आई शिकायतें" },
   { key: "testimonials", title: "भक्तों के अनुभव", note: "वेबसाइट से आए प्रशंसा-पत्र / फ़ोटो" },
 ]
@@ -121,14 +119,6 @@ export default function MandirContent() {
     return (
       <SpecialSectionView title="श्रृंगार बुकिंग" onBack={closeSection}>
         <ShringarBookings />
-      </SpecialSectionView>
-    )
-  }
-
-  if (activeSpecial?.key === "duty-register") {
-    return (
-      <SpecialSectionView title="ड्यूटी रजिस्टर" onBack={closeSection}>
-        <DutyRegisterView />
       </SpecialSectionView>
     )
   }
