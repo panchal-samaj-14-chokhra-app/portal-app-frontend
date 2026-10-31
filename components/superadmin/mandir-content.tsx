@@ -25,7 +25,10 @@ function DarshanLikeCount() {
       try {
         const token = await getAccessToken()
         const res = await fetch(`${API_URL}/darshan/likes/admin`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            ...(process.env.NEXT_PUBLIC_MANDIR_API_KEY ? { "x-api-key": process.env.NEXT_PUBLIC_MANDIR_API_KEY } : {}),
+          },
           cache: "no-store",
         })
         const d = await res.json()

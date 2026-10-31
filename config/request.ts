@@ -5,6 +5,9 @@ const request = axios.create({
   baseURL: process.env.NEXT_PUBLIC_REQUEST_URL,
   headers: {
     'Content-Type': 'application/json',
+    ...(process.env.NEXT_PUBLIC_MANDIR_API_KEY
+      ? { 'x-api-key': process.env.NEXT_PUBLIC_MANDIR_API_KEY }
+      : {}),
   },
 });
 

@@ -10,7 +10,7 @@ async function call(method: string, path: string, body?: unknown, retried = fals
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_URL}/shringar/admin${path}`, {
     method,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(process.env.NEXT_PUBLIC_MANDIR_API_KEY ? { "x-api-key": process.env.NEXT_PUBLIC_MANDIR_API_KEY } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
   })
