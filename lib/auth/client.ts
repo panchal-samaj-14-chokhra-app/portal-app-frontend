@@ -58,11 +58,20 @@ export function forceRefresh(): Promise<string | undefined> {
 }
 
 // Ends the login in this browser and goes to the login page with a short explanation. Runs once.
+// Preserves the current URL as callbackUrl so the user returns to the same page after re-login.
 export function endSession(reason: "expired" | "disabled" = "expired") {
   if (signingOut || typeof window === "undefined") return
   signingOut = true
   snapshot = null
-  signOut({ callbackUrl: `/login?reason=${reason}` })
+  const currentPath = window.location.pathname + window.location.search
+  const shouldPreserve =
+    currentPath.length > 1 &&
+    !currentPath.startsWith("/login") &&
+    !currentPath.startsWith("/api/")
+  const callbackParam = shouldPreserve
+    ? `&callbackUrl=${encodeURIComponent(currentPath)}`
+    : ""
+  signOut({ callbackUrl: `/login?reason=${reason}${callbackParam}` })
 }
 
 // Where each kind of user lands after login. null = no portal page for this role.
