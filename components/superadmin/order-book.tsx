@@ -25,13 +25,11 @@ import Image from "next/image"
 interface Signatory { name: string; designation: string }
 
 const DEFAULT_SIGNATORIES: Signatory[] = [
-  { name: "", designation: "अध्यक्ष" },
-  { name: "", designation: "मंत्री" },
-  { name: "", designation: "कोषाध्यक्ष" },
+  { name: "श्री नटवरलालजी पंचाल", designation: "महामंत्री" },
 ]
 
 const DESIGNATION_OPTIONS = [
-  "अध्यक्ष", "उपाध्यक्ष", "मंत्री", "कोषाध्यक्ष",
+  "अध्यक्ष", "उपाध्यक्ष", "महामंत्री", "मंत्री", "कोषाध्यक्ष",
   "मंदिर प्रबंधक", "अन्य अधिकृत अधिकारी",
 ]
 
@@ -106,23 +104,33 @@ function A4Document({
 
         {/* ── Letterhead ── */}
         <div style={{ textAlign: "center", marginBottom: "8mm", borderBottom: "2px solid #c2410c", paddingBottom: "4mm" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "4px" }}>
-            <Image src="/images/main-logo.png" alt="मंदिर लोगो" width={56} height={56} style={{ borderRadius: "50%" }} />
-            <div>
-              <div style={{ fontSize: "20pt", fontWeight: "bold", color: "#c2410c", fontFamily: "'Noto Serif Devanagari', serif" }}>
-                श्री त्रिपुरा सुंदरी देवस्थान ट्रस्ट
+          <div style={{ fontSize: "11pt", color: "#c2410c", fontWeight: "bold", marginBottom: "6px", letterSpacing: "1px" }}>
+            ॥ श्री त्रिपुरासुन्दरी नमः ॥
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px", marginBottom: "6px" }}>
+            <Image src="/images/main-logo.png" alt="मंदिर लोगो" width={62} height={62} style={{ borderRadius: "50%", border: "2px solid #c2410c" }} />
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: "17pt", fontWeight: "bold", color: "#c2410c", fontFamily: "'Noto Serif Devanagari', serif", lineHeight: "1.3" }}>
+                मंदिर श्री त्रिपुरासुन्दरी, व्यवस्थापक मण्डल
               </div>
-              <div style={{ fontSize: "10pt", color: "#555", marginTop: "2px" }}>
-                उमराई, तलवाड़ा, बांसवाड़ा, राजस्थान — 327001
+              <div style={{ fontSize: "10pt", color: "#444", marginTop: "2px" }}>
+                पंचाल समाज चौदह चोखरा (जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़)
+              </div>
+              <div style={{ fontSize: "9.5pt", color: "#555", marginTop: "1px" }}>
+                ग्राम उम्राई, पंचायत समिति तलवाड़ा, जिला बाँसवाड़ा (राज.)
               </div>
             </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5pt", color: "#666", borderTop: "1px solid #e5c8a0", paddingTop: "3px", marginTop: "4px" }}>
+            <span>रजि.नं. देव/उदय/288/दि.23-12-78</span>
+            <span>मोबाइल: 9680607101</span>
           </div>
         </div>
 
         {/* ── Order meta ── */}
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6mm", fontSize: "10pt" }}>
           <div>
-            <strong>आदेश संख्या:</strong> {orderNumber}
+            <strong>क्रमांक:</strong> {orderNumber}
           </div>
           <div>
             <strong>दिनांक:</strong> {new Date(date).toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" })}
@@ -158,9 +166,9 @@ function A4Document({
         )}
 
         {/* ── Footer ── */}
-        <div style={{ marginTop: "10mm", borderTop: "1px solid #c2410c", paddingTop: "3mm", textAlign: "center", fontSize: "9pt", color: "#666" }}>
-          श्री त्रिपुरा सुंदरी देवस्थान ट्रस्ट, उमराई, तलवाड़ा, बांसवाड़ा, राजस्थान
-          &nbsp;|&nbsp; {SITE_URL.replace(/^https?:\/\//, "")}
+        <div style={{ marginTop: "10mm", borderTop: "1px solid #c2410c", paddingTop: "3mm", textAlign: "center", fontSize: "8.5pt", color: "#666", lineHeight: "1.7" }}>
+          मंदिर श्री त्रिपुरासुन्दरी व्यवस्थापक मण्डल &nbsp;|&nbsp; पंचाल समाज चौदह चोखरा
+          <br />जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़ &nbsp;|&nbsp; मो. 8963848471, 9414352597
         </div>
       </div>
     </div>
@@ -244,7 +252,7 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
   const [form, setForm] = useState({
     orderNumber: "", title: "", subject: "", date: new Date().toISOString().split("T")[0],
     content: "", status: "draft", signatories: DEFAULT_SIGNATORIES,
-    settings: { wmOpacity: 0.07, wmSize: 180 },
+    settings: { wmOpacity: 0.05, wmSize: 220 },
   })
 
   // Seed form when editing
@@ -257,7 +265,7 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
       content: existing.content || "",
       status: existing.status || "draft",
       signatories: (existing.signatories as Signatory[]) || DEFAULT_SIGNATORIES,
-      settings: (existing.settings as any) || { wmOpacity: 0.07, wmSize: 180 },
+      settings: (existing.settings as any) || { wmOpacity: 0.05, wmSize: 220 },
     })
     setSeeded(true)
   }
@@ -425,17 +433,25 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
                     <div style={{ position: "relative", zIndex: 1 }}>
                       {/* Letterhead */}
                       <div style={{ textAlign: "center", marginBottom: "8mm", borderBottom: "2px solid #c2410c", paddingBottom: "4mm" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "4px" }}>
-                          <Image src="/images/main-logo.png" alt="" width={56} height={56} style={{ borderRadius: "50%" }} />
-                          <div>
-                            <div style={{ fontSize: "20pt", fontWeight: "bold", color: "#c2410c" }}>श्री त्रिपुरा सुंदरी देवस्थान ट्रस्ट</div>
-                            <div style={{ fontSize: "10pt", color: "#555", marginTop: "2px" }}>उमराई, तलवाड़ा, बांसवाड़ा, राजस्थान — 327001</div>
+                        <div style={{ fontSize: "11pt", color: "#c2410c", fontWeight: "bold", marginBottom: "6px", letterSpacing: "1px" }}>
+                          ॥ श्री त्रिपुरासुन्दरी नमः ॥
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px", marginBottom: "6px" }}>
+                          <Image src="/images/main-logo.png" alt="" width={62} height={62} style={{ borderRadius: "50%", border: "2px solid #c2410c" }} />
+                          <div style={{ textAlign: "left" }}>
+                            <div style={{ fontSize: "17pt", fontWeight: "bold", color: "#c2410c", lineHeight: "1.3" }}>मंदिर श्री त्रिपुरासुन्दरी, व्यवस्थापक मण्डल</div>
+                            <div style={{ fontSize: "10pt", color: "#444", marginTop: "2px" }}>पंचाल समाज चौदह चोखरा (जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़)</div>
+                            <div style={{ fontSize: "9.5pt", color: "#555", marginTop: "1px" }}>ग्राम उम्राई, पंचायत समिति तलवाड़ा, जिला बाँसवाड़ा (राज.)</div>
                           </div>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5pt", color: "#666", borderTop: "1px solid #e5c8a0", paddingTop: "3px", marginTop: "4px" }}>
+                          <span>रजि.नं. देव/उदय/288/दि.23-12-78</span>
+                          <span>मोबाइल: 9680607101</span>
                         </div>
                       </div>
                       {/* Meta */}
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6mm", fontSize: "10pt" }}>
-                        <div><strong>आदेश संख्या:</strong> {form.orderNumber || "—"}</div>
+                        <div><strong>क्रमांक:</strong> {form.orderNumber || "—"}</div>
                         <div><strong>दिनांक:</strong> {form.date ? new Date(form.date).toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" }) : "—"}</div>
                       </div>
                       {/* Title */}
@@ -471,8 +487,9 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
                         </div>
                       )}
                       {/* Footer */}
-                      <div style={{ marginTop: "10mm", borderTop: "1px solid #c2410c", paddingTop: "3mm", textAlign: "center", fontSize: "9pt", color: "#666" }}>
-                        श्री त्रिपुरा सुंदरी देवस्थान ट्रस्ट, उमराई, तलवाड़ा, बांसवाड़ा, राजस्थान &nbsp;|&nbsp; {SITE_URL.replace(/^https?:\/\//, "")}
+                      <div style={{ marginTop: "10mm", borderTop: "1px solid #c2410c", paddingTop: "3mm", textAlign: "center", fontSize: "8.5pt", color: "#666", lineHeight: "1.7" }}>
+                        मंदिर श्री त्रिपुरासुन्दरी व्यवस्थापक मण्डल &nbsp;|&nbsp; पंचाल समाज चौदह चोखरा
+                        <br />जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़ &nbsp;|&nbsp; मो. 8963848471, 9414352597
                       </div>
                     </div>
                   </div>
