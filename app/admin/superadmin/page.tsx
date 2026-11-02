@@ -11,7 +11,7 @@ import {
 } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart, ClipboardList } from "lucide-react"
+import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart, ClipboardList, Settings } from "lucide-react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -42,6 +42,7 @@ import ErrorModal from "@/components/superadmin/error-modal"
 import AddUserForm from "@/components/superadmin/add-user-form"
 import Polls from "@/components/superadmin/polls"
 import DutyRegisterView from "@/components/superadmin/duty-register"
+import DutySettingsView from "@/components/superadmin/duty-settings-view"
 
 const SIDEBAR_TABS = [
   { key: "chokhla", label: "चोखरा प्रबंधन", icon: Building2, shortLabel: "चोखरा" },
@@ -54,6 +55,7 @@ const SIDEBAR_TABS = [
   { key: "duty-register", label: "ड्यूटी रजिस्टर", icon: ClipboardList, shortLabel: "ड्यूटी" },
   { key: "business", label: "व्यापार निर्देशिका", icon: Briefcase, shortLabel: "व्यापार" },
   { key: "matrimonial", label: "वैवाहिक", icon: Heart, shortLabel: "वैवाहिक" },
+  { key: "settings", label: "सेटिंग्स", icon: Settings, shortLabel: "सेटिंग्स" },
 ]
 
 interface CreatedData {
@@ -73,7 +75,7 @@ function SuperAdmin() {
   const role = (userData?.user?.role as string) || ""
   const isMandirAdmin = role === "MANDIR_ADMIN"
 
-  const MANDIR_ADMIN_TABS = new Set(["mandir", "duty-register"])
+  const MANDIR_ADMIN_TABS = new Set(["mandir", "duty-register", "settings"])
 
   // MANDIR_ADMIN sees only Mandir and Duty Register tabs; everyone else sees all tabs
   const visibleTabs = isMandirAdmin
@@ -276,6 +278,8 @@ function SuperAdmin() {
         return <BusinessDirectory />
       case "matrimonial":
         return <MatrimonialManagement />
+      case "settings":
+        return <DutySettingsView />
       default:
         return null
     }
