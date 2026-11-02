@@ -545,7 +545,6 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
                 {preview ? (
                   <A4Document {...form} printRef={printRef} />
                 ) : (
-                  {/* Google Docs style: page break lines every 297mm via repeating gradient */}
                   <div className="text-gray-900 bg-white relative"
                     style={{
                       width: "210mm", minHeight: "297mm",
