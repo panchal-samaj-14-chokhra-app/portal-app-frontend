@@ -13,7 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import {
   BookOpen, Plus, Pencil, Trash2, Loader2, ArrowLeft, Save, Eye, Printer,
-  Download, Share2, Search, Calendar, CheckCircle, FileText, Copy, MessageCircle, X, Settings
+  Download, Share2, Search, Calendar, CheckCircle, FileText, Copy, MessageCircle, X, Settings, Upload, ImageIcon,
 } from "lucide-react"
 import {
   useOrders, useOrder, useCreateOrder, useUpdateOrder, useDeleteOrder, useNextOrderNumber,
@@ -22,10 +22,19 @@ import Image from "next/image"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Signatory { name: string; designation: string }
+interface Signatory {
+  name: string
+  designation: string
+  signatureImage?: string   // base64 data URL
+  contactDetails?: string   // multi-line text
+}
 
 const DEFAULT_SIGNATORIES: Signatory[] = [
-  { name: "श्री नटवरलालजी पंचाल", designation: "महामंत्री" },
+  {
+    name: "नटवरलाल पंचाल",
+    designation: "महामंत्री",
+    contactDetails: "मंदिर श्री त्रिपुरासुन्दरी व्यवस्थापक मण्डल\nपंचाल समाज चौदह चोखरा\nजिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़\nमो. 8963848471, 9414352597",
+  },
 ]
 
 const DESIGNATION_OPTIONS = [
@@ -78,6 +87,98 @@ function EditorToolbar({ onCmd }: { onCmd: (cmd: string, val?: string) => void }
   )
 }
 
+// ─── Shared letterhead block (used in A4Document + inline editor) ─────────────
+
+function LetterheadBlock() {
+  return (
+    <div style={{ marginBottom: "8mm", borderBottom: "3px double #c2410c", paddingBottom: "4mm" }}>
+      {/* Row 1: reg | motto | mobile */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "8pt", color: "#555", marginBottom: "5px" }}>
+        <span>रजि.नं. देव/उदय/288/दि.23-12-78</span>
+        <span style={{ fontWeight: "bold", color: "#c2410c", fontSize: "10pt", letterSpacing: "1px" }}>॥ श्री त्रिपुरासुन्दरी नमः ॥</span>
+        <span>मोबाइल: 9680607101</span>
+      </div>
+      {/* Row 2: logo + org text */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+        <Image
+          src="/images/main-logo.png"
+          alt="मंदिर लोगो"
+          width={72}
+          height={72}
+          style={{ borderRadius: "50%", border: "2.5px solid #c2410c", flexShrink: 0 }}
+        />
+        <div>
+          <div style={{ fontSize: "18pt", fontWeight: "bold", color: "#c2410c", fontFamily: "'Noto Serif Devanagari', serif", lineHeight: "1.25" }}>
+            मंदिर श्री त्रिपुरासुन्दरी, व्यवस्थापक मण्डल
+          </div>
+          <div style={{ fontSize: "10pt", color: "#333", marginTop: "2px" }}>
+            पंचाल समाज चौदह चोखरा (जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़)
+          </div>
+        </div>
+      </div>
+      {/* Row 3: address centered */}
+      <div style={{ textAlign: "center", fontSize: "9.5pt", color: "#444", marginTop: "5px" }}>
+        ग्राम उम्राई, पंचायत समिति तलवाड़ा, जिला बाँसवाड़ा (राज.)
+      </div>
+    </div>
+  )
+}
+
+// ─── Shared footer block ──────────────────────────────────────────────────────
+
+function FooterBlock() {
+  return (
+    <div style={{
+      marginTop: "10mm",
+      borderRadius: "4px",
+      overflow: "hidden",
+      background: "linear-gradient(135deg, #c2410c 0%, #ea580c 40%, #f97316 70%, #fb923c 100%)",
+      padding: "5px 12px",
+      textAlign: "center",
+    }}>
+      <div style={{ fontSize: "8.5pt", color: "#fff", lineHeight: "1.8", fontWeight: "500" }}>
+        मंदिर श्री त्रिपुरासुन्दरी व्यवस्थापक मण्डल &nbsp;|&nbsp; पंचाल समाज चौदह चोखरा
+      </div>
+      <div style={{ fontSize: "8pt", color: "#ffe0cc", lineHeight: "1.6" }}>
+        जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़ &nbsp;|&nbsp; मो. 8963848471, 9414352597
+        &nbsp;|&nbsp; {SITE_URL.replace(/^https?:\/\//, "")}
+      </div>
+    </div>
+  )
+}
+
+// ─── Signature block for A4 ───────────────────────────────────────────────────
+
+function SignatureBlock({ signatories }: { signatories: Signatory[] }) {
+  if (!signatories.length) return null
+  return (
+    <div style={{ marginTop: "14mm", borderTop: "1px solid #e0c8a0", paddingTop: "5mm" }}>
+      <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: "8mm" }}>
+        {signatories.map((s, i) => (
+          <div key={i} style={{ textAlign: "center", minWidth: "50mm", maxWidth: "70mm" }}>
+            {/* Signature image area */}
+            <div style={{ height: "18mm", marginBottom: "2mm", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+              {s.signatureImage
+                ? <img src={s.signatureImage} alt="हस्ताक्षर" style={{ maxHeight: "18mm", maxWidth: "60mm", objectFit: "contain" }} />
+                : <div style={{ width: "50mm", height: "14mm", borderBottom: "1.5px solid #333" }} />
+              }
+            </div>
+            {/* Name + designation */}
+            {s.name && <div style={{ fontWeight: "bold", fontSize: "10pt" }}>{s.name}</div>}
+            <div style={{ fontSize: "10pt", color: "#333", fontWeight: "600" }}>{s.designation}</div>
+            {/* Contact details */}
+            {s.contactDetails && (
+              <div style={{ fontSize: "8.5pt", color: "#555", marginTop: "3px", lineHeight: "1.5", whiteSpace: "pre-line" }}>
+                {s.contactDetails}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── A4 Document for print / preview ─────────────────────────────────────────
 
 function A4Document({
@@ -86,12 +187,12 @@ function A4Document({
   orderNumber: string; title: string; subject?: string; date: string
   content: string; signatories: Signatory[]; settings: any; printRef?: React.RefObject<HTMLDivElement>
 }) {
-  const wmOpacity = settings?.wmOpacity ?? 0.07
-  const wmSize = settings?.wmSize ?? 180
+  const wmOpacity = settings?.wmOpacity ?? 0.05
+  const wmSize = settings?.wmSize ?? 220
 
   return (
-    <div ref={printRef} className="a4-page font-[serif] text-gray-900 bg-white relative overflow-hidden"
-      style={{ width: "210mm", minHeight: "297mm", padding: "15mm 20mm", boxSizing: "border-box", fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6" }}>
+    <div ref={printRef} className="a4-page font-[serif] text-gray-900 bg-white relative"
+      style={{ width: "210mm", minHeight: "297mm", padding: "12mm 18mm 15mm", boxSizing: "border-box", fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6" }}>
 
       {/* Watermark */}
       <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 0 }}>
@@ -101,44 +202,16 @@ function A4Document({
 
       {/* Content layer */}
       <div style={{ position: "relative", zIndex: 1 }}>
-
-        {/* ── Letterhead ── */}
-        <div style={{ textAlign: "center", marginBottom: "8mm", borderBottom: "2px solid #c2410c", paddingBottom: "4mm" }}>
-          <div style={{ fontSize: "11pt", color: "#c2410c", fontWeight: "bold", marginBottom: "6px", letterSpacing: "1px" }}>
-            ॥ श्री त्रिपुरासुन्दरी नमः ॥
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px", marginBottom: "6px" }}>
-            <Image src="/images/main-logo.png" alt="मंदिर लोगो" width={62} height={62} style={{ borderRadius: "50%", border: "2px solid #c2410c" }} />
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: "17pt", fontWeight: "bold", color: "#c2410c", fontFamily: "'Noto Serif Devanagari', serif", lineHeight: "1.3" }}>
-                मंदिर श्री त्रिपुरासुन्दरी, व्यवस्थापक मण्डल
-              </div>
-              <div style={{ fontSize: "10pt", color: "#444", marginTop: "2px" }}>
-                पंचाल समाज चौदह चोखरा (जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़)
-              </div>
-              <div style={{ fontSize: "9.5pt", color: "#555", marginTop: "1px" }}>
-                ग्राम उम्राई, पंचायत समिति तलवाड़ा, जिला बाँसवाड़ा (राज.)
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5pt", color: "#666", borderTop: "1px solid #e5c8a0", paddingTop: "3px", marginTop: "4px" }}>
-            <span>रजि.नं. देव/उदय/288/दि.23-12-78</span>
-            <span>मोबाइल: 9680607101</span>
-          </div>
-        </div>
+        <LetterheadBlock />
 
         {/* ── Order meta ── */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6mm", fontSize: "10pt" }}>
-          <div>
-            <strong>क्रमांक:</strong> {orderNumber}
-          </div>
-          <div>
-            <strong>दिनांक:</strong> {new Date(date).toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" })}
-          </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5mm", fontSize: "10pt" }}>
+          <div><strong>क्रमांक:</strong> {orderNumber}</div>
+          <div><strong>दिनांक:</strong> {new Date(date).toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" })}</div>
         </div>
 
         {/* ── Title & Subject ── */}
-        <div style={{ textAlign: "center", marginBottom: "6mm" }}>
+        <div style={{ textAlign: "center", marginBottom: "5mm" }}>
           <div style={{ fontSize: "15pt", fontWeight: "bold", textDecoration: "underline", marginBottom: "3mm" }}>{title}</div>
           {subject && <div style={{ fontSize: "11pt" }}><strong>विषय:</strong> {subject}</div>}
         </div>
@@ -146,30 +219,12 @@ function A4Document({
         {/* ── Body ── */}
         <div
           className="order-body-content"
-          style={{ minHeight: "100mm" }}
+          style={{ minHeight: "80mm" }}
           dangerouslySetInnerHTML={{ __html: content || "<p>यहाँ दस्तावेज़ की सामग्री लिखें...</p>" }}
         />
 
-        {/* ── Signatures ── */}
-        {signatories.length > 0 && (
-          <div style={{ marginTop: "16mm", borderTop: "1px solid #ccc", paddingTop: "6mm" }}>
-            <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: "8mm" }}>
-              {signatories.map((s, i) => (
-                <div key={i} style={{ textAlign: "center", minWidth: "40mm" }}>
-                  <div style={{ height: "14mm", borderBottom: "1px solid #333", marginBottom: "3mm" }} />
-                  {s.name && <div style={{ fontWeight: "bold", fontSize: "10pt" }}>{s.name}</div>}
-                  <div style={{ fontSize: "10pt", color: "#444" }}>{s.designation}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Footer ── */}
-        <div style={{ marginTop: "10mm", borderTop: "1px solid #c2410c", paddingTop: "3mm", textAlign: "center", fontSize: "8.5pt", color: "#666", lineHeight: "1.7" }}>
-          मंदिर श्री त्रिपुरासुन्दरी व्यवस्थापक मण्डल &nbsp;|&nbsp; पंचाल समाज चौदह चोखरा
-          <br />जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़ &nbsp;|&nbsp; मो. 8963848471, 9414352597
-        </div>
+        <SignatureBlock signatories={signatories} />
+        <FooterBlock />
       </div>
     </div>
   )
@@ -178,24 +233,65 @@ function A4Document({
 // ─── Signatory Manager ────────────────────────────────────────────────────────
 
 function SignatoryManager({ value, onChange }: { value: Signatory[]; onChange: (s: Signatory[]) => void }) {
-  const add = () => onChange([...value, { name: "", designation: "अन्य अधिकृत अधिकारी" }])
+  const add = () => onChange([...value, { name: "", designation: "अन्य अधिकृत अधिकारी", contactDetails: "" }])
   const remove = (i: number) => onChange(value.filter((_, j) => j !== i))
   const set = (i: number, k: keyof Signatory, v: string) => {
     const next = [...value]; next[i] = { ...next[i], [k]: v }; onChange(next)
   }
+
+  const handleImageUpload = (i: number, file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => { if (e.target?.result) set(i, "signatureImage", e.target.result as string) }
+    reader.readAsDataURL(file)
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {value.map((s, i) => (
-        <div key={i} className="flex gap-2 items-center">
-          <Input placeholder="नाम (वैकल्पिक)" value={s.name} onChange={(e) => set(i, "name", e.target.value)} className="flex-1 text-sm" />
+        <div key={i} className="border border-orange-100 rounded-lg p-3 bg-orange-50/30 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-orange-700">हस्ताक्षरकर्ता {i + 1}</span>
+            <Button size="icon" variant="ghost" onClick={() => remove(i)} className="w-6 h-6 text-red-400 hover:bg-red-50"><X className="w-3 h-3" /></Button>
+          </div>
+
+          {/* Signature image upload */}
+          <div className="flex items-center gap-2">
+            {s.signatureImage
+              ? (
+                <div className="relative flex-shrink-0">
+                  <img src={s.signatureImage} alt="हस्ताक्षर" className="h-12 border rounded bg-white object-contain px-1" />
+                  <button onClick={() => set(i, "signatureImage", "")} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">×</button>
+                </div>
+              )
+              : (
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-orange-600 border border-orange-300 rounded px-2 py-1.5 hover:bg-orange-50">
+                  <Upload className="w-3 h-3" />हस्ताक्षर PNG
+                  <input type="file" accept="image/png,image/jpeg,image/svg+xml" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(i, f) }} />
+                </label>
+              )
+            }
+          </div>
+
+          {/* Name */}
+          <Input placeholder="नाम" value={s.name} onChange={(e) => set(i, "name", e.target.value)} className="text-sm h-8" />
+
+          {/* Designation */}
           <Select value={s.designation} onValueChange={(v) => set(i, "designation", v)}>
-            <SelectTrigger className="w-48 text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="text-sm h-8"><SelectValue /></SelectTrigger>
             <SelectContent>
               {DESIGNATION_OPTIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-              <SelectItem value={s.designation}>{s.designation}</SelectItem>
             </SelectContent>
           </Select>
-          <Button size="icon" variant="ghost" onClick={() => remove(i)} className="text-red-500 hover:bg-red-50 shrink-0"><X className="w-4 h-4" /></Button>
+
+          {/* Contact details */}
+          <textarea
+            placeholder={"संपर्क विवरण (पता, मोबाइल आदि)"}
+            value={s.contactDetails || ""}
+            onChange={(e) => set(i, "contactDetails", e.target.value)}
+            rows={4}
+            className="w-full text-xs border border-gray-200 rounded p-2 resize-none focus:outline-none focus:ring-1 focus:ring-orange-300 font-mono"
+          />
         </div>
       ))}
       <Button size="sm" variant="outline" onClick={add} className="text-orange-700 border-orange-300 hover:bg-orange-50">
@@ -214,9 +310,18 @@ function PrintStyles() {
         body > *:not(#print-root) { display: none !important; }
         #print-root { display: block !important; }
         @page { size: A4; margin: 0; }
-        .a4-page { width: 210mm !important; min-height: 297mm !important; padding: 15mm 20mm !important; box-shadow: none !important; }
-        .order-body-content table { border-collapse: collapse; width: 100%; }
+        .a4-page {
+          width: 210mm !important;
+          padding: 12mm 18mm 15mm !important;
+          box-shadow: none !important;
+          page-break-after: always;
+        }
+        .order-body-content { page-break-inside: auto; }
+        .order-body-content p, .order-body-content li { page-break-inside: avoid; }
+        .order-body-content table { border-collapse: collapse; width: 100%; page-break-inside: auto; }
+        .order-body-content tr { page-break-inside: avoid; }
         .order-body-content td, .order-body-content th { border: 1px solid #ccc; padding: 4px 8px; }
+        .sig-block { page-break-inside: avoid; }
       }
     `}</style>
   )
@@ -255,7 +360,6 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
     settings: { wmOpacity: 0.05, wmSize: 220 },
   })
 
-  // Seed form when editing
   if (id && existing && !seeded) {
     setForm({
       orderNumber: existing.orderNumber || "",
@@ -366,7 +470,7 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
             <Card className="bg-white/90 border-orange-200/50">
               <CardContent className="p-4 space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">आदेश संख्या</label>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">क्रमांक</label>
                   <Input value={form.orderNumber} onChange={(e) => set("orderNumber", e.target.value)} className="text-sm" />
                 </div>
                 <div>
@@ -398,14 +502,14 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
                 <CardHeader className="pb-2 pt-4 px-4"><CardTitle className="text-sm text-orange-700">वॉटरमार्क सेटिंग</CardTitle></CardHeader>
                 <CardContent className="px-4 pb-4 space-y-3">
                   <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">पारदर्शिता ({Math.round((form.settings?.wmOpacity ?? 0.07) * 100)}%)</label>
-                    <input type="range" min="1" max="30" value={Math.round((form.settings?.wmOpacity ?? 0.07) * 100)}
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">पारदर्शिता ({Math.round((form.settings?.wmOpacity ?? 0.05) * 100)}%)</label>
+                    <input type="range" min="1" max="30" value={Math.round((form.settings?.wmOpacity ?? 0.05) * 100)}
                       onChange={(e) => set("settings", { ...form.settings, wmOpacity: Number(e.target.value) / 100 })}
                       className="w-full" />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">आकार ({form.settings?.wmSize ?? 180}px)</label>
-                    <input type="range" min="80" max="300" value={form.settings?.wmSize ?? 180}
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">आकार ({form.settings?.wmSize ?? 220}px)</label>
+                    <input type="range" min="80" max="350" value={form.settings?.wmSize ?? 220}
                       onChange={(e) => set("settings", { ...form.settings, wmSize: Number(e.target.value) })}
                       className="w-full" />
                   </div>
@@ -421,41 +525,26 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
                 {preview ? (
                   <A4Document {...form} printRef={printRef} />
                 ) : (
-                  <div className="font-[serif] text-gray-900 bg-white relative overflow-hidden"
-                    style={{ width: "210mm", minHeight: "297mm", padding: "15mm 20mm", boxSizing: "border-box", fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6" }}>
+                  <div className="text-gray-900 bg-white relative"
+                    style={{ width: "210mm", minHeight: "297mm", padding: "12mm 18mm 15mm", boxSizing: "border-box", fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6" }}>
 
                     {/* Watermark */}
                     <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 0 }}>
-                      <Image src="/images/main-logo.png" alt="" width={form.settings?.wmSize ?? 180} height={form.settings?.wmSize ?? 180}
-                        style={{ opacity: form.settings?.wmOpacity ?? 0.07, userSelect: "none", width: form.settings?.wmSize ?? 180, height: form.settings?.wmSize ?? 180, objectFit: "contain" }} />
+                      <Image src="/images/main-logo.png" alt="" width={form.settings?.wmSize ?? 220} height={form.settings?.wmSize ?? 220}
+                        style={{ opacity: form.settings?.wmOpacity ?? 0.05, userSelect: "none", width: form.settings?.wmSize ?? 220, height: form.settings?.wmSize ?? 220, objectFit: "contain" }} />
                     </div>
 
                     <div style={{ position: "relative", zIndex: 1 }}>
-                      {/* Letterhead */}
-                      <div style={{ textAlign: "center", marginBottom: "8mm", borderBottom: "2px solid #c2410c", paddingBottom: "4mm" }}>
-                        <div style={{ fontSize: "11pt", color: "#c2410c", fontWeight: "bold", marginBottom: "6px", letterSpacing: "1px" }}>
-                          ॥ श्री त्रिपुरासुन्दरी नमः ॥
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px", marginBottom: "6px" }}>
-                          <Image src="/images/main-logo.png" alt="" width={62} height={62} style={{ borderRadius: "50%", border: "2px solid #c2410c" }} />
-                          <div style={{ textAlign: "left" }}>
-                            <div style={{ fontSize: "17pt", fontWeight: "bold", color: "#c2410c", lineHeight: "1.3" }}>मंदिर श्री त्रिपुरासुन्दरी, व्यवस्थापक मण्डल</div>
-                            <div style={{ fontSize: "10pt", color: "#444", marginTop: "2px" }}>पंचाल समाज चौदह चोखरा (जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़)</div>
-                            <div style={{ fontSize: "9.5pt", color: "#555", marginTop: "1px" }}>ग्राम उम्राई, पंचायत समिति तलवाड़ा, जिला बाँसवाड़ा (राज.)</div>
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5pt", color: "#666", borderTop: "1px solid #e5c8a0", paddingTop: "3px", marginTop: "4px" }}>
-                          <span>रजि.नं. देव/उदय/288/दि.23-12-78</span>
-                          <span>मोबाइल: 9680607101</span>
-                        </div>
-                      </div>
+                      <LetterheadBlock />
+
                       {/* Meta */}
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6mm", fontSize: "10pt" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5mm", fontSize: "10pt" }}>
                         <div><strong>क्रमांक:</strong> {form.orderNumber || "—"}</div>
                         <div><strong>दिनांक:</strong> {form.date ? new Date(form.date).toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" }) : "—"}</div>
                       </div>
+
                       {/* Title */}
-                      <div style={{ textAlign: "center", marginBottom: "6mm" }}>
+                      <div style={{ textAlign: "center", marginBottom: "5mm" }}>
                         <div style={{ fontSize: "15pt", fontWeight: "bold", textDecoration: "underline", marginBottom: "3mm" }}>{form.title || "शीर्षक"}</div>
                         {form.subject && <div style={{ fontSize: "11pt" }}><strong>विषय:</strong> {form.subject}</div>}
                       </div>
@@ -467,30 +556,15 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
                         contentEditable
                         suppressContentEditableWarning
                         onInput={onEditorInput}
-                        className="order-body-content outline-none focus:ring-1 focus:ring-orange-300 rounded-b min-h-[100mm] p-2"
+                        className="order-body-content outline-none focus:ring-1 focus:ring-orange-300 rounded-b min-h-[80mm] p-2"
                         style={{ fontSize: "12pt", lineHeight: "1.8", fontFamily: "inherit" }}
                         dangerouslySetInnerHTML={{ __html: form.content }}
                       />
 
-                      {/* Signatures */}
-                      {form.signatories.length > 0 && (
-                        <div style={{ marginTop: "16mm", borderTop: "1px solid #ccc", paddingTop: "6mm" }}>
-                          <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: "8mm" }}>
-                            {form.signatories.map((s, i) => (
-                              <div key={i} style={{ textAlign: "center", minWidth: "40mm" }}>
-                                <div style={{ height: "14mm", borderBottom: "1px solid #333", marginBottom: "3mm" }} />
-                                {s.name && <div style={{ fontWeight: "bold", fontSize: "10pt" }}>{s.name}</div>}
-                                <div style={{ fontSize: "10pt", color: "#444" }}>{s.designation}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {/* Footer */}
-                      <div style={{ marginTop: "10mm", borderTop: "1px solid #c2410c", paddingTop: "3mm", textAlign: "center", fontSize: "8.5pt", color: "#666", lineHeight: "1.7" }}>
-                        मंदिर श्री त्रिपुरासुन्दरी व्यवस्थापक मण्डल &nbsp;|&nbsp; पंचाल समाज चौदह चोखरा
-                        <br />जिला बाँसवाड़ा, डूंगरपुर, उदयपुर, प्रतापगढ़ &nbsp;|&nbsp; मो. 8963848471, 9414352597
+                      <div className="sig-block">
+                        <SignatureBlock signatories={form.signatories} />
                       </div>
+                      <FooterBlock />
                     </div>
                   </div>
                 )}
@@ -499,7 +573,7 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
           </div>
         </div>
 
-        {/* Hidden A4 for print (always renders the static version) */}
+        {/* Hidden A4 for print */}
         <div className="hidden">
           <A4Document {...form} printRef={printRef} />
         </div>
