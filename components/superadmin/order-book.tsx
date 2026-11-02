@@ -128,7 +128,7 @@ function LetterheadBlock() {
 
 function FooterBlock() {
   return (
-    <div style={{
+    <div className="doc-footer" style={{
       marginTop: "10mm",
       borderRadius: "4px",
       overflow: "hidden",
@@ -192,7 +192,7 @@ function A4Document({
 
   return (
     <div ref={printRef} className="a4-page font-[serif] text-gray-900 bg-white relative"
-      style={{ width: "210mm", minHeight: "297mm", padding: "12mm 18mm 15mm", boxSizing: "border-box", fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6" }}>
+      style={{ width: "210mm", minHeight: "297mm", padding: "12mm 18mm 15mm", boxSizing: "border-box", fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6", overflow: "visible" }}>
 
       {/* Watermark */}
       <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 0 }}>
@@ -306,32 +306,52 @@ function SignatoryManager({ value, onChange }: { value: Signatory[]; onChange: (
 function PrintStyles() {
   return (
     <style>{`
+      /* Hide print root on screen so it doesn't affect layout */
+      #print-root { display: none; }
+
       @media print {
+        /* Hide everything except our print root */
         body > *:not(#print-root) { display: none !important; }
         #print-root { display: block !important; }
+
         @page { size: A4; margin: 0; }
+
+        /* Let the A4 page flow naturally — browser paginates automatically */
         .a4-page {
           width: 210mm !important;
           padding: 12mm 18mm 15mm !important;
+          min-height: 0 !important;
           box-shadow: none !important;
-          page-break-after: always;
+          overflow: visible !important;
+          /* background/gradient reset so repeated bg doesn't print as page-break lines */
+          background-image: none !important;
         }
-        .order-body-content { page-break-inside: auto; }
-        .order-body-content p, .order-body-content li { page-break-inside: avoid; }
+
+        /* Body content pagination */
+        .order-body-content { page-break-inside: auto; overflow: visible !important; }
+        .order-body-content p,
+        .order-body-content li { page-break-inside: avoid; }
         .order-body-content table { border-collapse: collapse; width: 100%; page-break-inside: auto; }
-        .order-body-content tr { page-break-inside: avoid; }
-        .order-body-content td, .order-body-content th { border: 1px solid #ccc; padding: 4px 8px; }
+        .order-body-content tr { page-break-inside: avoid; page-break-after: auto; }
+        .order-body-content td,
+        .order-body-content th { border: 1px solid #ccc; padding: 4px 8px; }
+
+        /* Keep signature + footer together */
         .sig-block { page-break-inside: avoid; }
+        .doc-footer  { page-break-inside: avoid; }
       }
     `}</style>
   )
 }
 
+/* triggerPrint: append a hidden clone to <body>.
+   CSS hides it on screen; @media print shows only it.
+   No fixed/absolute positioning means the browser can
+   paginate the full content across as many A4 pages as needed. */
 function triggerPrint(node: HTMLElement) {
   const clone = node.cloneNode(true) as HTMLElement
   const root = document.createElement("div")
   root.id = "print-root"
-  root.style.cssText = "position:fixed;inset:0;background:#fff;z-index:99999;overflow:auto;"
   root.appendChild(clone)
   document.body.appendChild(root)
   window.print()
@@ -520,13 +540,20 @@ function OrderEditor({ id, onBack }: { id?: string; onBack: () => void }) {
 
           {/* ── Right panel: A4 document ── */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-200 rounded-lg p-4 overflow-auto">
+            <div className="bg-gray-300 rounded-lg p-4 overflow-auto" style={{ maxHeight: "80vh" }}>
               <div className="shadow-2xl mx-auto" style={{ width: "210mm", minWidth: "210mm" }}>
                 {preview ? (
                   <A4Document {...form} printRef={printRef} />
                 ) : (
+                  {/* Google Docs style: page break lines every 297mm via repeating gradient */}
                   <div className="text-gray-900 bg-white relative"
-                    style={{ width: "210mm", minHeight: "297mm", padding: "12mm 18mm 15mm", boxSizing: "border-box", fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6" }}>
+                    style={{
+                      width: "210mm", minHeight: "297mm",
+                      padding: "12mm 18mm 15mm", boxSizing: "border-box",
+                      fontFamily: "'Times New Roman', Times, serif", fontSize: "12pt", lineHeight: "1.6",
+                      overflow: "visible",
+                      backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent calc(297mm - 1px), #d1d5db calc(297mm - 1px), #d1d5db 297mm)",
+                    }}>
 
                     {/* Watermark */}
                     <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 0 }}>
