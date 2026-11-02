@@ -10,6 +10,7 @@ import BlogsTab from "./mandir-management"
 import MandirSubscribers from "./mandir-subscribers"
 import ShringarBookings from "./shringar-bookings"
 import SubmissionsList from "./submissions-list"
+import OrderBook from "./order-book"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { getAccessToken } from "@/lib/auth/client"
@@ -53,9 +54,10 @@ function DarshanLikeCount() {
   )
 }
 
-type SpecialKey = "blogs" | "subscribers" | "shringar" | "grievances" | "testimonials"
+type SpecialKey = "blogs" | "subscribers" | "shringar" | "grievances" | "testimonials" | "order-book"
 
 const SPECIAL_SECTIONS: { key: SpecialKey; title: string; note: string }[] = [
+  { key: "order-book", title: "आदेश पुस्तिका", note: "आधिकारिक आदेश एवं पत्र लेखक" },
   { key: "blogs", title: "ब्लॉग", note: "सूची" },
   { key: "subscribers", title: "सदस्य एवं ईमेल", note: "सूची" },
   { key: "shringar", title: "श्रृंगार बुकिंग", note: "कैलेंडर व सूची" },
@@ -119,6 +121,14 @@ export default function MandirContent() {
     return (
       <SpecialSectionView title="श्रृंगार बुकिंग" onBack={closeSection}>
         <ShringarBookings />
+      </SpecialSectionView>
+    )
+  }
+
+  if (activeSpecial?.key === "order-book") {
+    return (
+      <SpecialSectionView title="आदेश पुस्तिका" onBack={closeSection}>
+        <OrderBook />
       </SpecialSectionView>
     )
   }
