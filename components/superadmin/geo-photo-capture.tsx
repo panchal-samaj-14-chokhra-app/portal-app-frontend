@@ -146,29 +146,35 @@ export default function GeoPhotoCapture({
       )}
 
       <Dialog open={cameraOpen} onOpenChange={(o) => !o && closeCamera()}>
-        <DialogContent className="max-w-sm p-4">
-          <DialogHeader>
+        <DialogContent className="w-screen max-w-sm sm:max-w-sm mx-0 sm:mx-auto p-0 gap-0 rounded-t-2xl sm:rounded-xl bottom-0 sm:bottom-auto fixed sm:relative translate-y-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="text-base">कैमरा से फोटो लें</DialogTitle>
           </DialogHeader>
 
           {cameraError ? (
-            <div className="space-y-3">
+            <div className="px-4 pb-4 space-y-3">
               <p className="text-sm text-red-500">{cameraError}</p>
-              <Button variant="outline" size="sm" onClick={closeCamera} className="w-full">
+              <Button variant="outline" onClick={closeCamera} className="w-full">
                 <X className="w-4 h-4 mr-1" />
                 बंद करें
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
-              <video ref={videoRef} playsInline muted className="w-full rounded-md bg-black aspect-[3/4] object-cover" />
+            <div className="px-4 pb-6 space-y-3">
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                className="w-full rounded-xl bg-black object-cover"
+                style={{ maxHeight: "60svh", aspectRatio: "3/4" }}
+              />
               <div className="flex gap-2">
-                <Button variant="outline" onClick={closeCamera} className="flex-1">
+                <Button variant="outline" onClick={closeCamera} className="flex-1 h-12 text-base">
                   <X className="w-4 h-4 mr-1" />
                   रद्द करें
                 </Button>
-                <Button onClick={capture} className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600">
-                  <Aperture className="w-4 h-4 mr-1" />
+                <Button onClick={capture} className="flex-1 h-12 text-base bg-gradient-to-r from-orange-500 to-orange-600">
+                  <Aperture className="w-5 h-5 mr-1" />
                   कैप्चर करें
                 </Button>
               </div>
