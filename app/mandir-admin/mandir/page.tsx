@@ -1,7 +1,12 @@
-"use client";
-export const dynamic = "force-dynamic"
+import { Suspense } from "react"
 import MandirContent from "@/components/superadmin/mandir-content"
 
+export const dynamic = "force-dynamic"
+
 export default function MandirAdminMandirPage() {
-  return <MandirContent />
+  return (
+    <Suspense>
+      <MandirContent />
+    </Suspense>
+  )
 }

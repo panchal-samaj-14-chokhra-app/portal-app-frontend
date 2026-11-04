@@ -1,7 +1,12 @@
-"use client";
-export const dynamic = "force-dynamic"
+import { Suspense } from "react"
 import DutyRegisterView from "@/components/superadmin/duty-register"
 
+export const dynamic = "force-dynamic"
+
 export default function DutyRegisterRegisterPage() {
-  return <DutyRegisterView />
+  return (
+    <Suspense>
+      <DutyRegisterView />
+    </Suspense>
+  )
 }
