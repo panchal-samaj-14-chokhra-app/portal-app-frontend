@@ -1,5 +1,5 @@
-export const dynamic = "force-dynamic"
 "use client";
+export const dynamic = "force-dynamic"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
