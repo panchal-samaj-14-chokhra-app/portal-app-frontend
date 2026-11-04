@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { uploadBlogImage } from "@/data-hooks/requests/blog"
 
-export type GeoPhoto = { url: string; lat: number | null; lng: number | null }
+export type GeoPhoto = { url: string; lat: number | null; lng: number | null; capturedAt?: string }
 
 // Best-effort geolocation: the site may be served over plain http (not https/localhost), where
 // browsers refuse navigator.geolocation outright — so a denial/timeout still lets the photo through,
@@ -107,10 +107,11 @@ export default function GeoPhotoCapture({
     setCameraOpen(false)
     setBusy(true)
     try {
+      const capturedAt = new Date().toLocaleString("hi-IN", { dateStyle: "short", timeStyle: "short" })
       const blob = await compressCanvas(canvas, 200_000)
       const file = new File([blob], `checkin-${Date.now()}.jpg`, { type: "image/jpeg" })
       const [url, loc] = await Promise.all([uploadBlogImage(file), getLocation()])
-      onChange({ url, lat: loc?.lat ?? null, lng: loc?.lng ?? null })
+      onChange({ url, lat: loc?.lat ?? null, lng: loc?.lng ?? null, capturedAt })
     } catch {
       // upload failed silently; caller's save validation will catch a missing photo
     } finally {
@@ -123,7 +124,13 @@ export default function GeoPhotoCapture({
       {value?.url ? (
         <div className="flex items-center gap-3">
           <img src={value.url} alt="चेक-इन फोटो" className="h-16 w-16 rounded-md object-cover border" />
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 space-y-0.5">
+            {value.capturedAt && (
+              <div className="flex items-center gap-1 text-gray-600 font-medium">
+                <Camera className="w-3 h-3" />
+                {value.capturedAt}
+              </div>
+            )}
             {value.lat != null && value.lng != null ? (
               <span className="inline-flex items-center gap-1 text-green-600">
                 <MapPin className="w-3.5 h-3.5" />
