@@ -1,18 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  getDutySettings, updateDutySettings,
-  type DutySettingsData,
-} from "@/data-hooks/requests/duty-settings"
-
-const KEY = ["duty-settings"]
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { getDutySettings, updateDutySettings, type DutySettingsData } from "@/data-hooks/requests/duty-settings"
 
 export const useDutySettings = () =>
-  useQuery({ queryKey: KEY, queryFn: getDutySettings, staleTime: 60_000, retry: false })
+  useQuery({ queryKey: ["duty-settings"], queryFn: getDutySettings, staleTime: 0 })
 
 export const useUpdateDutySettings = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: Partial<DutySettingsData>) => updateDutySettings(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["duty-settings"] }),
   })
 }

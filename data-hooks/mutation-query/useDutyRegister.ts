@@ -1,30 +1,63 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  createDuty, deleteDuty, getDutyStats, listDuties, updateDuty,
-  type DutyEntry,
+  getDutyRegisterList,
+  getDutyRegisterStats,
+  getDutyRegisterEntry,
+  createDutyRegisterEntry,
+  updateDutyRegisterEntry,
+  deleteDutyRegisterEntry,
+  type DutyRegisterEntry,
+  type DutyRegisterFilters,
 } from "@/data-hooks/requests/duty-register"
 
-const KEY = ["duty-register"]
-const STATS_KEY = ["duty-register-stats"]
+export const useDutyRegisterList = (filters: DutyRegisterFilters) =>
+  useQuery({
+    queryKey: ["duty-register", filters],
+    queryFn: () => getDutyRegisterList(filters),
+    staleTime: 0,
+  })
 
-export const useDutyList = (params?: Record<string, string>) =>
-  useQuery({ queryKey: [...KEY, params], queryFn: () => listDuties(params), staleTime: 0, retry: false })
+export const useDutyRegisterStats = () =>
+  useQuery({ queryKey: ["duty-register-stats"], queryFn: getDutyRegisterStats, staleTime: 0 })
 
-export const useDutyStats = () =>
-  useQuery({ queryKey: STATS_KEY, queryFn: getDutyStats, staleTime: 30_000, retry: false })
+export const useDutyRegisterEntry = (id: string) =>
+  useQuery({
+    queryKey: ["duty-register-entry", id],
+    queryFn: () => getDutyRegisterEntry(id),
+    enabled: !!id,
+    staleTime: 0,
+  })
 
-function useInvalidating<TVars, TRes>(fn: (v: TVars) => Promise<TRes>) {
+export const useCreateDutyRegisterEntry = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: fn,
+    mutationFn: (payload: Partial<DutyRegisterEntry>) => createDutyRegisterEntry(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: KEY })
-      qc.invalidateQueries({ queryKey: STATS_KEY })
+      qc.invalidateQueries({ queryKey: ["duty-register"] })
+      qc.invalidateQueries({ queryKey: ["duty-register-stats"] })
     },
   })
 }
 
-export const useCreateDuty = () => useInvalidating((p: Partial<DutyEntry>) => createDuty(p))
-export const useUpdateDuty = () =>
-  useInvalidating((v: { id: string; payload: Partial<DutyEntry> }) => updateDuty(v.id, v.payload))
-export const useDeleteDuty = () => useInvalidating((id: string) => deleteDuty(id))
+export const useUpdateDutyRegisterEntry = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<DutyRegisterEntry> }) =>
+      updateDutyRegisterEntry(id, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["duty-register"] })
+      qc.invalidateQueries({ queryKey: ["duty-register-stats"] })
+    },
+  })
+}
+
+export const useDeleteDutyRegisterEntry = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteDutyRegisterEntry(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["duty-register"] })
+      qc.invalidateQueries({ queryKey: ["duty-register-stats"] })
+    },
+  })
+}

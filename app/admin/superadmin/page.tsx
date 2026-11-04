@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   useAllVillages,
   useAllChokhlas,
@@ -11,7 +11,7 @@ import {
 } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart, ClipboardList, Settings } from "lucide-react"
+import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart } from "lucide-react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -41,8 +41,6 @@ import SuccessModal from "@/components/superadmin/success-modal"
 import ErrorModal from "@/components/superadmin/error-modal"
 import AddUserForm from "@/components/superadmin/add-user-form"
 import Polls from "@/components/superadmin/polls"
-import DutyRegisterView from "@/components/superadmin/duty-register"
-import DutySettingsView from "@/components/superadmin/duty-settings-view"
 
 const SIDEBAR_TABS = [
   { key: "chokhla", label: "चोखरा प्रबंधन", icon: Building2, shortLabel: "चोखरा" },
@@ -52,10 +50,8 @@ const SIDEBAR_TABS = [
   { key: "profile", label: "सुपर एडमिन प्रोफ़ाइल", icon: User, shortLabel: "प्रोफ़ाइल" },
   { key: "reports", label: "रिपोर्ट", icon: FileText, shortLabel: "रिपोर्ट" },
   { key: "mandir", label: "मंदिर प्रबंधन", icon: Landmark, shortLabel: "मंदिर" },
-  { key: "duty-register", label: "ड्यूटी रजिस्टर", icon: ClipboardList, shortLabel: "ड्यूटी" },
   { key: "business", label: "व्यापार निर्देशिका", icon: Briefcase, shortLabel: "व्यापार" },
   { key: "matrimonial", label: "वैवाहिक", icon: Heart, shortLabel: "वैवाहिक" },
-  { key: "settings", label: "सेटिंग्स", icon: Settings, shortLabel: "सेटिंग्स" },
 ]
 
 interface CreatedData {
@@ -72,17 +68,10 @@ function SuperAdmin() {
   const router = useRouter()
   const pathname = usePathname()
   const { data: userData } = useSession()
-  const role = (userData?.user?.role as string) || ""
-  const isMandirAdmin = role === "MANDIR_ADMIN"
 
-  const MANDIR_ADMIN_TABS = new Set(["mandir", "duty-register", "settings"])
+  const visibleTabs = SIDEBAR_TABS
 
-  // MANDIR_ADMIN sees only Mandir and Duty Register tabs; everyone else sees all tabs
-  const visibleTabs = isMandirAdmin
-    ? SIDEBAR_TABS.filter((t) => MANDIR_ADMIN_TABS.has(t.key))
-    : SIDEBAR_TABS
-
-  const activeTab = searchParams.get("tab") || (isMandirAdmin ? "mandir" : "chokhla")
+  const activeTab = searchParams.get("tab") || "chokhla"
 
   const [openChokhlaModal, setOpenChokhlaModal] = useState(false)
   const [openAddUserModal, setOpenAddUserModal] = useState(false)
@@ -115,15 +104,6 @@ function SuperAdmin() {
   const mutate = toggleUserStatusMutation.mutate
   const loading = (toggleUserStatusMutation as any).isLoading
 
-
-  // Redirect MANDIR_ADMIN away from tabs they can't see
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (isMandirAdmin && !MANDIR_ADMIN_TABS.has(activeTab)) {
-      const p = new URLSearchParams(); p.set("tab", "mandir")
-      router.replace(`${pathname}?${p.toString()}`, { scroll: false })
-    }
-  }, [isMandirAdmin, activeTab])
 
   const handleChokhlaSubmit = (formData: any) => {
     setIsSubmitting(true)
@@ -272,14 +252,10 @@ function SuperAdmin() {
         return <ReportsView />
       case "mandir":
         return <MandirContent />
-      case "duty-register":
-        return <DutyRegisterView />
       case "business":
         return <BusinessDirectory />
       case "matrimonial":
         return <MatrimonialManagement />
-      case "settings":
-        return <DutySettingsView />
       default:
         return null
     }
@@ -371,9 +347,7 @@ function SuperAdmin() {
               />
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">
-                  <span className="hidden md:inline">
-                    {isMandirAdmin ? "श्री त्रिपुरा सुंदरी मंदिर - मंदिर एडमिन" : "पंचाल समाज 14 चोखरा - सुपर एडमिन"}
-                  </span>
+                  <span className="hidden md:inline">पंचाल समाज 14 चोखरा - सुपर एडमिन</span>
                   <span className="md:hidden">{getCurrentTabLabel()}</span>
                 </h1>
                 <p className="text-orange-100 text-xs sm:text-sm truncate">स्वागत है, {userData?.user?.name}</p>

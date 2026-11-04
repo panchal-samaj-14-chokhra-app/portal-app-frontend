@@ -1,56 +1,71 @@
-import { endSession, forceRefresh, getAccessToken } from "@/lib/auth/client"
+import request from "@/config/request"
 
-async function call(method: string, path: string, body?: unknown, retried = false): Promise<any> {
-  const token = await getAccessToken()
-  if (!token) throw new Error("सत्र समाप्त हो गया है, कृपया फिर से लॉगिन करें")
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_URL}/duty-register${path}`, {
-    method,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    cache: "no-store",
-  })
-  const json: any = await res.json().catch(() => ({}))
-  if (res.status === 401 && !retried && (await forceRefresh())) return call(method, path, body, true)
-  if (res.status === 401) {
-    endSession("expired")
-    throw new Error(json.message || "सत्र समाप्त हो गया है")
-  }
-  if (!res.ok || json.success === false) throw new Error(json.message || "कुछ गड़बड़ हुई")
-  return json
-}
-
-export type DutyStatus = "Assigned" | "InProgress" | "Completed" | "Cancelled"
-export type AttendanceStatus = "Present" | "Absent" | "Late" | "Leave"
-
-export type DutyEntry = {
+export type DutyRegisterEntry = {
   id: string
   dutyDate: string
   dutyType: string
   title: string
   shift: string
+  dutyMemberId?: string | null
   memberName: string
-  memberRole: string | null
-  assignedBy: string | null
-  scheduledStart: string | null
-  scheduledEnd: string | null
-  actualCheckin: string | null
-  actualCheckout: string | null
-  attendanceStatus: AttendanceStatus
-  dutyStatus: DutyStatus
-  remarks: string | null
-  verifiedBy: string | null
+  memberRole?: string | null
+  assignedBy?: string | null
+  scheduledStart?: string | null
+  scheduledEnd?: string | null
+  actualCheckin?: string | null
+  actualCheckout?: string | null
+  attendanceStatus: string
+  checkinPhotoUrl?: string | null
+  checkinLat?: number | null
+  checkinLng?: number | null
+  remarks?: string | null
+  verifiedBy?: string | null
   createdAt: string
   updatedAt: string
 }
 
-export type DutyStats = { total: number; today: number; pending: number; completed: number }
-
-export const listDuties = (params?: Record<string, string>) => {
-  const q = params ? "?" + new URLSearchParams(params).toString() : ""
-  return call("GET", `/${q}`) as Promise<{ data: DutyEntry[] }>
+export type DutyRegisterFilters = {
+  date?: string
+  dateFrom?: string
+  dateTo?: string
+  dutyType?: string
+  shift?: string
+  attendanceStatus?: string
+  memberName?: string
 }
-export const getDutyStats = () => call("GET", "/stats") as Promise<{ data: DutyStats }>
-export const createDuty = (payload: Partial<DutyEntry>) => call("POST", "/", payload)
-export const updateDuty = (id: string, payload: Partial<DutyEntry>) => call("PUT", `/${id}`, payload)
-export const deleteDuty = (id: string) => call("DELETE", `/${id}`)
+
+export type DutyRegisterStats = { total: number; today: number }
+
+export const getDutyRegisterList = async (filters: DutyRegisterFilters): Promise<DutyRegisterEntry[]> => {
+  const params: Record<string, string> = {}
+  Object.entries(filters).forEach(([k, v]) => {
+    if (v) params[k] = v
+  })
+  const { data } = await request.get(`/duty-register`, { params })
+  return data.data
+}
+
+export const getDutyRegisterStats = async (): Promise<DutyRegisterStats> => {
+  const { data } = await request.get(`/duty-register/stats`)
+  return data.data
+}
+
+export const getDutyRegisterEntry = async (id: string): Promise<DutyRegisterEntry> => {
+  const { data } = await request.get(`/duty-register/${id}`)
+  return data.data
+}
+
+export const createDutyRegisterEntry = async (payload: Partial<DutyRegisterEntry>) => {
+  const { data } = await request.post(`/duty-register`, payload)
+  return data.data
+}
+
+export const updateDutyRegisterEntry = async (id: string, payload: Partial<DutyRegisterEntry>) => {
+  const { data } = await request.put(`/duty-register/${id}`, payload)
+  return data.data
+}
+
+export const deleteDutyRegisterEntry = async (id: string) => {
+  const { data } = await request.delete(`/duty-register/${id}`)
+  return data
+}

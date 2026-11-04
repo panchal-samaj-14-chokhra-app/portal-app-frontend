@@ -16,14 +16,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(login)
   }
 
-  // the super admin area is for SUPER_ADMIN and MANDIR_ADMIN
-  const superadminRoles = new Set(["SUPER_ADMIN", "MANDIR_ADMIN"])
-  if (req.nextUrl.pathname.startsWith("/admin/superadmin") && !superadminRoles.has(token.role as string)) {
+  // the super admin area is for SUPER_ADMIN only; MANDIR_ADMIN has its own area
+  if (req.nextUrl.pathname.startsWith("/admin/superadmin") && token.role !== "SUPER_ADMIN") {
+    return NextResponse.redirect(new URL("/login", req.url))
+  }
+
+  // the mandir admin area is for MANDIR_ADMIN only
+  if (req.nextUrl.pathname.startsWith("/mandir-admin") && token.role !== "MANDIR_ADMIN") {
     return NextResponse.redirect(new URL("/login", req.url))
   }
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/mandir-admin/:path*"],
 }
