@@ -201,10 +201,10 @@ export default function DutyRegisterView() {
                             <div className="font-medium text-gray-800 text-sm truncate">{entry.memberName}</div>
                             {entry.memberRole && <div className="text-xs text-gray-400 truncate">{entry.memberRole}</div>}
                             {/* Place + timing */}
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <span className="text-xs text-gray-600">{typeLabel}</span>
-                              {shiftItem && <span className="text-xs text-gray-400">· {shiftItem.label}</span>}
-                              {shiftTiming && <span className="text-xs text-orange-500 font-medium">· {shiftTiming}</span>}
+                            <div className="mt-1 text-xs text-gray-500 leading-tight">
+                              <span>{typeLabel}</span>
+                              {shiftItem && <span className="text-gray-400"> · {shiftItem.label}</span>}
+                              {shiftTiming && <span className="text-orange-500 font-medium"> · {shiftTiming}</span>}
                             </div>
                           </div>
                           {/* Actions */}
