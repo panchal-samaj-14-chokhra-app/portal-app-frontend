@@ -107,10 +107,10 @@ export default function DutyRegisterView() {
         )
       )}
 
-      {/* Table */}
+      {/* List */}
       {viewMode === "list" && (
         <Card>
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent className="p-0">
             {isLoading ? (
               <div className="py-16 text-center text-gray-500">
                 <Loader2 className="w-5 h-5 inline animate-spin mr-2" />लोड हो रहा है...
@@ -121,60 +121,109 @@ export default function DutyRegisterView() {
               <div className="py-16 text-center text-gray-500">कोई रिकॉर्ड नहीं मिला</div>
             ) : (
               <>
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-600 text-left">
-                    <tr>
-                      <th className="px-4 py-2">तिथि</th>
-                      <th className="px-4 py-2">स्थान / पाली</th>
-                      <th className="px-4 py-2">शीर्षक</th>
-                      <th className="px-4 py-2">सदस्य</th>
-                      <th className="px-4 py-2">समय</th>
-                      <th className="px-4 py-2">उपस्थिति</th>
-                      <th className="px-4 py-2 text-right">कार्य</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {pageEntries.map((entry) => {
-                      const typeLabel = dutyTypes.find((t) => t.key === entry.dutyType)?.label || entry.dutyType
-                      const shiftItem = shifts.find((s) => s.key === entry.shift)
-                      const shiftLabel = shiftItem?.label || entry.shift
-                      const shiftTiming = shiftItem?.start && shiftItem?.end ? `${shiftItem.start} – ${shiftItem.end}` : null
-                      const attLabel = attendanceStatuses.find((s) => s.key === entry.attendanceStatus)?.label || entry.attendanceStatus
-                      return (
-                        <tr key={entry.id} className="hover:bg-orange-50/40">
-                          <td className="px-4 py-2 whitespace-nowrap">{entry.dutyDate}</td>
-                          <td className="px-4 py-2">
-                            <div>{typeLabel}</div>
-                            <div className="text-xs text-gray-400">{shiftLabel}</div>
-                            {shiftTiming && <div className="text-xs text-orange-500 font-medium">{shiftTiming}</div>}
-                          </td>
-                          <td className="px-4 py-2">{entry.title}</td>
-                          <td className="px-4 py-2">
-                            <div>{entry.memberName}</div>
-                            {entry.memberRole && <div className="text-xs text-gray-400">{entry.memberRole}</div>}
-                          </td>
-                          <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">
-                            {shiftTiming || "—"}
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs">{attLabel}</span>
-                          </td>
-                          <td className="px-4 py-2 text-right whitespace-nowrap">
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-gray-600 text-left">
+                      <tr>
+                        <th className="px-4 py-2">तिथि</th>
+                        <th className="px-4 py-2">स्थान / पाली</th>
+                        <th className="px-4 py-2">शीर्षक</th>
+                        <th className="px-4 py-2">सदस्य</th>
+                        <th className="px-4 py-2">समय</th>
+                        <th className="px-4 py-2">उपस्थिति</th>
+                        <th className="px-4 py-2 text-right">कार्य</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {pageEntries.map((entry) => {
+                        const typeLabel = dutyTypes.find((t) => t.key === entry.dutyType)?.label || entry.dutyType
+                        const shiftItem = shifts.find((s) => s.key === entry.shift)
+                        const shiftLabel = shiftItem?.label || entry.shift
+                        const shiftTiming = shiftItem?.start && shiftItem?.end ? `${shiftItem.start} – ${shiftItem.end}` : null
+                        const attLabel = attendanceStatuses.find((s) => s.key === entry.attendanceStatus)?.label || entry.attendanceStatus
+                        return (
+                          <tr key={entry.id} className="hover:bg-orange-50/40">
+                            <td className="px-4 py-2 whitespace-nowrap">{entry.dutyDate}</td>
+                            <td className="px-4 py-2">
+                              <div>{typeLabel}</div>
+                              <div className="text-xs text-gray-400">{shiftLabel}</div>
+                              {shiftTiming && <div className="text-xs text-orange-500 font-medium">{shiftTiming}</div>}
+                            </td>
+                            <td className="px-4 py-2">{entry.title}</td>
+                            <td className="px-4 py-2">
+                              <div>{entry.memberName}</div>
+                              {entry.memberRole && <div className="text-xs text-gray-400">{entry.memberRole}</div>}
+                            </td>
+                            <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">{shiftTiming || "—"}</td>
+                            <td className="px-4 py-2">
+                              <span className="rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs">{attLabel}</span>
+                            </td>
+                            <td className="px-4 py-2 text-right whitespace-nowrap">
+                              <Link href={`/mandir-admin/duty-register/register/${entry.id}/view`}>
+                                <Button size="icon" variant="ghost"><Eye className="w-4 h-4" /></Button>
+                              </Link>
+                              <Link href={`/mandir-admin/duty-register/register/${entry.id}/edit`}>
+                                <Button size="icon" variant="ghost"><Pencil className="w-4 h-4" /></Button>
+                              </Link>
+                              <Button size="icon" variant="ghost" onClick={() => handleDelete(entry.id)}>
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden divide-y">
+                  {pageEntries.map((entry) => {
+                    const typeLabel = dutyTypes.find((t) => t.key === entry.dutyType)?.label || entry.dutyType
+                    const shiftItem = shifts.find((s) => s.key === entry.shift)
+                    const shiftTiming = shiftItem?.start && shiftItem?.end ? `${shiftItem.start} – ${shiftItem.end}` : null
+                    const attLabel = attendanceStatuses.find((s) => s.key === entry.attendanceStatus)?.label || entry.attendanceStatus
+                    const isPresent = entry.attendanceStatus?.toLowerCase().includes("present")
+                    const isAbsent = entry.attendanceStatus?.toLowerCase().includes("absent")
+                    return (
+                      <div key={entry.id} className="px-4 py-3 hover:bg-orange-50/30">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            {/* Date + attendance */}
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-medium text-gray-500">{entry.dutyDate}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs ${isPresent ? "bg-green-100 text-green-700" : isAbsent ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-700"}`}>
+                                {attLabel}
+                              </span>
+                            </div>
+                            {/* Member */}
+                            <div className="font-medium text-gray-800 text-sm truncate">{entry.memberName}</div>
+                            {entry.memberRole && <div className="text-xs text-gray-400 truncate">{entry.memberRole}</div>}
+                            {/* Place + timing */}
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <span className="text-xs text-gray-600">{typeLabel}</span>
+                              {shiftItem && <span className="text-xs text-gray-400">· {shiftItem.label}</span>}
+                              {shiftTiming && <span className="text-xs text-orange-500 font-medium">· {shiftTiming}</span>}
+                            </div>
+                          </div>
+                          {/* Actions */}
+                          <div className="flex items-center gap-0.5 shrink-0">
                             <Link href={`/mandir-admin/duty-register/register/${entry.id}/view`}>
-                              <Button size="icon" variant="ghost"><Eye className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
                             </Link>
                             <Link href={`/mandir-admin/duty-register/register/${entry.id}/edit`}>
-                              <Button size="icon" variant="ghost"><Pencil className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8"><Pencil className="w-4 h-4" /></Button>
                             </Link>
-                            <Button size="icon" variant="ghost" onClick={() => handleDelete(entry.id)}>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleDelete(entry.id)}>
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
 
                 {/* Pagination */}
                 {totalPages > 1 && (
