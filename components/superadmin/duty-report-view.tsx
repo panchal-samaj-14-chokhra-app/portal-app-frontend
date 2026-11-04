@@ -13,12 +13,14 @@ import type { DutyRegisterEntry } from "@/data-hooks/requests/duty-register"
 
 const EXPORT_HEADERS = ["तिथि", "स्थान", "पाली", "शीर्षक", "सदस्य", "सदस्य भूमिका", "उपस्थिति"]
 
+type ExportRow = { [key: string]: string }
+
 function buildExportRows(
   rows: DutyRegisterEntry[],
   dutyTypes: { key: string; label: string }[],
   shifts: { key: string; label: string }[],
   attendanceStatuses: { key: string; label: string }[]
-) {
+): ExportRow[] {
   return rows.map((r) => ({
     तिथि: r.dutyDate,
     स्थान: dutyTypes.find((t) => t.key === r.dutyType)?.label || r.dutyType,
@@ -30,10 +32,10 @@ function buildExportRows(
   }))
 }
 
-function toCsv(rows: ReturnType<typeof buildExportRows>) {
+function toCsv(rows: ExportRow[]) {
   const lines = [EXPORT_HEADERS.join(",")]
   for (const r of rows) {
-    lines.push(EXPORT_HEADERS.map((h) => `"${String((r as any)[h] ?? "").replace(/"/g, '""')}"`).join(","))
+    lines.push(EXPORT_HEADERS.map((h) => `"${String(r[h] ?? "").replace(/"/g, '""')}"`).join(","))
   }
   return lines.join("\n")
 }
@@ -73,6 +75,17 @@ export default function DutyReportView() {
 
   const exportFileName = `duty-report-${dateFrom || "all"}-${dateTo || "all"}`
 
+  const buildReportParams = () => {
+    const p = new URLSearchParams()
+    if (dateFrom) p.set("dateFrom", dateFrom)
+    if (dateTo) p.set("dateTo", dateTo)
+    if (dutyType && dutyType !== "all") p.set("dutyType", dutyType)
+    if (shift && shift !== "all") p.set("shift", shift)
+    if (attendanceStatus && attendanceStatus !== "all") p.set("attendanceStatus", attendanceStatus)
+    if (search) p.set("memberName", search)
+    return p.toString()
+  }
+
   const handleExportCsv = () => {
     if (!entries?.length) return
     const rows = buildExportRows(entries, dutyTypes, shifts, attendanceStatuses)
@@ -95,27 +108,9 @@ export default function DutyReportView() {
 
   const handleExportPdf = () => {
     if (!entries?.length) return
-    const rows = buildExportRows(entries, dutyTypes, shifts, attendanceStatuses)
-    const win = window.open("", "_blank")
-    if (!win) return
-    const tableRows = rows.map((r) => `<tr>${EXPORT_HEADERS.map((h) => `<td>${(r as any)[h] ?? ""}</td>`).join("")}</tr>`).join("")
-    win.document.write(`<!doctype html>
-      <html lang="hi"><head><meta charset="utf-8" /><title>${exportFileName}</title>
-      <style>
-        body { font-family: "Noto Sans Devanagari","Nirmala UI",sans-serif; padding: 24px; }
-        h2 { font-size: 16px; margin-bottom: 4px; } p { font-size: 12px; color: #666; margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
-        th { background: #fdf0e3; }
-        @media print { body { padding: 0; } }
-      </style></head><body>
-      <h2>ड्यूटी रिपोर्ट</h2>
-      <p>${dateFrom ? `${dateFrom} से ` : ""}${dateTo ? `${dateTo} तक` : "संपूर्ण अवधि"} · कुल: ${entries?.length ?? 0} रिकॉर्ड</p>
-      <table><thead><tr>${EXPORT_HEADERS.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-      <tbody>${tableRows}</tbody></table>
-      <script>window.onload = () => setTimeout(() => window.print(), 200)</script>
-      </body></html>`)
-    win.document.close()
+    const qs = buildReportParams()
+    const base = process.env.NEXT_PUBLIC_REQUEST_URL || ""
+    window.open(`${base}/duty-register/report/pdf${qs ? `?${qs}` : ""}`, "_blank")
   }
 
   // Summary stats
