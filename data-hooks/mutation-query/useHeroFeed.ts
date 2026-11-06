@@ -7,7 +7,7 @@ import {
 const KEY = ["hero-feed"]
 
 export const useHeroFeed      = (take?: string) => useQuery({ queryKey: [...KEY, take], queryFn: () => getHeroFeed(take ? { take } : undefined), staleTime: 30_000 })
-export const useHeroFeedAdmin = () => useQuery({ queryKey: [...KEY, "admin"], queryFn: getHeroFeedAdmin })
+export const useHeroFeedAdmin = () => useQuery({ queryKey: [...KEY, "admin"], queryFn: () => getHeroFeedAdmin() })
 
 export const useHeroFeedComments = (id: string) =>
   useQuery({ queryKey: [...KEY, id, "comments"], queryFn: () => getHeroFeedComments(id), enabled: !!id })
