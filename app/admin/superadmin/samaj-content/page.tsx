@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   Plus, Pencil, Trash2, Loader2, Newspaper, FileText, Calendar, MessageSquare,
   Eye, EyeOff, Upload, ChevronUp, ChevronDown, Save,
@@ -29,14 +29,21 @@ import {
   useSamajPosts, useUpdateSamajPost, useDeleteSamajPost,
 } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajNews, SamajPressRelease, SamajEvent } from "@/data-hooks/requests/samaj-content"
+import {
+  useHeroFeedAdmin, useCreateHeroFeed, useUpdateHeroFeed, useDeleteHeroFeed,
+} from "@/data-hooks/mutation-query/useHeroFeed"
+import type { HeroFeed } from "@/data-hooks/requests/hero-feed"
+import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
+import { Heart } from "lucide-react"
 
-type Tab = "news" | "press" | "events" | "posts" | "flags"
+type Tab = "news" | "press" | "events" | "posts" | "feed" | "flags"
 
 const TABS: { id: Tab; label: string; icon: any; desc: string }[] = [
   { id: "news",   label: "समाचार",          icon: Newspaper,     desc: "समाज के समाचार एवं सूचनाएं" },
   { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText,      desc: "आधिकारिक विज्ञप्तियां" },
   { id: "events", label: "कार्यक्रम",       icon: Calendar,      desc: "आगामी एवं बीते आयोजन" },
   { id: "posts",  label: "पोस्ट मॉडरेशन",  icon: MessageSquare, desc: "सदस्यों की पोस्ट प्रबंधन" },
+  { id: "feed",   label: "हीरो फीड",        icon: Heart,         desc: "होमपेज हीरो सेक्शन — बधाई · जन्मदिवस · शोक संदेश" },
   { id: "flags",  label: "फ़ीचर फ्लैग्स",   icon: ToggleLeft,    desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
 ]
 
@@ -665,6 +672,297 @@ function PostsPanel() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// CROP IMAGE UPLOAD
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Crop ratio: 9:16 portrait (hero card format)
+const CROP_W = 360
+const CROP_H = 640
+
+function CropImageUpload({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { toast } = useToast()
+  const [src, setSrc]       = useState<string | null>(null)
+  const [busy, setBusy]     = useState(false)
+  const [offsetX, setOffsetX] = useState(0.5) // 0–1 horizontal crop center
+  const [offsetY, setOffsetY] = useState(0.5) // 0–1 vertical crop center
+  const imgRef  = useRef<HTMLImageElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [naturalW, setNaturalW] = useState(0)
+  const [naturalH, setNaturalH] = useState(0)
+
+  const loadFile = (f?: File) => {
+    if (!f) return
+    const reader = new FileReader()
+    reader.onload = e => { setSrc(e.target?.result as string); setOffsetX(0.5); setOffsetY(0.5) }
+    reader.readAsDataURL(f)
+  }
+
+  const renderPreview = () => {
+    const canvas = canvasRef.current
+    const img = imgRef.current
+    if (!canvas || !img || !naturalW || !naturalH) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    const srcRatio = naturalW / naturalH
+    const tgtRatio = CROP_W / CROP_H
+
+    let sw: number, sh: number, sx: number, sy: number
+    if (srcRatio > tgtRatio) {
+      sh = naturalH
+      sw = sh * tgtRatio
+      sx = (naturalW - sw) * offsetX
+      sy = 0
+    } else {
+      sw = naturalW
+      sh = sw / tgtRatio
+      sx = 0
+      sy = (naturalH - sh) * offsetY
+    }
+    ctx.clearRect(0, 0, CROP_W, CROP_H)
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_W, CROP_H)
+  }
+
+  useEffect(() => { renderPreview() }, [offsetX, offsetY, naturalW, naturalH])
+
+  const uploadCropped = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    canvas.toBlob(async (blob: Blob | null) => {
+      if (!blob) return
+      try {
+        setBusy(true)
+        const { uploadBlogImage } = await import("@/data-hooks/requests/blog")
+        const file = new File([blob], "hero-feed.jpg", { type: "image/jpeg" })
+        const url = await uploadBlogImage(file)
+        onChange(url)
+        setSrc(null)
+        toast({ title: "इमेज अपलोड हो गई", variant: "success" })
+      } catch (e: any) {
+        toast({ title: "अपलोड त्रुटि", description: e?.message, variant: "destructive" })
+      } finally {
+        setBusy(false)
+      }
+    }, "image/jpeg", 0.92)
+  }
+
+  if (!src) return (
+    <div className="space-y-1">
+      <div className="flex gap-2">
+        <Input value={value || ""} onChange={e => onChange(e.target.value)} placeholder="इमेज URL या फ़ाइल अपलोड करें" className="flex-1" />
+        <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 cursor-pointer text-sm whitespace-nowrap">
+          <Upload className="w-4 h-4" /> क्रॉप करें
+          <input type="file" accept="image/*" className="hidden" onChange={e => { loadFile(e.target.files?.[0]); e.currentTarget.value = "" }} />
+        </label>
+      </div>
+      {value && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="" className="h-24 rounded-lg object-cover border border-gray-200" onError={e => ((e.target as HTMLImageElement).style.display = "none")} />
+      )}
+    </div>
+  )
+
+  return (
+    <div className="space-y-3 p-3 border border-orange-200 rounded-xl bg-orange-50">
+      <p className="text-xs font-semibold text-orange-700">इमेज क्रॉप करें (9:16 पोर्ट्रेट)</p>
+      <div className="flex gap-3 items-start flex-wrap">
+        <canvas ref={canvasRef} width={CROP_W} height={CROP_H}
+          className="rounded-xl border border-orange-200 shadow-sm"
+          style={{ width: 108, height: 192 }} />
+        <div className="flex-1 space-y-3 min-w-[180px]">
+          {/* Hidden img for drawing */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img ref={imgRef} src={src} alt="" className="hidden"
+            onLoad={e => {
+              const t = e.target as HTMLImageElement
+              setNaturalW(t.naturalWidth)
+              setNaturalH(t.naturalHeight)
+            }} />
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">बाएं–दाएं</label>
+            <input type="range" min={0} max={1} step={0.01} value={offsetX}
+              onChange={e => setOffsetX(Number(e.target.value))}
+              className="w-full accent-orange-500" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">ऊपर–नीचे</label>
+            <input type="range" min={0} max={1} step={0.01} value={offsetY}
+              onChange={e => setOffsetY(Number(e.target.value))}
+              className="w-full accent-orange-500" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" onClick={uploadCropped} disabled={busy || !naturalW}
+              className="bg-orange-500 hover:bg-orange-600 text-white text-xs">
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Upload className="w-3.5 h-3.5 mr-1" />}
+              अपलोड करें
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSrc(null)} className="text-xs text-gray-500">
+              रद्द करें
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HERO FEED PANEL
+// ══════════════════════════════════════════════════════════════════════════════
+
+const EMPTY_FEED: Partial<HeroFeed> = { type: "badhai", heading: "", personName: "", details: "", imageUrl: "", status: "published" }
+
+function HeroFeedPanel() {
+  const { toast } = useToast()
+  const { data: itemsRaw, isLoading } = useHeroFeedAdmin()
+  const items: HeroFeed[] = (itemsRaw as HeroFeed[] | undefined) ?? []
+  const create = useCreateHeroFeed()
+  const update = useUpdateHeroFeed()
+  const remove = useDeleteHeroFeed()
+
+  const [open, setOpen]       = useState(false)
+  const [form, setForm]       = useState<Partial<HeroFeed>>(EMPTY_FEED)
+  const [editing, setEditing] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<{ id: string; label: string } | null>(null)
+  const saving = create.isPending || update.isPending
+
+  const openCreate = () => { setEditing(null); setForm({ ...EMPTY_FEED }); setOpen(true) }
+  const openEdit   = (item: HeroFeed) => { setEditing(item.id); setForm({ ...item }); setOpen(true) }
+  const closeForm  = () => { setOpen(false); setEditing(null); setForm({ ...EMPTY_FEED }) }
+
+  const set = (k: keyof HeroFeed, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSave = () => {
+    if (!form.heading?.trim() || !form.personName?.trim() || !form.imageUrl?.trim()) {
+      toast({ title: "अधूरी जानकारी", description: "शीर्षक, व्यक्ति का नाम और इमेज आवश्यक हैं", variant: "destructive" }); return
+    }
+    const cb = {
+      onSuccess: () => { toast({ title: editing ? "अपडेट हो गया" : "जोड़ा गया", variant: "success" }); closeForm() },
+      onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+    }
+    if (editing) update.mutate({ id: editing, ...form }, cb)
+    else create.mutate(form, cb)
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-base">हीरो फीड</CardTitle>
+            <CardDescription>होमपेज पर दिखने वाले बधाई, जन्मदिवस, शोक संदेश प्रबंधित करें</CardDescription>
+          </div>
+          <Button size="sm" onClick={openCreate} className="bg-orange-500 hover:bg-orange-600 text-white shrink-0">
+            <Plus className="w-4 h-4 mr-1.5" />जोड़ें
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-orange-400" /></div>}
+          {!isLoading && items.length === 0 && (
+            <p className="text-center text-gray-400 py-8 text-sm">अभी कोई फीड नहीं है। ऊपर "जोड़ें" दबाएं।</p>
+          )}
+          {!isLoading && items.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {items.map(item => {
+                const ft = FEED_TYPES.find(t => t.value === item.type)
+                return (
+                  <div key={item.id} className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all bg-white flex flex-col">
+                    {item.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.imageUrl} alt={item.heading} className="w-full h-48 object-cover" onError={e => ((e.target as HTMLImageElement).style.display = "none")} />
+                    )}
+                    <div className="p-3 flex-1 flex flex-col">
+                      {ft && <span className={`self-start text-[11px] font-bold px-2 py-0.5 rounded-full mb-1 ${ft.bg} ${ft.color}`}>{ft.label}</span>}
+                      <p className="font-bold text-gray-800 text-sm line-clamp-2">{item.heading}</p>
+                      <p className="text-orange-600 text-xs mt-0.5">{item.personName}</p>
+                      {item.details && <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-1">{item.details}</p>}
+                      <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50">
+                        <Badge variant="secondary"
+                          className={item.status === "published" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}>
+                          {item.status === "published" ? "प्रकाशित" : "ड्राफ्ट"}
+                        </Badge>
+                        <span className="text-xs text-gray-400 ml-auto">{item.likesCount} ♥</span>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-500 hover:bg-gray-100" onClick={() => openEdit(item)}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, label: item.heading })}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add / Edit Dialog */}
+      <Dialog open={open} onOpenChange={v => !v && closeForm()}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "फीड संपादित करें" : "नई फीड जोड़ें"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>प्रकार</Label>
+              <Select value={form.type} onValueChange={v => set("type", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FEED_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>शीर्षक *</Label>
+              <Input value={form.heading || ""} onChange={e => set("heading", e.target.value)} placeholder="जैसे: जन्मदिवस की हार्दिक शुभकामनाएं" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>व्यक्ति का नाम *</Label>
+              <Input value={form.personName || ""} onChange={e => set("personName", e.target.value)} placeholder="व्यक्ति का पूरा नाम" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>विवरण (वैकल्पिक)</Label>
+              <Textarea value={form.details || ""} onChange={e => set("details", e.target.value)} placeholder="अतिरिक्त जानकारी जैसे पता, परिवार आदि" rows={2} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>इमेज * (9:16 पोर्ट्रेट साइज़)</Label>
+              <CropImageUpload value={form.imageUrl || ""} onChange={v => set("imageUrl", v)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>स्थिति</Label>
+              <Select value={form.status || "published"} onValueChange={v => set("status", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="published">प्रकाशित</SelectItem>
+                  <SelectItem value="draft">ड्राफ्ट</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeForm}>रद्द करें</Button>
+            <Button onClick={handleSave} disabled={saving} className="bg-orange-500 hover:bg-orange-600 text-white">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+              {editing ? "अपडेट करें" : "जोड़ें"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.label || ""}
+        onConfirm={() => {
+          if (deleting) remove.mutate(deleting.id, {
+            onSuccess: () => { toast({ title: "फीड हटाई गई", variant: "success" }); setDeleting(null) },
+            onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+          })
+        }} />
+    </>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // PAGE
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -701,6 +999,7 @@ export default function SamajContentPage() {
       {tab === "press"  && <PressPanel />}
       {tab === "events" && <EventsPanel />}
       {tab === "posts"  && <PostsPanel />}
+      {tab === "feed"   && <HeroFeedPanel />}
       {tab === "flags"  && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <SectionFeatureFlags

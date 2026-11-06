@@ -9,17 +9,20 @@ import {
   Handshake, Vote, Award,
   Phone, Mail, Facebook, Twitter, Youtube, Instagram,
   Home, GraduationCap, Database, UserCircle,
-  Briefcase, Gift, Flame, Download,
+  Briefcase, Gift, Download,
   ChevronDown, Share2, MessageCircle,
   ChevronLeft, ChevronRight as ChevRight,
-  Calendar, Loader2, MapPin,
+  Calendar, Loader2, MapPin, Send,
 } from "lucide-react"
 import {
   useSamajNews, useSamajPress, useLikeSamajNews,
 } from "@/data-hooks/mutation-query/useSamajContent"
-import type { SamajNews, SamajPressRelease } from "@/data-hooks/requests/samaj-content"
+import type { SamajNews } from "@/data-hooks/requests/samaj-content"
 import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
 import { usePortalConfigValue } from "@/data-hooks/mutation-query/usePortalConfig"
+import { useHeroFeed, useLikeHeroFeed, useHeroFeedComments, useAddHeroFeedComment } from "@/data-hooks/mutation-query/useHeroFeed"
+import type { HeroFeed } from "@/data-hooks/requests/hero-feed"
+import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
 
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
@@ -48,102 +51,169 @@ const SERVICES = [
   { icon: Calendar,      color: "bg-indigo-100 text-indigo-700",  title: "कार्यक्रम",             href: "/events" },
 ]
 
-// ─── HERO SLIDER ─────────────────────────────────────────────────────────────
-
-const FALLBACK_SLIDES = [
-  { src: "/placeholder.jpg", label: "सामाजिक सभा",     desc: "समाज की एकता का उत्सव" },
-  { src: "/placeholder.jpg", label: "धार्मिक आयोजन",   desc: "आस्था और परंपरा" },
-  { src: "/placeholder.jpg", label: "सामूहिक विवाह",   desc: "समाज की पावन परंपरा" },
-]
-
 // ═══════════════════════════════════════════════════════════════════════════
-// HERO IMAGE SLIDER
+// HERO FEED CARD + SLIDER
 // ═══════════════════════════════════════════════════════════════════════════
 
-function HeroSlider({ darshanEnabled = true }: { darshanEnabled?: boolean }) {
+function HeroFeedSlider() {
   const [current, setCurrent] = useState(0)
-  const [slides, setSlides] = useState(FALLBACK_SLIDES as { src: string; label: string; desc: string }[])
-  const [isDarshan, setIsDarshan] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [commentName, setCommentName] = useState("")
+  const [commentText, setCommentText] = useState("")
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const total = slides.length
-  const go = (idx: number) => setCurrent((idx + total) % total)
+
+  const { data: feeds = [], isLoading } = useHeroFeed("10")
+  const total = feeds.length
+  const go = (idx: number) => { setCurrent((idx + total) % total); setShowComments(false) }
+
+  const pause = () => { if (timerRef.current) clearInterval(timerRef.current) }
+  const resume = () => { timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 5000) }
 
   useEffect(() => {
-    if (!darshanEnabled) return
-    const fetchDarshan = async () => {
-      try {
-        const req = (await import("@/config/request")).default
-        const { data } = await req.get("/content/aaj-ke-darshan")
-        const items = data?.data?.items
-        const images: string[] = Array.isArray(items?.images)
-          ? items.images.filter((u: unknown): u is string => typeof u === "string").slice(0, 5)
-          : []
-        if (images.length > 0) {
-          // Preload all images in parallel before showing
-          await Promise.allSettled(images.map(src => {
-            const img = new window.Image()
-            img.src = src
-            return new Promise(res => { img.onload = res; img.onerror = res })
-          }))
-          setSlides(images.map(src => ({
-            src,
-            label: "आज के दर्शन",
-            desc: items?.caption || "श्री राजराजेश्वरी माँ त्रिपुरा सुंदरी के आज के दर्शन",
-          })))
-          setIsDarshan(true)
-        }
-      } catch {
-        // keep fallback slides
-      }
-    }
-    fetchDarshan()
-  }, [darshanEnabled])
-
-  useEffect(() => {
-    timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 4000)
+    if (total === 0) return
+    timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 5000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [total])
 
-  const pause = () => { if (timerRef.current) clearInterval(timerRef.current) }
-  const resume = () => { timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 4000) }
+  const feed = feeds[current] as HeroFeed | undefined
+  const feedType = feed ? FEED_TYPES.find(t => t.value === feed.type) : null
+  const like = useLikeHeroFeed(feed?.id ?? "")
+  const { data: comments = [] } = useHeroFeedComments(showComments ? (feed?.id ?? "") : "")
+  const addComment = useAddHeroFeedComment(feed?.id ?? "")
+
+  const [liked, setLiked] = useState(false)
+  const [localLikes, setLocalLikes] = useState(0)
+
+  useEffect(() => {
+    if (!feed) return
+    setLocalLikes(feed.likesCount)
+    try { setLiked(JSON.parse(localStorage.getItem("liked-feed") || "[]").includes(feed.id)) } catch { setLiked(false) }
+  }, [feed?.id])
+
+  const handleLike = () => {
+    if (liked || !feed) return
+    setLiked(true)
+    setLocalLikes(n => n + 1)
+    like.mutate()
+    try {
+      const arr = JSON.parse(localStorage.getItem("liked-feed") || "[]")
+      localStorage.setItem("liked-feed", JSON.stringify([...arr, feed.id]))
+    } catch {}
+  }
+
+  const handleComment = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!commentText.trim() || !feed) return
+    addComment.mutate({ authorName: commentName.trim() || "अज्ञात", content: commentText.trim() }, {
+      onSuccess: () => { setCommentText(""); setCommentName("") }
+    })
+  }
+
+  if (isLoading) return (
+    <div className="w-full rounded-3xl bg-orange-50 flex items-center justify-center" style={{ aspectRatio: "9/16", maxHeight: "520px" }}>
+      <Loader2 className="w-8 h-8 text-orange-300 animate-spin" />
+    </div>
+  )
+
+  if (total === 0) return (
+    <div className="w-full rounded-3xl bg-gradient-to-b from-orange-50 to-amber-50 flex flex-col items-center justify-center gap-3 p-6 text-center" style={{ aspectRatio: "9/16", maxHeight: "520px" }}>
+      <Gift className="w-10 h-10 text-orange-300" />
+      <p className="text-orange-500 font-medium text-sm">समाज की सूचनाएं यहाँ दिखेंगी</p>
+      <p className="text-gray-400 text-xs">बधाई · जन्मदिवस · शोक संदेश</p>
+    </div>
+  )
 
   return (
-    <div className="relative w-full aspect-square rounded-3xl overflow-hidden shadow-2xl select-none" onMouseEnter={pause} onMouseLeave={resume}>
-      {isDarshan && (
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-orange-500/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
-          <Flame className="w-3.5 h-3.5" />
-          आज के दर्शन
+    <div className="w-full select-none" onMouseEnter={pause} onMouseLeave={resume}>
+      {/* Card: 75% image + 25% details */}
+      <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-white flex flex-col" style={{ aspectRatio: "9/16", maxHeight: "520px" }}>
+        {/* 75% IMAGE */}
+        <div className="relative flex-[3] overflow-hidden">
+          {feeds.map((f, i) => (
+            <div key={f.id} className={`absolute inset-0 transition-opacity duration-700 ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
+              <Image src={f.imageUrl} alt={f.heading} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" unoptimized priority={i === 0} />
+            </div>
+          ))}
+          {/* Type badge */}
+          {feedType && (
+            <div className={`absolute top-3 left-3 z-20 flex items-center gap-1.5 ${feedType.bg} ${feedType.color} text-xs font-bold px-3 py-1.5 rounded-full shadow-sm`}>
+              {feedType.label}
+            </div>
+          )}
+          {/* Nav arrows */}
+          {total > 1 && (<>
+            <button onClick={() => go(current - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all">
+              <ChevronLeft className="w-4 h-4 text-gray-700" />
+            </button>
+            <button onClick={() => go(current + 1)} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all">
+              <ChevRight className="w-4 h-4 text-gray-700" />
+            </button>
+          </>)}
+          {/* Dots */}
+          {total > 1 && (
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
+              {feeds.map((_, i) => (
+                <button key={i} onClick={() => go(i)} className={`rounded-full transition-all duration-300 ${i === current ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/50 hover:bg-white/80"}`} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 25% DETAILS */}
+        <div className="flex-1 flex flex-col px-4 pt-3 pb-2 bg-white overflow-hidden">
+          {feed && (<>
+            <p className="font-extrabold text-gray-900 text-sm leading-snug line-clamp-2">{feed.heading}</p>
+            <p className="text-orange-600 font-semibold text-xs mt-1">{feed.personName}</p>
+            {feed.details && <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-1">{feed.details}</p>}
+
+            {/* Like + Comment */}
+            <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50">
+              <button onClick={handleLike}
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl font-semibold transition-all ${liked ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-400"}`}>
+                <Heart className={`w-3.5 h-3.5 ${liked ? "fill-red-500" : ""}`} />
+                {localLikes > 0 ? localLikes : "पसंद"}
+              </button>
+              <button onClick={() => setShowComments(v => !v)}
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl font-semibold transition-all ${showComments ? "bg-orange-50 text-orange-500" : "bg-gray-50 text-gray-400 hover:bg-orange-50 hover:text-orange-400"}`}>
+                <MessageCircle className="w-3.5 h-3.5" />
+                {feed._count?.comments || "टिप्पणी"}
+              </button>
+              <span className="ml-auto text-[10px] text-gray-300">{current + 1}/{total}</span>
+            </div>
+          </>)}
+        </div>
+      </div>
+
+      {/* Comments panel */}
+      {showComments && feed && (
+        <div className="mt-2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-700">टिप्पणियाँ</span>
+            <button onClick={() => setShowComments(false)} className="text-gray-400 hover:text-gray-600 p-1"><X className="w-4 h-4" /></button>
+          </div>
+          <div className="max-h-36 overflow-y-auto px-4 py-2 space-y-2">
+            {comments.length === 0 && <p className="text-xs text-gray-400 text-center py-2">पहली टिप्पणी करें</p>}
+            {comments.map(c => (
+              <div key={c.id} className="text-xs">
+                <span className="font-semibold text-gray-700">{c.authorName}: </span>
+                <span className="text-gray-500">{c.content}</span>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={handleComment} className="px-4 py-3 border-t border-gray-50 flex gap-2">
+            <div className="flex-1 space-y-1">
+              <input value={commentName} onChange={e => setCommentName(e.target.value)} placeholder="आपका नाम (वैकल्पिक)"
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-orange-300" />
+              <input value={commentText} onChange={e => setCommentText(e.target.value)} placeholder="टिप्पणी लिखें..." required
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-orange-300" />
+            </div>
+            <button type="submit" disabled={addComment.isPending}
+              className="self-end bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition-colors disabled:opacity-50">
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </form>
         </div>
       )}
-      {slides.map((slide, i) => (
-        <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
-          <Image src={slide.src} alt={slide.label} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority unoptimized loading="eager" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-          {!isDarshan && (
-            <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
-              <div className="inline-block bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">{slide.label}</div>
-              <p className="text-white text-sm font-medium leading-tight">{slide.desc}</p>
-            </div>
-          )}
-          {isDarshan && i === current && (
-            <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-              <p className="text-white text-xs font-medium leading-snug line-clamp-2 drop-shadow">{slide.desc}</p>
-            </div>
-          )}
-        </div>
-      ))}
-      <button onClick={() => go(current - 1)} className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all">
-        <ChevronLeft className="w-4 h-4 text-gray-700" />
-      </button>
-      <button onClick={() => go(current + 1)} className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all">
-        <ChevRight className="w-4 h-4 text-gray-700" />
-      </button>
-      <div className="absolute bottom-14 right-4 z-20 flex gap-1.5">
-        {slides.map((_, i) => (
-          <button key={i} onClick={() => go(i)} className={`rounded-full transition-all duration-300 ${i === current ? "w-5 h-2 bg-orange-400" : "w-2 h-2 bg-white/60 hover:bg-white"}`} />
-        ))}
-      </div>
-      <div className="absolute top-4 right-4 z-20 bg-black/40 text-white text-xs px-2.5 py-1 rounded-full">{current + 1} / {total}</div>
     </div>
   )
 }
@@ -354,17 +424,17 @@ export default function CommunityPortal() {
               </div>
             </div>
 
-            {/* Slider with decorative frame */}
-            <div className="order-1 lg:order-2 w-full max-w-sm mx-auto lg:mx-0 lg:ml-auto">
+            {/* Hero Feed Slider */}
+            <div className="order-1 lg:order-2 w-full max-w-xs mx-auto lg:mx-0 lg:ml-auto">
               <div className="relative">
                 <div className="absolute -inset-3 rounded-3xl opacity-20 blur-xl" style={{ background: "linear-gradient(135deg,#f97316,#c2410c)" }} />
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-4 ring-orange-200/50">
-                  <HeroSlider darshanEnabled={isEnabled("darshan_slider")} />
+                <div className="relative">
+                  <HeroFeedSlider />
                 </div>
                 {/* Floating badge */}
-                <div className="absolute -bottom-3 -right-3 bg-white rounded-2xl px-3 py-2 shadow-lg border border-orange-100 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-xs font-semibold text-gray-700">आज के दर्शन</span>
+                <div className="absolute -bottom-3 -right-3 bg-white rounded-2xl px-3 py-2 shadow-lg border border-orange-100 flex items-center gap-2 z-10">
+                  <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-700">समाज संदेश</span>
                 </div>
               </div>
             </div>
