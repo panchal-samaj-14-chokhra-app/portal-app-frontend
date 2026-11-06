@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft, Download } from "lucide-react"
 import Link from "next/link"
 import { useNiyamavaliArticles, useNiyamavaliArticle } from "@/data-hooks/mutation-query/useNiyamavali"
+import { NIYAMAVALI_GROUPS } from "@/data-hooks/requests/niyamavali"
 
 // ── Decorative divider ────────────────────────────────────────────────────────
 function OrnamentDivider() {
@@ -201,20 +202,31 @@ function NiyamavaliInner() {
               <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-orange-400" /></div>
             ) : (
               <nav className="pb-6 px-3 space-y-1">
-                {articles?.map(art => (
-                  <button key={art.id} onClick={() => selectArticle(art.id)}
-                    className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all group
-                      ${activeId === art.id
-                        ? "bg-orange-600 text-white shadow-md shadow-orange-200"
-                        : "text-orange-900 hover:bg-orange-100"}`}>
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                      ${activeId === art.id ? "bg-white/25 text-white" : "bg-orange-100 text-orange-600"}`}>
-                      {art.articleNumber || "•"}
-                    </span>
-                    <span className="text-sm font-medium leading-snug flex-1">{art.title}</span>
-                    {activeId === art.id && <ChevronRight className="w-3.5 h-3.5 opacity-70 shrink-0" />}
-                  </button>
-                ))}
+                {NIYAMAVALI_GROUPS.map(grp => {
+                  const grpArticles = (articles ?? []).filter(a => (a.group || "shubh") === grp.value)
+                  if (!grpArticles.length) return null
+                  return (
+                    <div key={grp.value}>
+                      <div className={`px-2 py-1 mt-3 mb-1 text-xs font-bold uppercase tracking-wider rounded ${grp.bg} ${grp.color}`}>
+                        {grp.label}
+                      </div>
+                      {grpArticles.map(art => (
+                        <button key={art.id} onClick={() => selectArticle(art.id)}
+                          className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all group
+                            ${activeId === art.id
+                              ? "bg-orange-600 text-white shadow-md shadow-orange-200"
+                              : "text-orange-900 hover:bg-orange-100"}`}>
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+                            ${activeId === art.id ? "bg-white/25 text-white" : `${grp.bg} ${grp.color}`}`}>
+                            {art.articleNumber || "•"}
+                          </span>
+                          <span className="text-sm font-medium leading-snug flex-1">{art.title}</span>
+                          {activeId === art.id && <ChevronRight className="w-3.5 h-3.5 opacity-70 shrink-0" />}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })}
               </nav>
             )}
           </div>
@@ -241,20 +253,31 @@ function NiyamavaliInner() {
               <nav className="flex-1 pb-6 px-3 space-y-1">
                 {isLoading ? (
                   <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-orange-400" /></div>
-                ) : articles?.map(art => (
-                  <button key={art.id} onClick={() => selectArticle(art.id)}
-                    className={`w-full text-left flex items-center gap-2.5 px-3 py-3 rounded-xl transition-all
-                      ${activeId === art.id
-                        ? "bg-orange-600 text-white shadow-md shadow-orange-200"
-                        : "text-orange-900 hover:bg-orange-100"}`}>
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                      ${activeId === art.id ? "bg-white/25 text-white" : "bg-orange-100 text-orange-600"}`}>
-                      {art.articleNumber || "•"}
-                    </span>
-                    <span className="text-sm font-medium leading-snug">{art.title}</span>
-                    {activeId === art.id && <ChevronRight className="w-3.5 h-3.5 opacity-70 shrink-0 ml-auto" />}
-                  </button>
-                ))}
+                ) : NIYAMAVALI_GROUPS.map(grp => {
+                  const grpArticles = (articles ?? []).filter(a => (a.group || "shubh") === grp.value)
+                  if (!grpArticles.length) return null
+                  return (
+                    <div key={grp.value}>
+                      <div className={`px-2 py-1 mt-3 mb-1 text-xs font-bold uppercase tracking-wider rounded ${grp.bg} ${grp.color}`}>
+                        {grp.label}
+                      </div>
+                      {grpArticles.map(art => (
+                        <button key={art.id} onClick={() => selectArticle(art.id)}
+                          className={`w-full text-left flex items-center gap-2.5 px-3 py-3 rounded-xl transition-all
+                            ${activeId === art.id
+                              ? "bg-orange-600 text-white shadow-md shadow-orange-200"
+                              : "text-orange-900 hover:bg-orange-100"}`}>
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+                            ${activeId === art.id ? "bg-white/25 text-white" : `${grp.bg} ${grp.color}`}`}>
+                            {art.articleNumber || "•"}
+                          </span>
+                          <span className="text-sm font-medium leading-snug">{art.title}</span>
+                          {activeId === art.id && <ChevronRight className="w-3.5 h-3.5 opacity-70 shrink-0 ml-auto" />}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })}
               </nav>
             </div>
           </div>
@@ -272,18 +295,31 @@ function NiyamavaliInner() {
               <h2 className="text-2xl font-extrabold text-orange-900 mb-2">पंचाल समाज नियमावली</h2>
               <p className="text-gray-500 text-sm mb-6">बाईं ओर से कोई भी अनुच्छेद चुनें</p>
               <OrnamentDivider />
-              <div className="mt-6 grid gap-3 max-w-sm mx-auto">
+              <div className="mt-6 max-w-sm mx-auto space-y-4">
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-orange-400 mx-auto" /> :
-                  articles?.map(art => (
-                    <button key={art.id} onClick={() => selectArticle(art.id)}
-                      className="flex items-center gap-3 w-full px-5 py-3.5 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 hover:border-orange-400 transition-all text-left shadow-sm">
-                      <span className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-sm font-bold shrink-0">
-                        {art.articleNumber || "•"}
-                      </span>
-                      <span className="text-orange-900 font-medium text-sm">{art.title}</span>
-                      <ChevronRight className="w-4 h-4 text-orange-300 ml-auto" />
-                    </button>
-                  ))}
+                  NIYAMAVALI_GROUPS.map(grp => {
+                    const grpArticles = (articles ?? []).filter(a => (a.group || "shubh") === grp.value)
+                    if (!grpArticles.length) return null
+                    return (
+                      <div key={grp.value}>
+                        <div className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-lg mb-2 ${grp.bg} ${grp.color}`}>
+                          {grp.label}
+                        </div>
+                        <div className="grid gap-2">
+                          {grpArticles.map(art => (
+                            <button key={art.id} onClick={() => selectArticle(art.id)}
+                              className={`flex items-center gap-3 w-full px-5 py-3.5 rounded-xl border bg-white hover:bg-orange-50 transition-all text-left shadow-sm ${grp.border}`}>
+                              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${grp.bg} ${grp.color}`}>
+                                {art.articleNumber || "•"}
+                              </span>
+                              <span className="text-orange-900 font-medium text-sm">{art.title}</span>
+                              <ChevronRight className="w-4 h-4 text-orange-300 ml-auto" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
               </div>
             </div>
           ) : (
