@@ -8,7 +8,7 @@ import {
   useSamajEventsAdmin, useCreateSamajEvent, useUpdateSamajEvent, useDeleteSamajEvent,
   useSamajPosts, useUpdateSamajPost, useDeleteSamajPost,
 } from "@/data-hooks/mutation-query/useSamajContent"
-import type { SamajNews, SamajPressRelease, SamajEvent, SamajPost } from "@/data-hooks/requests/samaj-content"
+import type { SamajNews, SamajPressRelease, SamajEvent } from "@/data-hooks/requests/samaj-content"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
@@ -26,8 +26,6 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: "events", label: "कार्यक्रम",       icon: Calendar },
   { id: "posts",  label: "पोस्ट",           icon: MessageSquare },
 ]
-
-// ── Generic text field ────────────────────────────────────────────────────────
 
 function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
@@ -47,8 +45,6 @@ function TextArea({ label, ...props }: { label: string } & React.TextareaHTMLAtt
   )
 }
 
-// ── Confirm delete dialog ──────────────────────────────────────────────────────
-
 function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onClose: () => void; onConfirm: () => void; label: string }) {
   return (
     <AlertDialog open={open} onOpenChange={v => !v && onClose()}>
@@ -66,9 +62,7 @@ function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onC
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// NEWS PANEL
-// ══════════════════════════════════════════════════════════════════════════════
+// ── News ──────────────────────────────────────────────────────────────────────
 
 function NewsPanel() {
   const { data: items, isLoading } = useSamajNewsAdmin()
@@ -81,19 +75,14 @@ function NewsPanel() {
 
   const startEdit = (item: SamajNews) => { setEditing(item.id); setForm(item) }
   const cancelEdit = () => { setEditing(null); setForm({}) }
-
   const handleSave = () => {
     if (!form.title) return
-    if (editing) {
-      update.mutate({ id: editing, payload: form }, { onSuccess: cancelEdit })
-    } else {
-      create.mutate(form, { onSuccess: cancelEdit })
-    }
+    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: cancelEdit })
+    else create.mutate(form, { onSuccess: cancelEdit })
   }
 
   return (
     <div className="space-y-4">
-      {/* Form */}
       <div className="bg-orange-50 rounded-2xl p-5 space-y-3">
         <h3 className="font-bold text-gray-700 text-sm">{editing ? "समाचार अपडेट करें" : "नया समाचार जोड़ें"}</h3>
         <Field label="शीर्षक *" value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="समाचार का शीर्षक" />
@@ -122,8 +111,6 @@ function NewsPanel() {
           {editing && <Button size="sm" variant="ghost" onClick={cancelEdit}><X className="w-4 h-4" /> रद्द करें</Button>}
         </div>
       </div>
-
-      {/* List */}
       {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
       <div className="space-y-2">
         {items?.map(item => (
@@ -148,14 +135,13 @@ function NewsPanel() {
           <div className="text-center py-8 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
         )}
       </div>
-      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""} onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
     </div>
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PRESS PANEL
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Press ─────────────────────────────────────────────────────────────────────
 
 function PressPanel() {
   const { data: items, isLoading } = useSamajPressAdmin()
@@ -198,7 +184,6 @@ function PressPanel() {
           {editing && <Button size="sm" variant="ghost" onClick={cancelEdit}><X className="w-4 h-4" /> रद्द करें</Button>}
         </div>
       </div>
-
       {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
       <div className="space-y-2">
         {items?.map(item => (
@@ -218,14 +203,13 @@ function PressPanel() {
           <div className="text-center py-8 text-gray-400 text-sm">अभी कोई प्रेस विज्ञप्ति नहीं है।</div>
         )}
       </div>
-      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""} onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
     </div>
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// EVENTS PANEL
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Events ────────────────────────────────────────────────────────────────────
 
 function EventsPanel() {
   const { data: items, isLoading } = useSamajEventsAdmin()
@@ -266,7 +250,6 @@ function EventsPanel() {
           {editing && <Button size="sm" variant="ghost" onClick={cancelEdit}><X className="w-4 h-4" /> रद्द करें</Button>}
         </div>
       </div>
-
       {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
       <div className="space-y-2">
         {items?.map(item => (
@@ -285,14 +268,13 @@ function EventsPanel() {
           <div className="text-center py-8 text-gray-400 text-sm">अभी कोई कार्यक्रम नहीं है।</div>
         )}
       </div>
-      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""} onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
     </div>
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// POSTS PANEL (admin view — moderate/delete)
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Posts (moderate) ──────────────────────────────────────────────────────────
 
 function PostsPanel() {
   const { data: posts, isLoading } = useSamajPosts({ status: "all" })
@@ -302,7 +284,9 @@ function PostsPanel() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-gray-500">सदस्यों की पोस्ट देखें और प्रबंधित करें। पोस्ट को छिपाएं या हटाएं।</p>
+      <p className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-2">
+        सदस्यों की पोस्ट यहाँ दिखती हैं। पोस्ट को छिपाएं या हटाएं।
+      </p>
       {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
       {posts?.map(post => (
         <div key={post.id} className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
@@ -314,12 +298,10 @@ function PostsPanel() {
             <div className="text-xs text-gray-600 mt-0.5 line-clamp-2">{post.content}</div>
             <div className="text-[10px] text-gray-400 mt-0.5">{new Date(post.createdAt).toLocaleString("hi-IN")} · {post.likesCount} लाइक · {post._count?.comments || 0} टिप्पणी</div>
           </div>
-          <div className="flex gap-1 shrink-0">
+          <div className="flex gap-1 shrink-0 items-center">
             <button
               onClick={() => update.mutate({ id: post.id, payload: { status: post.status === "published" ? "hidden" : "published" } })}
-              className={`p-1.5 rounded-lg text-xs ${post.status === "published" ? "text-gray-400 hover:bg-gray-50" : "text-orange-500 hover:bg-orange-50"}`}
-              title={post.status === "published" ? "छिपाएं" : "प्रकाशित करें"}
-            >
+              className={`px-2 py-1 rounded-lg text-[10px] font-semibold ${post.status === "published" ? "bg-gray-100 text-gray-500 hover:bg-gray-200" : "bg-green-100 text-green-700 hover:bg-green-200"}`}>
               {post.status === "published" ? "छिपाएं" : "दिखाएं"}
             </button>
             <button onClick={() => setDeleting({ id: post.id, title: post.content.slice(0, 40) })} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
@@ -329,25 +311,22 @@ function PostsPanel() {
       {!isLoading && (!posts || posts.length === 0) && (
         <div className="text-center py-8 text-gray-400 text-sm">अभी कोई पोस्ट नहीं है।</div>
       )}
-      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""} onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+      <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
     </div>
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PAGE
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SamajContentPage() {
   const [tab, setTab] = useState<Tab>("news")
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-extrabold text-gray-800">समाज कंटेंट प्रबंधन</h1>
-        <p className="text-gray-400 text-sm mt-1">समाचार, प्रेस विज्ञप्ति, कार्यक्रम और पोस्ट प्रबंधित करें।</p>
+        <h2 className="text-xl font-extrabold text-gray-800">समाज पोर्टल प्रबंधन</h2>
+        <p className="text-gray-400 text-sm mt-0.5">समाचार, प्रेस विज्ञप्ति, कार्यक्रम और पोस्ट प्रबंधित करें।</p>
       </div>
-
-      {/* Tab bar */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -356,7 +335,6 @@ export default function SamajContentPage() {
           </button>
         ))}
       </div>
-
       {tab === "news"   && <NewsPanel />}
       {tab === "press"  && <PressPanel />}
       {tab === "events" && <EventsPanel />}
