@@ -19,15 +19,16 @@ import {
   useCreateSamajPost, useToggleSamajPostLike, useAddSamajPostComment, useSamajPostComments,
 } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajPost, SamajNews, SamajPressRelease } from "@/data-hooks/requests/samaj-content"
+import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
 
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: "होम",           href: "#home",         icon: Home },
-  { label: "समाचार",        href: "#feed",         icon: Newspaper },
-  { label: "प्रेस विज्ञप्ति", href: "/press-release", icon: FileText },
-  { label: "कार्यक्रम",    href: "/events",       icon: Calendar },
-  { label: "नियमावली",     href: "/niyamavali",   icon: BookOpen },
+  { label: "होम",           href: "#home",          icon: Home,      flagKey: null },
+  { label: "समाचार",        href: "#feed",          icon: Newspaper, flagKey: "news_feed" },
+  { label: "प्रेस विज्ञप्ति", href: "/press-release", icon: FileText,  flagKey: "press_release" },
+  { label: "कार्यक्रम",    href: "/events",        icon: Calendar,  flagKey: "events" },
+  { label: "नियमावली",     href: "/niyamavali",    icon: BookOpen,  flagKey: "niyamavali" },
 ]
 
 // ─── STATS ──────────────────────────────────────────────────────────────────
@@ -68,7 +69,7 @@ const FALLBACK_SLIDES = [
 // HERO IMAGE SLIDER
 // ═══════════════════════════════════════════════════════════════════════════
 
-function HeroSlider() {
+function HeroSlider({ darshanEnabled = true }: { darshanEnabled?: boolean }) {
   const [current, setCurrent] = useState(0)
   const [slides, setSlides] = useState(FALLBACK_SLIDES as { src: string; label: string; desc: string }[])
   const [isDarshan, setIsDarshan] = useState(false)
@@ -77,6 +78,7 @@ function HeroSlider() {
   const go = (idx: number) => setCurrent((idx + total) % total)
 
   useEffect(() => {
+    if (!darshanEnabled) return
     // Fetch today's darshan images from the mandir content API
     const fetchDarshan = async () => {
       try {
@@ -99,7 +101,7 @@ function HeroSlider() {
       }
     }
     fetchDarshan()
-  }, [])
+  }, [darshanEnabled])
 
   useEffect(() => {
     timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 4000)
@@ -344,6 +346,13 @@ export default function CommunityPortal() {
   const [counted,   setCounted]   = useState(false)
   const statsRef = useRef<HTMLDivElement>(null)
 
+  const { data: flags } = useFeatureFlags()
+  const isEnabled = (key: string) => {
+    if (!flags) return true
+    const f = flags.find(f => f.key === key)
+    return f ? f.enabled : true
+  }
+
   const { data: newsFeed,  isLoading: newsLoading }  = useSamajNews({ take: "5" })
   const { data: postsFeed, isLoading: postsLoading } = useSamajPosts({ take: "5" })
   const { data: pressFeed } = useSamajPress({ take: "3" })
@@ -398,7 +407,7 @@ export default function CommunityPortal() {
               </div>
             </Link>
             <div className="hidden lg:flex items-center gap-1">
-              {NAV_ITEMS.map(item => (
+              {NAV_ITEMS.filter(item => !item.flagKey || isEnabled(item.flagKey)).map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setActiveNav(item.href)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeNav === item.href ? "bg-orange-100 text-orange-700" : "text-gray-500 hover:text-orange-700 hover:bg-orange-50"}`}>
                   {item.label}
@@ -416,7 +425,7 @@ export default function CommunityPortal() {
         </div>
         {menuOpen && (
           <div className="lg:hidden border-t bg-white px-4 py-3 space-y-1 shadow-lg">
-            {NAV_ITEMS.map(item => (
+            {NAV_ITEMS.filter(item => !item.flagKey || isEnabled(item.flagKey)).map(item => (
               <Link key={item.href} href={item.href} onClick={() => { setActiveNav(item.href); setMenuOpen(false) }}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700">
                 <item.icon className="w-4 h-4 text-orange-400" />{item.label}
@@ -464,7 +473,7 @@ export default function CommunityPortal() {
               </button>
             </div>
             <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
-              <HeroSlider />
+              <HeroSlider darshanEnabled={isEnabled("darshan_slider")} />
             </div>
           </div>
         </div>
@@ -512,7 +521,7 @@ export default function CommunityPortal() {
       </div>
 
       {/* ── SOCIAL FEED ────────────────────────────────────────────────── */}
-      <section id="feed" className="py-10 sm:py-14 px-4 bg-white">
+      {isEnabled("news_feed") && <section id="feed" className="py-10 sm:py-14 px-4 bg-white">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="inline-flex bg-gray-100 rounded-xl p-1 gap-1">
@@ -566,10 +575,10 @@ export default function CommunityPortal() {
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
       {/* ── PRESS RELEASES ─────────────────────────────────────────────── */}
-      <section id="press" className="py-14 px-4 bg-gray-50">
+      {isEnabled("press_release") && <section id="press" className="py-14 px-4 bg-gray-50">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-extrabold text-gray-800">प्रेस विज्ञप्ति</h2>
@@ -601,7 +610,7 @@ export default function CommunityPortal() {
             )}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ── FOOTER ─────────────────────────────────────────────────────── */}
       <footer className="bg-gray-900 text-gray-300">
