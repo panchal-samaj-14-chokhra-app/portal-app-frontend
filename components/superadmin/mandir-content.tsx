@@ -11,6 +11,7 @@ import MandirSubscribers from "./mandir-subscribers"
 import ShringarBookings from "./shringar-bookings"
 import SubmissionsList from "./submissions-list"
 import OrderBook from "./order-book"
+import SectionFeatureFlags from "./section-feature-flags"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { getAccessToken } from "@/lib/auth/client"
@@ -154,6 +155,13 @@ export default function MandirContent() {
   return (
     <div className="space-y-6">
       <DarshanLikeCount />
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <SectionFeatureFlags
+          section="mandir"
+          title="मंदिर — फ़ीचर फ्लैग्स"
+          description="मंदिर पोर्टल की सुविधाएं चालू / बंद करें"
+        />
+      </div>
       <p className="text-sm text-gray-600">किसी अनुभाग को संपादित करने के लिए उस पर क्लिक करें। यह सामग्री मंदिर वेबसाइट पर दिखेगी।</p>
 
       {SECTION_CATEGORIES.map((category) => {

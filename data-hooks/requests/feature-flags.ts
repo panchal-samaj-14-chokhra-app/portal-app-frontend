@@ -9,8 +9,8 @@ export interface FeatureFlag {
   updatedAt: string
 }
 
-export const getFeatureFlags = async (): Promise<FeatureFlag[]> => {
-  const { data } = await request.get("/feature-flags")
+export const getFeatureFlags = async (section?: string): Promise<FeatureFlag[]> => {
+  const { data } = await request.get("/feature-flags", { params: section ? { section } : {} })
   return data.data
 }
 

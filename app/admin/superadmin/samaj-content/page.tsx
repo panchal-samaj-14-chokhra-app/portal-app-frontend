@@ -20,6 +20,8 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { uploadBlogImage } from "@/data-hooks/requests/blog"
+import SectionFeatureFlags from "@/components/superadmin/section-feature-flags"
+import { ToggleLeft } from "lucide-react"
 import {
   useSamajNewsAdmin, useCreateSamajNews, useUpdateSamajNews, useDeleteSamajNews,
   useSamajPressAdmin, useCreateSamajPress, useUpdateSamajPress, useDeleteSamajPress,
@@ -28,13 +30,14 @@ import {
 } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajNews, SamajPressRelease, SamajEvent } from "@/data-hooks/requests/samaj-content"
 
-type Tab = "news" | "press" | "events" | "posts"
+type Tab = "news" | "press" | "events" | "posts" | "flags"
 
 const TABS: { id: Tab; label: string; icon: any; desc: string }[] = [
-  { id: "news",   label: "समाचार",          icon: Newspaper,      desc: "समाज के समाचार एवं सूचनाएं" },
-  { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText,       desc: "आधिकारिक विज्ञप्तियां" },
-  { id: "events", label: "कार्यक्रम",       icon: Calendar,       desc: "आगामी एवं बीते आयोजन" },
-  { id: "posts",  label: "पोस्ट मॉडरेशन",  icon: MessageSquare,  desc: "सदस्यों की पोस्ट प्रबंधन" },
+  { id: "news",   label: "समाचार",          icon: Newspaper,     desc: "समाज के समाचार एवं सूचनाएं" },
+  { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText,      desc: "आधिकारिक विज्ञप्तियां" },
+  { id: "events", label: "कार्यक्रम",       icon: Calendar,      desc: "आगामी एवं बीते आयोजन" },
+  { id: "posts",  label: "पोस्ट मॉडरेशन",  icon: MessageSquare, desc: "सदस्यों की पोस्ट प्रबंधन" },
+  { id: "flags",  label: "फ़ीचर फ्लैग्स",   icon: ToggleLeft,    desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
 ]
 
 function fmtDate(d?: string) {
@@ -698,6 +701,15 @@ export default function SamajContentPage() {
       {tab === "press"  && <PressPanel />}
       {tab === "events" && <EventsPanel />}
       {tab === "posts"  && <PostsPanel />}
+      {tab === "flags"  && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <SectionFeatureFlags
+            section="samaj_portal"
+            title="समाज पोर्टल — फ़ीचर फ्लैग्स"
+            description="इन फ़ीचर को चालू या बंद करने पर वेबसाइट के नेवबार एवं सेक्शन तुरंत प्रभावित होंगे।"
+          />
+        </div>
+      )}
     </div>
   )
 }
