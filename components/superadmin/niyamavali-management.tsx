@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
+import CkEditor from "@/components/superadmin/ck-editor"
 import { Plus, Pencil, Trash2, Loader2, BookOpen, ScrollText, ChevronLeft, ChevronUp, ChevronDown, Eye, EyeOff, Save } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -51,73 +51,6 @@ function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onC
   )
 }
 
-function RichEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
-
-  const wrap = (before: string, after: string) => {
-    const ta = ref.current
-    if (!ta) return
-    const s = ta.selectionStart, e = ta.selectionEnd
-    const sel = value.slice(s, e) || "टेक्स्ट"
-    const next = value.slice(0, s) + before + sel + after + value.slice(e)
-    onChange(next)
-    requestAnimationFrame(() => { ta.focus(); ta.selectionStart = s + before.length; ta.selectionEnd = e + before.length })
-  }
-
-  const block = (tag: string) => {
-    const ta = ref.current
-    if (!ta) return
-    const s = ta.selectionStart, e = ta.selectionEnd
-    const sel = value.slice(s, e) || "टेक्स्ट यहाँ लिखें"
-    onChange(value.slice(0, s) + `<${tag}>${sel}</${tag}>\n` + value.slice(e))
-  }
-
-  const ToolBtn = ({ label, title, onClick, cls = "" }: { label: string; title: string; onClick: () => void; cls?: string }) => (
-    <button type="button" title={title} onClick={onClick}
-      className={`px-2.5 py-1 rounded text-xs font-semibold border border-orange-200 bg-white hover:bg-orange-50 text-orange-800 transition-colors ${cls}`}>
-      {label}
-    </button>
-  )
-
-  return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-orange-400">
-      <div className="flex flex-wrap gap-1.5 p-2.5 bg-orange-50 border-b border-orange-100">
-        <ToolBtn label="B" title="Bold (मोटा)" onClick={() => wrap("<strong>", "</strong>")} cls="font-black" />
-        <ToolBtn label="I" title="Italic (तिरछा)" onClick={() => wrap("<em>", "</em>")} cls="italic" />
-        <ToolBtn label="H2" title="Heading 2" onClick={() => block("h2")} />
-        <ToolBtn label="H3" title="Heading 3" onClick={() => block("h3")} />
-        <ToolBtn label="§ P" title="Paragraph" onClick={() => block("p")} />
-        <ToolBtn label="• सूची" title="Bullet list" onClick={() => block("ul")} />
-        <ToolBtn label="1. सूची" title="Numbered list" onClick={() => block("ol")} />
-        <ToolBtn label="<li>" title="List item" onClick={() => wrap("<li>", "</li>")} />
-        <ToolBtn label="─ रेखा" title="Divider" onClick={() => onChange(value + "\n<hr/>\n")} />
-        <div className="ml-auto text-xs text-orange-400 self-center">HTML</div>
-      </div>
-      <Textarea
-        ref={ref}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        rows={16}
-        className="font-mono text-sm border-0 rounded-none focus-visible:ring-0 resize-y bg-white"
-        placeholder={"<h3>नियम का शीर्षक</h3>\n<p>विवरण यहाँ लिखें...</p>\n<ol>\n<li>पहला बिंदु</li>\n<li>दूसरा बिंदु</li>\n</ol>"}
-      />
-    </div>
-  )
-}
-
-function HtmlPreview({ html }: { html: string }) {
-  if (!html.trim()) return <p className="text-gray-400 text-sm italic">कुछ लिखें तो प्रीव्यू दिखेगा।</p>
-  return (
-    <div
-      className="text-gray-700 leading-loose text-sm
-        [&_h2]:text-orange-900 [&_h2]:font-extrabold [&_h2]:text-xl [&_h2]:mt-4 [&_h2]:mb-2
-        [&_h3]:text-orange-800 [&_h3]:font-bold [&_h3]:text-base [&_h3]:mt-3 [&_h3]:mb-1.5
-        [&_p]:mb-2.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1
-        [&_li]:text-gray-700 [&_strong]:text-orange-900 [&_strong]:font-semibold [&_em]:italic [&_hr]:border-orange-100 [&_hr]:my-3"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  )
-}
 
 function SectionsPanel({ article, onBack }: { article: NiyamavaliArticle; onBack: () => void }) {
   const { toast } = useToast()
@@ -130,14 +63,13 @@ function SectionsPanel({ article, onBack }: { article: NiyamavaliArticle; onBack
   const [form, setForm] = useState<Partial<NiyamavaliSection>>({ status: "published", order: 0, content: "" })
   const [editing, setEditing] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
-  const [preview, setPreview] = useState(false)
   const saving = create.isPending || update.isPending
 
   const openCreate = () => {
     const nextOrder = sections?.length ?? 0
-    setEditing(null); setForm({ status: "published", order: nextOrder, content: "", articleId: article.id }); setPreview(false); setOpen(true)
+    setEditing(null); setForm({ status: "published", order: nextOrder, content: "", articleId: article.id }); setOpen(true)
   }
-  const openEdit = (s: NiyamavaliSection) => { setEditing(s.id); setForm({ ...s }); setPreview(false); setOpen(true) }
+  const openEdit = (s: NiyamavaliSection) => { setEditing(s.id); setForm({ ...s }); setOpen(true) }
   const closeForm = () => { setOpen(false); setEditing(null); setForm({ status: "published", order: 0, content: "" }) }
 
   const handleSave = () => {
@@ -243,22 +175,8 @@ function SectionsPanel({ article, onBack }: { article: NiyamavaliArticle; onBack
               </div>
             </div>
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label>सामग्री (HTML)</Label>
-                <div className="flex rounded-lg overflow-hidden border border-orange-200 text-xs">
-                  <button className={`px-3 py-1.5 transition-colors ${!preview ? "bg-orange-600 text-white" : "bg-white text-orange-700 hover:bg-orange-50"}`}
-                    onClick={() => setPreview(false)}>✏️ संपादित करें</button>
-                  <button className={`px-3 py-1.5 transition-colors ${preview ? "bg-orange-600 text-white" : "bg-white text-orange-700 hover:bg-orange-50"}`}
-                    onClick={() => setPreview(true)}>👁 प्रीव्यू</button>
-                </div>
-              </div>
-              {preview ? (
-                <div className="min-h-[300px] border border-orange-100 rounded-xl p-5 bg-white">
-                  <HtmlPreview html={form.content || ""} />
-                </div>
-              ) : (
-                <RichEditor value={form.content || ""} onChange={v => setForm(f => ({ ...f, content: v }))} />
-              )}
+              <Label>सामग्री</Label>
+              <CkEditor value={form.content || ""} onChange={v => setForm(f => ({ ...f, content: v }))} />
             </div>
           </div>
           <DialogFooter>
