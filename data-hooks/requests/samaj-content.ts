@@ -23,6 +23,14 @@ export type SamajPostComment = {
   createdAt: string
 }
 
+export type SamajNewsComment = {
+  id: string
+  newsId: string
+  authorName: string
+  content: string
+  createdAt: string
+}
+
 export type SamajNews = {
   id: string
   title: string
@@ -31,9 +39,11 @@ export type SamajNews = {
   content?: string | null
   imageUrl?: string | null
   status: string
+  likesCount: number
   publishedAt: string
   createdAt: string
   updatedAt: string
+  _count?: { comments: number }
 }
 
 export type SamajPressRelease = {
@@ -131,6 +141,26 @@ export const updateSamajNews = async (id: string, payload: Partial<SamajNews>): 
 export const deleteSamajNews = async (id: string) => {
   const { data } = await request.delete(`/samaj-news/${id}`)
   return data
+}
+
+export const getSamajNewsById = async (id: string): Promise<SamajNews> => {
+  const { data } = await request.get(`/samaj-news/${id}`)
+  return data.data
+}
+
+export const likeSamajNews = async (id: string): Promise<{ likesCount: number }> => {
+  const { data } = await request.post(`/samaj-news/${id}/like`)
+  return data.data
+}
+
+export const getSamajNewsComments = async (id: string): Promise<SamajNewsComment[]> => {
+  const { data } = await request.get(`/samaj-news/${id}/comments`)
+  return data.data
+}
+
+export const addSamajNewsComment = async (id: string, payload: { authorName: string; content: string }): Promise<SamajNewsComment> => {
+  const { data } = await request.post(`/samaj-news/${id}/comments`, payload)
+  return data.data
 }
 
 // ── Press Releases ────────────────────────────────────────────────────────────

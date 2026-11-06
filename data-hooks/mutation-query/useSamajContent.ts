@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getSamajPosts, createSamajPost, updateSamajPost, deleteSamajPost,
   toggleSamajPostLike, getSamajPostComments, addSamajPostComment, deleteSamajPostComment,
-  getSamajNews, getSamajNewsAdmin, createSamajNews, updateSamajNews, deleteSamajNews,
+  getSamajNews, getSamajNewsById, getSamajNewsAdmin, createSamajNews, updateSamajNews, deleteSamajNews,
+  likeSamajNews, getSamajNewsComments, addSamajNewsComment,
   getSamajPress, getSamajPressAdmin, createSamajPress, updateSamajPress, deleteSamajPress,
   getSamajEvents, getSamajEventsAdmin, createSamajEvent, updateSamajEvent, deleteSamajEvent,
   type SamajPost, type SamajNews, type SamajPressRelease, type SamajEvent,
@@ -93,6 +94,36 @@ export const useDeleteSamajNews = () => {
   return useMutation({
     mutationFn: (id: string) => deleteSamajNews(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["samaj-news"] }); qc.invalidateQueries({ queryKey: ["samaj-news-admin"] }) },
+  })
+}
+
+export const useSamajNewsById = (id?: string) =>
+  useQuery({
+    queryKey: ["samaj-news-item", id],
+    queryFn: () => getSamajNewsById(id as string),
+    enabled: !!id,
+  })
+
+export const useLikeSamajNews = (id: string) => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => likeSamajNews(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["samaj-news"] }); qc.invalidateQueries({ queryKey: ["samaj-news-item", id] }) },
+  })
+}
+
+export const useSamajNewsComments = (newsId?: string) =>
+  useQuery({
+    queryKey: ["samaj-news-comments", newsId],
+    queryFn: () => getSamajNewsComments(newsId as string),
+    enabled: !!newsId,
+  })
+
+export const useAddSamajNewsComment = (newsId: string) => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { authorName: string; content: string }) => addSamajNewsComment(newsId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["samaj-news-comments", newsId] }),
   })
 }
 

@@ -4,18 +4,18 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
-  Menu, X, ChevronRight, Users, MapPin, Heart, Star, Newspaper,
-  BookOpen, Stethoscope, FileText,
+  Menu, X, ChevronRight, Heart, Star, Newspaper,
+  BookOpen, FileText, Stethoscope,
   Handshake, Vote, Award,
   Phone, Mail, Facebook, Twitter, Youtube, Instagram,
   Home, GraduationCap, Database, UserCheck,
   Briefcase, Gift, Flame, Download,
-  ChevronDown,
+  ChevronDown, Share2, MessageCircle,
   ChevronLeft, ChevronRight as ChevRight,
-  Calendar, Loader2,
+  Calendar, Loader2, MapPin,
 } from "lucide-react"
 import {
-  useSamajNews, useSamajPress,
+  useSamajNews, useSamajPress, useLikeSamajNews,
 } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajNews, SamajPressRelease } from "@/data-hooks/requests/samaj-content"
 import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
@@ -152,21 +152,61 @@ function HeroSlider({ darshanEnabled = true }: { darshanEnabled?: boolean }) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function NewsCard({ item }: { item: SamajNews }) {
+  const [liked, setLiked] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("liked-news") || "[]").includes(item.id) } catch { return false }
+  })
+  const [localLikes, setLocalLikes] = useState(item.likesCount || 0)
+  const like = useLikeSamajNews(item.id)
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (liked) return
+    setLiked(true)
+    setLocalLikes(n => n + 1)
+    like.mutate()
+    try {
+      const arr = JSON.parse(localStorage.getItem("liked-news") || "[]")
+      localStorage.setItem("liked-news", JSON.stringify([...arr, item.id]))
+    } catch {}
+  }
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const url = `${window.location.origin}/news/${item.id}`
+    if (navigator.share) navigator.share({ title: item.title, url })
+    else navigator.clipboard.writeText(url).then(() => alert("लिंक कॉपी हो गया!"))
+  }
+
   const date = new Date(item.publishedAt).toLocaleDateString("hi-IN", { day: "numeric", month: "short", year: "numeric" })
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer group p-5">
+    <Link href={`/news/${item.id}`} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer group block overflow-hidden">
       {item.imageUrl && (
-        <div className="relative rounded-xl overflow-hidden mb-3 bg-gray-100">
-          <Image src={item.imageUrl} alt={item.title} width={600} height={300} className="w-full object-cover max-h-44" />
+        <div className="overflow-hidden bg-gray-50">
+          <Image src={item.imageUrl} alt={item.title} width={600} height={300}
+            className="w-full h-auto group-hover:scale-[1.02] transition-transform duration-300" unoptimized />
         </div>
       )}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{item.tag}</span>
-        <span className="text-gray-400 text-xs">{date}</span>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{item.tag}</span>
+          <span className="text-gray-400 text-xs">{date}</span>
+        </div>
+        <h4 className="font-bold text-gray-800 text-sm mb-1.5 group-hover:text-orange-700 transition-colors leading-snug line-clamp-2">{item.title}</h4>
+        {item.summary && <p className="text-gray-400 text-xs leading-relaxed line-clamp-2 mb-3">{item.summary}</p>}
+        <div className="flex items-center gap-1 pt-2 border-t border-gray-50">
+          <button onClick={handleLike}
+            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${liked ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}>
+            <Heart className={`w-3 h-3 ${liked ? "fill-red-500" : ""}`} />
+            {localLikes > 0 && localLikes}
+          </button>
+          <span className="flex items-center gap-1 text-xs text-gray-400 px-2 py-1">
+            <MessageCircle className="w-3 h-3" />{item._count?.comments || 0}
+          </span>
+          <button onClick={handleShare} className="text-gray-400 hover:text-green-600 p-1 rounded-lg ml-auto">
+            <Share2 className="w-3 h-3" />
+          </button>
+        </div>
       </div>
-      <h4 className="font-bold text-gray-800 text-base mb-1.5 group-hover:text-orange-700 transition-colors leading-snug">{item.title}</h4>
-      {item.summary && <p className="text-gray-500 text-sm leading-relaxed">{item.summary}</p>}
-    </div>
+    </Link>
   )
 }
 
@@ -244,58 +284,106 @@ export default function CommunityPortal() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────── */}
-      <section id="home" className="pt-[60px] min-h-screen flex flex-col justify-center bg-gradient-to-br from-orange-50 via-white to-amber-50">
-        <div className="max-w-7xl mx-auto px-4 py-16 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 text-xs font-semibold px-4 py-1.5 rounded-full">
-                <Star className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
-                डिजिटल सामाजिक मंच · राजस्थान
+      <section id="home" className="relative pt-[60px] min-h-screen flex flex-col justify-center overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fffbf5 40%, #fef3c7 100%)" }} />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle, #fb923c, transparent 70%)" }} />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-15 blur-3xl" style={{ background: "radial-gradient(circle, #f97316, transparent 70%)" }} />
+          {/* Decorative pattern */}
+          <div className="absolute inset-0 opacity-[0.03]"
+            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c2410c' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 py-12 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div className="space-y-7 order-2 lg:order-1">
+              {/* Top label */}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 max-w-[40px] bg-gradient-to-r from-orange-400 to-transparent" />
+                <span className="text-orange-600 text-xs font-bold tracking-widest uppercase">पंचाल समाज पोर्टल</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
-                पंचाल समाज<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-700">चौदह चौखरा</span>
-              </h1>
-              <p className="text-orange-600 font-semibold text-sm">बांसवाड़ा – डूंगरपुर – प्रतापगढ़ – साबरकांठा, राजस्थान</p>
-              {/* 14 Chokhra names */}
+              <div>
+                <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-tight text-gray-900">
+                  पंचाल समाज
+                </h1>
+                <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-tight"
+                  style={{ WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(90deg,#c2410c,#ea580c,#f97316)", WebkitBackgroundClip: "text" }}>
+                  चौदह चौखरा
+                </h1>
+              </div>
+              <p className="text-orange-600/80 font-medium text-sm tracking-wide">बांसवाड़ा · डूंगरपुर · प्रतापगढ़ · साबरकांठा — राजस्थान</p>
+
+              {/* 14 Chokhra pills */}
               <div className="flex flex-wrap gap-1.5">
-                {["चौरासी","डूंगरपुर","बोरी","पाठोक","बेताली","तरपोट","मैयोड","खमेरा","बांसवाड़ा","लोहारिया","सागवाड़ा","परसोला","परतापुर","खड़क"].map(name => (
-                  <span key={name} className="px-2.5 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full border border-orange-200">
+                {["चौरासी","डूंगरपुर","बोरी","पाठोक","बेताली","तरपोट","मैयोड","खमेरा","बांसवाड़ा","लोहारिया","सागवाड़ा","परसोला","परतापुर","खड़क"].map((name, i) => (
+                  <span key={name}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-full border transition-all hover:scale-105 cursor-default"
+                    style={{
+                      background: i % 3 === 0 ? "rgba(234,88,12,0.08)" : i % 3 === 1 ? "rgba(251,191,36,0.1)" : "rgba(194,65,12,0.06)",
+                      borderColor: i % 3 === 0 ? "rgba(234,88,12,0.25)" : i % 3 === 1 ? "rgba(217,119,6,0.3)" : "rgba(194,65,12,0.2)",
+                      color: i % 3 === 0 ? "#c2410c" : i % 3 === 1 ? "#92400e" : "#9a3412",
+                    }}>
                     {name}
                   </span>
                 ))}
               </div>
-              <button
-                onClick={() => {
-                  setShowSvc(v => !v)
-                  setTimeout(() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
-                }}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:from-orange-600 hover:to-orange-700 transition-all text-sm sm:text-base"
-              >
-                Explore Digital Panchal Samaj
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSvc ? "rotate-180" : ""}`} />
-              </button>
+
+              {/* CTA buttons */}
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => {
+                    setShowSvc(v => !v)
+                    setTimeout(() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold shadow-lg shadow-orange-200 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: "linear-gradient(135deg, #c2410c 0%, #ea580c 60%, #f97316 100%)" }}>
+                  सेवाएं देखें
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSvc ? "rotate-180" : ""}`} />
+                </button>
+                <Link href="/community-hub"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-orange-700 text-sm font-bold bg-white border border-orange-200 shadow-sm hover:shadow-md hover:bg-orange-50 transition-all">
+                  जनगणना
+                </Link>
+              </div>
             </div>
-            <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
-              <HeroSlider darshanEnabled={isEnabled("darshan_slider")} />
+
+            {/* Slider with decorative frame */}
+            <div className="order-1 lg:order-2 w-full max-w-sm mx-auto lg:mx-0 lg:ml-auto">
+              <div className="relative">
+                <div className="absolute -inset-3 rounded-3xl opacity-20 blur-xl" style={{ background: "linear-gradient(135deg,#f97316,#c2410c)" }} />
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-4 ring-orange-200/50">
+                  <HeroSlider darshanEnabled={isEnabled("darshan_slider")} />
+                </div>
+                {/* Floating badge */}
+                <div className="absolute -bottom-3 -right-3 bg-white rounded-2xl px-3 py-2 shadow-lg border border-orange-100 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-700">आज के दर्शन</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
         <div className="flex justify-center pb-6 animate-bounce">
-          <ChevronDown className="w-6 h-6 text-orange-400" />
+          <ChevronDown className="w-5 h-5 text-orange-300" />
         </div>
       </section>
 
       {/* ── EXPLORE SERVICES ───────────────────────────────────────────── */}
       <div id="services"
-        className={`overflow-hidden transition-all duration-500 bg-gray-50 border-b border-gray-100 ${showSvc ? "max-h-[800px] py-10" : "max-h-0 py-0"}`}>
+        className={`overflow-hidden transition-all duration-500 border-b border-orange-100 ${showSvc ? "max-h-[900px] py-10" : "max-h-0 py-0"}`}
+        style={{ background: "linear-gradient(180deg, #fff7ed 0%, #fffbf5 100%)" }}>
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-lg font-bold text-gray-700 mb-6 text-center">समाज की डिजिटल सेवाएं</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-extrabold text-gray-800">समाज की डिजिटल सेवाएं</h2>
+            <p className="text-xs text-gray-400 mt-1">पंचाल समाज चौदह चौखरा के सभी डिजिटल माध्यम</p>
+          </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {SERVICES.map(svc => (
               <Link key={svc.title} href={svc.href}
-                className="flex flex-col items-center gap-2 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:border-orange-200 hover:shadow-md transition-all group text-center">
-                <div className={`w-10 h-10 rounded-xl ${svc.color} flex items-center justify-center`}>
+                className="flex flex-col items-center gap-2 bg-white rounded-2xl p-4 shadow-sm border border-orange-50 hover:border-orange-200 hover:shadow-md transition-all group text-center">
+                <div className={`w-10 h-10 rounded-xl ${svc.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                   <svc.icon className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-medium text-gray-700 group-hover:text-orange-700 leading-tight">{svc.title}</span>
@@ -306,29 +394,30 @@ export default function CommunityPortal() {
       </div>
 
       {/* ── NEWS FEED ──────────────────────────────────────────────────── */}
-      {isEnabled("news_feed") && <section id="feed" className="py-10 sm:py-14 px-4 bg-white">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="flex items-center gap-2 text-xl font-extrabold text-gray-800">
-              <Newspaper className="w-5 h-5 text-orange-500" />समाज समाचार
-            </h2>
+      {isEnabled("news_feed") && <section id="feed" className="py-12 sm:py-16 px-4"
+        style={{ background: "linear-gradient(180deg, #fffbf5 0%, #ffffff 100%)" }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-extrabold text-gray-900">समाज समाचार</h2>
+              <p className="text-xs text-gray-400 mt-0.5">पंचाल समाज की ताज़ा खबरें</p>
+            </div>
+            <Link href="/news"
+              className="flex items-center gap-1.5 text-orange-600 text-sm font-semibold hover:text-orange-800 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-xl transition-colors">
+              सभी देखें <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
-          <div className="space-y-4">
-            {newsLoading && (
-              <div className="text-center py-10 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
-            )}
-            {!newsLoading && (!newsFeed || newsFeed.length === 0) && (
-              <div className="text-center py-10 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
-            )}
-            {newsFeed?.map(item => <NewsCard key={item.id} item={item} />)}
-            {newsFeed && newsFeed.length > 0 && (
-              <div className="text-center pt-2">
-                <Link href="/news" className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
-                  सभी समाचार देखें <ChevronRight className="w-4 h-4" />
-                </Link>
-              </div>
-            )}
-          </div>
+          {newsLoading && (
+            <div className="text-center py-10 text-orange-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
+          )}
+          {!newsLoading && (!newsFeed || newsFeed.length === 0) && (
+            <div className="text-center py-10 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
+          )}
+          {newsFeed && newsFeed.length > 0 && (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {newsFeed.map(item => <NewsCard key={item.id} item={item} />)}
+            </div>
+          )}
         </div>
       </section>}
 
