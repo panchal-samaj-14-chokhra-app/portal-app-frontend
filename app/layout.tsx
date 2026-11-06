@@ -24,7 +24,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Panchal Samaj 14 Chokhra" }],
   viewport: "width=device-width, initial-scale=1",
   themeColor: "#f97316",
-  generator: 'v0.dev'
+  icons: {
+    icon: "/images/main-logo.png",
+    apple: "/images/main-logo.png",
+  },
 }
 
 export default function RootLayout({
