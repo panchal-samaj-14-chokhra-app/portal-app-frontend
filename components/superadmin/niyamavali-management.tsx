@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import CkEditor from "@/components/superadmin/ck-editor"
+import RichTextEditor from "@/components/superadmin/rich-text-editor"
 import { Plus, Pencil, Trash2, Loader2, BookOpen, ScrollText, ChevronLeft, ChevronUp, ChevronDown, Eye, EyeOff, Save } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -177,7 +177,12 @@ function SectionsPanel({ article, onBack }: { article: NiyamavaliArticle; onBack
             </div>
             <div className="space-y-1.5">
               <Label>सामग्री</Label>
-              <CkEditor value={form.content || ""} onChange={v => setForm(f => ({ ...f, content: v }))} />
+              <RichTextEditor
+                key={editing || "new"}
+                initialValue={form.content || ""}
+                onChange={v => setForm(f => ({ ...f, content: v }))}
+                placeholder="नियम का विवरण यहाँ लिखें..."
+              />
             </div>
           </div>
           <DialogFooter>
