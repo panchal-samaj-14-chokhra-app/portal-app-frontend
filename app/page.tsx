@@ -69,17 +69,22 @@ function HeroSlider({ darshanEnabled = true }: { darshanEnabled?: boolean }) {
 
   useEffect(() => {
     if (!darshanEnabled) return
-    // Fetch today's darshan images from the mandir content API
     const fetchDarshan = async () => {
       try {
-        const { default: req } = await import("@/config/request")
+        const req = (await import("@/config/request")).default
         const { data } = await req.get("/content/aaj-ke-darshan")
         const items = data?.data?.items
         const images: string[] = Array.isArray(items?.images)
           ? items.images.filter((u: unknown): u is string => typeof u === "string").slice(0, 5)
           : []
         if (images.length > 0) {
-          setSlides(images.map((src, i) => ({
+          // Preload all images in parallel before showing
+          await Promise.allSettled(images.map(src => {
+            const img = new window.Image()
+            img.src = src
+            return new Promise(res => { img.onload = res; img.onerror = res })
+          }))
+          setSlides(images.map(src => ({
             src,
             label: "आज के दर्शन",
             desc: items?.caption || "श्री राजराजेश्वरी माँ त्रिपुरा सुंदरी के आज के दर्शन",
@@ -111,7 +116,7 @@ function HeroSlider({ darshanEnabled = true }: { darshanEnabled?: boolean }) {
       )}
       {slides.map((slide, i) => (
         <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
-          <Image src={slide.src} alt={slide.label} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} unoptimized />
+          <Image src={slide.src} alt={slide.label} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority unoptimized loading="eager" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           {!isDarshan && (
             <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
@@ -251,15 +256,15 @@ export default function CommunityPortal() {
                 पंचाल समाज<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-700">चौदह चौखरा</span>
               </h1>
-              <p className="text-orange-600 font-semibold text-sm">बांसवाड़ा – डूंगरपुर – प्रतापगढ़ – उदयपुर, राजस्थान</p>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-700 italic border-l-4 border-orange-400 pl-4 leading-snug">
-                "एक समाज, एक पहचान,<br className="hidden sm:block" />एक डिजिटल मंच।"
-              </p>
-              <p className="text-gray-500 text-sm sm:text-base leading-relaxed max-w-lg">
-                पंचाल समाज के सभी परिवारों और सदस्यों को एक डिजिटल मंच पर जोड़ने का प्रयास।
-                समाज की गतिविधियों, समाचारों, उपलब्धियों, शिक्षा, रोजगार और सामाजिक सहयोग की
-                जानकारी अब एक ही स्थान पर।
-              </p>
+              <p className="text-orange-600 font-semibold text-sm">बांसवाड़ा – डूंगरपुर – प्रतापगढ़ – साबरकांठा, राजस्थान</p>
+              {/* 14 Chokhra names */}
+              <div className="flex flex-wrap gap-1.5">
+                {["चौरासी","डूंगरपुर","बोरी","पाठोक","बेताली","तरपोट","मैयोड","खमेरा","बांसवाड़ा","लोहारिया","सागवाड़ा","परसोला","परतापुर","खड़क"].map(name => (
+                  <span key={name} className="px-2.5 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full border border-orange-200">
+                    {name}
+                  </span>
+                ))}
+              </div>
               <button
                 onClick={() => {
                   setShowSvc(v => !v)
