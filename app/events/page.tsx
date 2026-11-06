@@ -27,8 +27,8 @@ function EventCard({ event, past }: { event: SamajEvent; past?: boolean }) {
   return (
     <article className={`bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow ${past ? "opacity-85" : ""}`}>
       {event.imageUrl && (
-        <div className="relative aspect-video w-full bg-gray-100">
-          <Image src={event.imageUrl} alt={event.title} fill className="object-cover" />
+        <div className="w-full bg-gray-50">
+          <Image src={event.imageUrl} alt={event.title} width={1200} height={900} className="w-full h-auto" unoptimized />
         </div>
       )}
       <div className="flex gap-4 p-5 sm:gap-6 sm:p-7">
