@@ -23,8 +23,8 @@ import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: "होम",           href: "#home",          icon: Home,      flagKey: null },
-  { label: "समाचार",        href: "#feed",          icon: Newspaper, flagKey: "news_feed" },
+  { label: "होम",           href: "/",              icon: Home,      flagKey: null },
+  { label: "समाचार",        href: "/news",          icon: Newspaper, flagKey: "news_feed" },
   { label: "प्रेस विज्ञप्ति", href: "/press-release", icon: FileText,  flagKey: "press_release" },
   { label: "कार्यक्रम",    href: "/events",        icon: Calendar,  flagKey: "events" },
   { label: "नियमावली",     href: "/niyamavali",    icon: BookOpen,  flagKey: "niyamavali" },
@@ -217,7 +217,7 @@ function NewsCard({ item }: { item: SamajNews }) {
 export default function CommunityPortal() {
   const [menuOpen,  setMenuOpen]  = useState(false)
   const [scrolled,  setScrolled]  = useState(false)
-  const [activeNav, setActiveNav] = useState("#home")
+  const [activeNav, setActiveNav] = useState("/")
   const [showSvc,   setShowSvc]   = useState(false)
 
   const { data: flags } = useFeatureFlags()
@@ -338,13 +338,9 @@ export default function CommunityPortal() {
                   }}
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold shadow-lg shadow-orange-200 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                   style={{ background: "linear-gradient(135deg, #c2410c 0%, #ea580c 60%, #f97316 100%)" }}>
-                  सेवाएं देखें
+                  डिजिटल सेवाएं
                   <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSvc ? "rotate-180" : ""}`} />
                 </button>
-                <Link href="/community-hub"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-orange-700 text-sm font-bold bg-white border border-orange-200 shadow-sm hover:shadow-md hover:bg-orange-50 transition-all">
-                  जनगणना
-                </Link>
               </div>
             </div>
 
