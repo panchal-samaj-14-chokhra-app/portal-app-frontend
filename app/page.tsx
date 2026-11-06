@@ -110,13 +110,13 @@ function HeroFeedSlider() {
   }
 
   if (isLoading) return (
-    <div className="w-full rounded-3xl bg-orange-50 flex items-center justify-center" style={{ aspectRatio: "9/16", maxHeight: "520px" }}>
+    <div className="w-full rounded-3xl bg-orange-50 flex items-center justify-center" style={{ aspectRatio: "1/1" }}>
       <Loader2 className="w-8 h-8 text-orange-300 animate-spin" />
     </div>
   )
 
   if (total === 0) return (
-    <div className="w-full rounded-3xl bg-gradient-to-b from-orange-50 to-amber-50 flex flex-col items-center justify-center gap-3 p-6 text-center" style={{ aspectRatio: "9/16", maxHeight: "520px" }}>
+    <div className="w-full rounded-3xl bg-gradient-to-b from-orange-50 to-amber-50 flex flex-col items-center justify-center gap-3 p-6 text-center" style={{ aspectRatio: "1/1" }}>
       <Gift className="w-10 h-10 text-orange-300" />
       <p className="text-orange-500 font-medium text-sm">समाज की सूचनाएं यहाँ दिखेंगी</p>
       <p className="text-gray-400 text-xs">बधाई · जन्मदिवस · शोक संदेश</p>
@@ -125,10 +125,10 @@ function HeroFeedSlider() {
 
   return (
     <div className="w-full select-none" onMouseEnter={pause} onMouseLeave={resume}>
-      {/* Card: 75% image + 25% details */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-white flex flex-col" style={{ aspectRatio: "9/16", maxHeight: "520px" }}>
-        {/* 75% IMAGE */}
-        <div className="relative flex-[3] overflow-hidden">
+      {/* Card: square image (4:4) + fixed details bar below */}
+      <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-white flex flex-col">
+        {/* IMAGE — square 1:1 */}
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "1/1" }}>
           {feeds.map((f, i) => (
             <div key={f.id} className={`absolute inset-0 transition-opacity duration-700 ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
               <Image src={f.imageUrl} alt={f.heading} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" unoptimized priority={i === 0} />
@@ -159,15 +159,15 @@ function HeroFeedSlider() {
           )}
         </div>
 
-        {/* 25% DETAILS */}
-        <div className="flex-1 flex flex-col px-4 pt-3 pb-2 bg-white overflow-hidden">
+        {/* DETAILS bar — fixed height below image */}
+        <div className="px-4 pt-3 pb-3 bg-white">
           {feed && (<>
-            <p className="font-extrabold text-gray-900 text-sm leading-snug line-clamp-2">{feed.heading}</p>
-            <p className="text-orange-600 font-semibold text-xs mt-1">{feed.personName}</p>
+            <p className="font-extrabold text-gray-900 text-sm leading-snug line-clamp-1">{feed.heading}</p>
+            <p className="text-orange-600 font-semibold text-xs mt-0.5">{feed.personName}</p>
             {feed.details && <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-1">{feed.details}</p>}
 
             {/* Like + Comment */}
-            <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50">
+            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
               <button onClick={handleLike}
                 className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl font-semibold transition-all ${liked ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-400"}`}>
                 <Heart className={`w-3.5 h-3.5 ${liked ? "fill-red-500" : ""}`} />
@@ -184,14 +184,14 @@ function HeroFeedSlider() {
         </div>
       </div>
 
-      {/* Comments panel */}
+      {/* Comments panel — outside card so not clipped */}
       {showComments && feed && (
-        <div className="mt-2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+        <div className="mt-2 bg-white rounded-2xl shadow-lg border border-gray-100">
+          <div className="px-4 py-2.5 border-b border-gray-50 flex items-center justify-between">
             <span className="text-xs font-bold text-gray-700">टिप्पणियाँ</span>
             <button onClick={() => setShowComments(false)} className="text-gray-400 hover:text-gray-600 p-1"><X className="w-4 h-4" /></button>
           </div>
-          <div className="max-h-36 overflow-y-auto px-4 py-2 space-y-2">
+          <div className="max-h-28 overflow-y-auto px-4 py-2 space-y-2">
             {comments.length === 0 && <p className="text-xs text-gray-400 text-center py-2">पहली टिप्पणी करें</p>}
             {comments.map(c => (
               <div key={c.id} className="text-xs">
@@ -201,14 +201,14 @@ function HeroFeedSlider() {
             ))}
           </div>
           <form onSubmit={handleComment} className="px-4 py-3 border-t border-gray-50 flex gap-2">
-            <div className="flex-1 space-y-1">
+            <div className="flex-1 space-y-1.5">
               <input value={commentName} onChange={e => setCommentName(e.target.value)} placeholder="आपका नाम (वैकल्पिक)"
                 className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-orange-300" />
               <input value={commentText} onChange={e => setCommentText(e.target.value)} placeholder="टिप्पणी लिखें..." required
                 className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-orange-300" />
             </div>
             <button type="submit" disabled={addComment.isPending}
-              className="self-end bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition-colors disabled:opacity-50">
+              className="self-end bg-orange-500 hover:bg-orange-600 text-white p-2.5 rounded-lg transition-colors disabled:opacity-50">
               <Send className="w-3.5 h-3.5" />
             </button>
           </form>

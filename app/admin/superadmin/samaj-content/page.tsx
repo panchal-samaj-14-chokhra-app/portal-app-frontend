@@ -675,9 +675,9 @@ function PostsPanel() {
 // CROP IMAGE UPLOAD
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Crop ratio: 9:16 portrait (hero card format)
-const CROP_W = 360
-const CROP_H = 640
+// Crop ratio: 1:1 square (hero card format)
+const CROP_W = 480
+const CROP_H = 480
 
 function CropImageUpload({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { toast } = useToast()
@@ -764,11 +764,11 @@ function CropImageUpload({ value, onChange }: { value: string; onChange: (v: str
 
   return (
     <div className="space-y-3 p-3 border border-orange-200 rounded-xl bg-orange-50">
-      <p className="text-xs font-semibold text-orange-700">इमेज क्रॉप करें (9:16 पोर्ट्रेट)</p>
+      <p className="text-xs font-semibold text-orange-700">इमेज क्रॉप करें (1:1 स्क्वायर)</p>
       <div className="flex gap-3 items-start flex-wrap">
         <canvas ref={canvasRef} width={CROP_W} height={CROP_H}
           className="rounded-xl border border-orange-200 shadow-sm"
-          style={{ width: 108, height: 192 }} />
+          style={{ width: 160, height: 160 }} />
         <div className="flex-1 space-y-3 min-w-[180px]">
           {/* Hidden img for drawing */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -927,7 +927,7 @@ function HeroFeedPanel() {
               <Textarea value={form.details || ""} onChange={e => set("details", e.target.value)} placeholder="अतिरिक्त जानकारी जैसे पता, परिवार आदि" rows={2} />
             </div>
             <div className="space-y-1.5">
-              <Label>इमेज * (9:16 पोर्ट्रेट साइज़)</Label>
+              <Label>इमेज * (1:1 स्क्वायर साइज़)</Label>
               <CropImageUpload value={form.imageUrl || ""} onChange={v => set("imageUrl", v)} />
             </div>
             <div className="space-y-1.5">
