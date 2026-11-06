@@ -23,7 +23,8 @@ import {
   useNiyamavaliSectionsAdmin, useCreateNiyamavaliSection,
   useUpdateNiyamavaliSection, useDeleteNiyamavaliSection,
 } from "@/data-hooks/mutation-query/useNiyamavali"
-import type { NiyamavaliArticle, NiyamavaliSection } from "@/data-hooks/requests/niyamavali"
+import type { NiyamavaliArticle, NiyamavaliSection, NiyamavaliGroup } from "@/data-hooks/requests/niyamavali"
+import { NIYAMAVALI_GROUPS } from "@/data-hooks/requests/niyamavali"
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -31,6 +32,15 @@ function StatusBadge({ status }: { status: string }) {
       ? "bg-green-100 text-green-700 hover:bg-green-100 border-0"
       : "bg-gray-100 text-gray-500 hover:bg-gray-100 border-0"}>
       {status === "published" ? "प्रकाशित" : "ड्राफ़्ट"}
+    </Badge>
+  )
+}
+
+function GroupBadge({ group }: { group?: string }) {
+  const g = NIYAMAVALI_GROUPS.find(x => x.value === group) ?? NIYAMAVALI_GROUPS[0]
+  return (
+    <Badge className={`${g.bg} ${g.color} hover:${g.bg} border-0 font-medium`}>
+      {g.label}
     </Badge>
   )
 }
@@ -214,12 +224,18 @@ function ArticlesPanel({ onSelectArticle }: { onSelectArticle: (a: NiyamavaliArt
   const remove = useDeleteNiyamavaliArticle()
 
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<Partial<NiyamavaliArticle>>({ status: "published", order: 0 })
+  const [form, setForm] = useState<Partial<NiyamavaliArticle>>({ status: "published", group: "shubh", order: 0 })
   const [editing, setEditing] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
   const saving = create.isPending || update.isPending
 
-  const openCreate = () => { setEditing(null); setForm({ status: "published", order: articles?.length ?? 0 }); setOpen(true) }
+  // Group articles by their group value for display
+  const grouped = NIYAMAVALI_GROUPS.map(g => ({
+    ...g,
+    articles: (articles ?? []).filter(a => (a.group || "shubh") === g.value),
+  })).filter(g => g.articles.length > 0)
+
+  const openCreate = () => { setEditing(null); setForm({ status: "published", group: "shubh", order: articles?.length ?? 0 }); setOpen(true) }
   const openEdit = (a: NiyamavaliArticle) => { setEditing(a.id); setForm({ ...a }); setOpen(true) }
   const closeForm = () => { setOpen(false); setEditing(null); setForm({ status: "published", order: 0 }) }
 
@@ -260,47 +276,58 @@ function ArticlesPanel({ onSelectArticle }: { onSelectArticle: (a: NiyamavaliArt
           ) : !articles?.length ? (
             <div className="text-center py-12 text-gray-400 text-sm">अभी कोई अनुच्छेद नहीं है।</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-14">अनु.</TableHead>
-                  <TableHead>शीर्षक</TableHead>
-                  <TableHead className="hidden sm:table-cell">विवरण</TableHead>
-                  <TableHead className="hidden md:table-cell">अनुभाग</TableHead>
-                  <TableHead>स्थिति</TableHead>
-                  <TableHead className="text-right">क्रिया</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {articles.map((art, i) => (
-                  <TableRow key={art.id}>
-                    <TableCell className="text-sm text-gray-500 font-mono">{art.articleNumber || (i + 1)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <ScrollText className="w-4 h-4 text-orange-400 shrink-0" />
-                        <span className="font-medium">{art.title}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-gray-400 max-w-[180px]">
-                      <div className="truncate">{art.description || "—"}</div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-gray-500">{art._count?.sections ?? "—"}</TableCell>
-                    <TableCell><StatusBadge status={art.status} /></TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveOrder(art, -1)} disabled={i === 0}><ChevronUp className="w-3.5 h-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveOrder(art, 1)} disabled={i === (articles.length - 1)}><ChevronDown className="w-3.5 h-3.5" /></Button>
-                        <Button size="sm" variant="outline" className="h-8 px-2.5 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => onSelectArticle(art)}>
-                          अनुभाग
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(art)}><Pencil className="w-4 h-4" /></Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: art.id, title: art.title })}><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="divide-y divide-gray-100">
+              {grouped.map(grp => (
+                <div key={grp.value}>
+                  {/* Group header */}
+                  <div className={`flex items-center gap-2 px-4 py-2 ${grp.bg}`}>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${grp.color}`}>{grp.label}</span>
+                    <span className={`text-xs ${grp.color} opacity-70`}>({grp.articles.length} अनुच्छेद)</span>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-14">अनु.</TableHead>
+                        <TableHead>शीर्षक</TableHead>
+                        <TableHead className="hidden sm:table-cell">विवरण</TableHead>
+                        <TableHead className="hidden md:table-cell">अनुभाग</TableHead>
+                        <TableHead>स्थिति</TableHead>
+                        <TableHead className="text-right">क्रिया</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {grp.articles.map((art, i) => (
+                        <TableRow key={art.id}>
+                          <TableCell className="text-sm text-gray-500 font-mono">{art.articleNumber || (i + 1)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <ScrollText className={`w-4 h-4 shrink-0 ${grp.color}`} />
+                              <span className="font-medium">{art.title}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell text-sm text-gray-400 max-w-[180px]">
+                            <div className="truncate">{art.description || "—"}</div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-sm text-gray-500">{art._count?.sections ?? "—"}</TableCell>
+                          <TableCell><StatusBadge status={art.status} /></TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveOrder(art, -1)} disabled={i === 0}><ChevronUp className="w-3.5 h-3.5" /></Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveOrder(art, 1)} disabled={i === grp.articles.length - 1}><ChevronDown className="w-3.5 h-3.5" /></Button>
+                              <Button size="sm" variant="outline" className="h-8 px-2.5 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => onSelectArticle(art)}>
+                                अनुभाग
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(art)}><Pencil className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: art.id, title: art.title })}><Trash2 className="w-4 h-4" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -326,6 +353,19 @@ function ArticlesPanel({ onSelectArticle }: { onSelectArticle: (a: NiyamavaliArt
             <div className="space-y-1.5">
               <Label>विवरण</Label>
               <Textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>समूह</Label>
+              <Select value={(form.group as string) || "shubh"} onValueChange={v => setForm(f => ({ ...f, group: v as NiyamavaliGroup }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {NIYAMAVALI_GROUPS.map(g => (
+                    <SelectItem key={g.value} value={g.value}>
+                      <span className={g.color}>{g.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label>स्थिति</Label>

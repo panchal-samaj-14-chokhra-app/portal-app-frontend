@@ -17,11 +17,20 @@ export interface NiyamavaliSection {
   updatedAt: string
 }
 
+export type NiyamavaliGroup = "shubh" | "ashubh" | "vidhi_vidhan"
+
+export const NIYAMAVALI_GROUPS: { value: NiyamavaliGroup; label: string; color: string; bg: string; border: string }[] = [
+  { value: "shubh",        label: "शुभ",          color: "text-orange-700", bg: "bg-orange-100", border: "border-orange-300" },
+  { value: "ashubh",       label: "अशुभ",         color: "text-blue-700",   bg: "bg-blue-100",   border: "border-blue-300" },
+  { value: "vidhi_vidhan", label: "विधि विधान",   color: "text-green-700",  bg: "bg-green-100",  border: "border-green-300" },
+]
+
 export interface NiyamavaliArticle {
   id: string
   title: string
   articleNumber?: string
   description?: string
+  group: NiyamavaliGroup
   order: number
   status: string
   createdAt: string
