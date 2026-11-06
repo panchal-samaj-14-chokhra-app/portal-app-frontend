@@ -58,13 +58,10 @@ const SERVICES = [
 
 // ─── HERO SLIDER ─────────────────────────────────────────────────────────────
 
-const SLIDES = [
+const FALLBACK_SLIDES = [
   { src: "/placeholder.jpg", label: "सामाजिक सभा",     desc: "समाज की एकता का उत्सव" },
   { src: "/placeholder.jpg", label: "धार्मिक आयोजन",   desc: "आस्था और परंपरा" },
   { src: "/placeholder.jpg", label: "सामूहिक विवाह",   desc: "समाज की पावन परंपरा" },
-  { src: "/placeholder.jpg", label: "प्रतिभा सम्मान",  desc: "मेधावी सदस्यों का सम्मान" },
-  { src: "/placeholder.jpg", label: "शिक्षा",          desc: "ज्ञान की रोशनी" },
-  { src: "/placeholder.jpg", label: "सांस्कृतिक",      desc: "हमारी विरासत, हमारी पहचान" },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -73,25 +70,68 @@ const SLIDES = [
 
 function HeroSlider() {
   const [current, setCurrent] = useState(0)
-  const total = SLIDES.length
+  const [slides, setSlides] = useState(FALLBACK_SLIDES as { src: string; label: string; desc: string }[])
+  const [isDarshan, setIsDarshan] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const total = slides.length
   const go = (idx: number) => setCurrent((idx + total) % total)
+
+  useEffect(() => {
+    // Fetch today's darshan images from the mandir content API
+    const fetchDarshan = async () => {
+      try {
+        const { default: req } = await import("@/config/request")
+        const { data } = await req.get("/content/aaj-ke-darshan")
+        const items = data?.data?.items
+        const images: string[] = Array.isArray(items?.images)
+          ? items.images.filter((u: unknown): u is string => typeof u === "string").slice(0, 5)
+          : []
+        if (images.length > 0) {
+          setSlides(images.map((src, i) => ({
+            src,
+            label: "आज के दर्शन",
+            desc: items?.caption || "श्री राजराजेश्वरी माँ त्रिपुरा सुंदरी के आज के दर्शन",
+          })))
+          setIsDarshan(true)
+        }
+      } catch {
+        // keep fallback slides
+      }
+    }
+    fetchDarshan()
+  }, [])
+
   useEffect(() => {
     timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 4000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [total])
+
   const pause = () => { if (timerRef.current) clearInterval(timerRef.current) }
   const resume = () => { timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 4000) }
+
   return (
     <div className="relative w-full aspect-square rounded-3xl overflow-hidden shadow-2xl select-none" onMouseEnter={pause} onMouseLeave={resume}>
-      {SLIDES.map((slide, i) => (
+      {isDarshan && (
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-orange-500/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+          <Flame className="w-3.5 h-3.5" />
+          आज के दर्शन
+        </div>
+      )}
+      {slides.map((slide, i) => (
         <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
-          <Image src={slide.src} alt={slide.label} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} />
+          <Image src={slide.src} alt={slide.label} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} unoptimized />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
-            <div className="inline-block bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">{slide.label}</div>
-            <p className="text-white text-sm font-medium leading-tight">{slide.desc}</p>
-          </div>
+          {!isDarshan && (
+            <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
+              <div className="inline-block bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">{slide.label}</div>
+              <p className="text-white text-sm font-medium leading-tight">{slide.desc}</p>
+            </div>
+          )}
+          {isDarshan && i === current && (
+            <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+              <p className="text-white text-xs font-medium leading-snug line-clamp-2 drop-shadow">{slide.desc}</p>
+            </div>
+          )}
         </div>
       ))}
       <button onClick={() => go(current - 1)} className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all">
@@ -101,7 +141,7 @@ function HeroSlider() {
         <ChevRight className="w-4 h-4 text-gray-700" />
       </button>
       <div className="absolute bottom-14 right-4 z-20 flex gap-1.5">
-        {SLIDES.map((_, i) => (
+        {slides.map((_, i) => (
           <button key={i} onClick={() => go(i)} className={`rounded-full transition-all duration-300 ${i === current ? "w-5 h-2 bg-orange-400" : "w-2 h-2 bg-white/60 hover:bg-white"}`} />
         ))}
       </div>
@@ -617,7 +657,11 @@ export default function CommunityPortal() {
         </div>
         <div className="border-t border-gray-800">
           <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-            <span>© {new Date().getFullYear()} पंचाल समाज चौदह चौखरा। सर्वाधिकार सुरक्षित।</span>
+            <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
+              <span>© {new Date().getFullYear()} पंचाल समाज चौदह चौखरा। सर्वाधिकार सुरक्षित।</span>
+              <span className="hidden sm:inline text-gray-700">·</span>
+              <span>Designed &amp; Developed by <a href="https://placego.online/" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 transition-colors">placego.online</a></span>
+            </div>
             <div className="flex gap-4">
               <a href="#" className="hover:text-orange-400 transition-colors">गोपनीयता नीति</a>
               <a href="#" className="hover:text-orange-400 transition-colors">नियम एवं शर्तें</a>
