@@ -68,7 +68,8 @@ export const createNiyamavaliArticle = async (payload: Partial<NiyamavaliArticle
 }
 
 export const updateNiyamavaliArticle = async (id: string, payload: Partial<NiyamavaliArticle>): Promise<NiyamavaliArticle> => {
-  const { data } = await request.put(`/niyamavali/articles/${id}`, payload)
+  const { _count, sections, ...body } = payload as any
+  const { data } = await request.put(`/niyamavali/articles/${id}`, body)
   return data.data
 }
 
