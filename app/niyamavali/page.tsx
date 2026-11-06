@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft } from "lucide-react"
+import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft, Download } from "lucide-react"
 import Link from "next/link"
 import { useNiyamavaliArticles, useNiyamavaliArticle } from "@/data-hooks/mutation-query/useNiyamavali"
 
@@ -84,21 +84,20 @@ function ArticleReader({ articleId }: { articleId: string }) {
                   </span>
                 )}
                 <h1 className="text-xl sm:text-2xl font-extrabold leading-snug">{article.title}</h1>
-                {article.description && (
-                  <p className="text-orange-100 text-sm mt-1.5 leading-relaxed">{article.description}</p>
-                )}
               </div>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 print:hidden">
               <button onClick={handleShare}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/25 transition-colors print:hidden"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/30 transition-colors text-white text-xs font-medium"
                 title="शेयर करें">
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">शेयर</span>
               </button>
               <button onClick={() => window.print()}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/25 transition-colors print:hidden"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/30 transition-colors text-white text-xs font-medium"
                 title="प्रिंट">
-                <Printer className="w-4 h-4" />
+                <Printer className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">प्रिंट</span>
               </button>
             </div>
           </div>
@@ -153,12 +152,12 @@ function NiyamavaliInner() {
         style={{ background: "linear-gradient(90deg, #9a3412 0%, #c2410c 50%, #ea580c 100%)", boxShadow: "0 2px 8px rgba(154,52,18,0.25)" }}>
         {/* Decorative top strip */}
         <div className="h-1" style={{ background: "repeating-linear-gradient(90deg,#fbbf24 0,#fbbf24 8px,#c2410c 8px,#c2410c 16px)" }} />
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href="/" className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2 sm:gap-3">
+          <Link href="/" className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           {/* Mobile hamburger */}
-          <button className="lg:hidden p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white"
+          <button className="lg:hidden p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0"
             onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
@@ -167,10 +166,23 @@ function NiyamavaliInner() {
               <BookOpen className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-white font-extrabold text-base sm:text-lg leading-tight">समाज नियमावली</h1>
-              <p className="text-orange-200 text-xs hidden sm:block">पंचाल समाज चौदह चौखरा — सामाजिक संविधान</p>
+              <h1 className="text-white font-extrabold text-sm sm:text-base lg:text-lg leading-tight truncate">समाज नियमावली</h1>
+              <p className="text-orange-200 text-xs hidden md:block">पंचाल समाज चौदह चौखरा — सामाजिक संविधान</p>
             </div>
           </div>
+          {/* Download button */}
+          <button
+            onClick={() => {
+              const prev = document.title
+              document.title = "पंचाल समाज नियमावली"
+              window.print()
+              setTimeout(() => { document.title = prev }, 1000)
+            }}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-orange-700 hover:bg-orange-50 transition-colors text-xs font-bold shadow-sm"
+            title="नियमावली डाउनलोड करें (PDF)">
+            <Download className="w-4 h-4" />
+            <span className="hidden xs:inline sm:inline">डाउनलोड</span>
+          </button>
         </div>
       </header>
 
@@ -284,8 +296,13 @@ function NiyamavaliInner() {
       <style>{`
         @media print {
           header, aside, .print\\:hidden { display: none !important; }
-          main { padding: 0 !important; }
+          main { padding: 8px !important; }
           body { background: white !important; }
+          .rounded-2xl { border-radius: 8px !important; }
+          @page { margin: 1cm; }
+        }
+        @media (max-width: 400px) {
+          .xs\\:inline { display: inline !important; }
         }
       `}</style>
     </div>
