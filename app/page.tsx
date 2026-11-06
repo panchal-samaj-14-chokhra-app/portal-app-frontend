@@ -10,16 +10,23 @@ import {
   Phone, Mail, Facebook, Twitter, Youtube, Instagram,
   Home, Info, GraduationCap, Database, UserCheck,
   Briefcase, Gift, Flame, TrendingUp, ExternalLink, Download,
-  ThumbsUp, MessageCircle, Share2, PlusCircle, ChevronDown,
-  ChevronLeft, ChevronRight as ChevRight,
+  MessageCircle, Share2, PlusCircle, ChevronDown, Send,
+  Image as ImageIcon, ChevronLeft, ChevronRight as ChevRight,
+  Calendar, Loader2,
 } from "lucide-react"
+import {
+  useSamajPosts, useSamajNews, useSamajPress,
+  useCreateSamajPost, useToggleSamajPostLike, useAddSamajPostComment, useSamajPostComments,
+} from "@/data-hooks/mutation-query/useSamajContent"
+import type { SamajPost, SamajNews, SamajPressRelease } from "@/data-hooks/requests/samaj-content"
 
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: "होम",           href: "#home",  icon: Home },
-  { label: "समाचार",        href: "#feed",  icon: Newspaper },
-  { label: "प्रेस विज्ञप्ति", href: "#press", icon: FileText },
+  { label: "होम",           href: "#home",   icon: Home },
+  { label: "समाचार",        href: "#feed",   icon: Newspaper },
+  { label: "प्रेस विज्ञप्ति", href: "/press-release", icon: FileText },
+  { label: "कार्यक्रम",    href: "/events", icon: Calendar },
 ]
 
 // ─── STATS ──────────────────────────────────────────────────────────────────
@@ -41,15 +48,14 @@ const SERVICES = [
   { icon: Stethoscope,   color: "bg-cyan-100 text-cyan-700",      title: "स्वास्थ्य एवं चिकित्सा", href: "#health" },
   { icon: Vote,          color: "bg-violet-100 text-violet-700",  title: "समाज की योजनाएं",        href: "#schemes" },
   { icon: Award,         color: "bg-amber-100 text-amber-700",    title: "उपलब्धियां",             href: "#highlights" },
-  { icon: FileText,      color: "bg-teal-100 text-teal-700",      title: "प्रेस विज्ञप्ति",        href: "#press" },
+  { icon: FileText,      color: "bg-teal-100 text-teal-700",      title: "प्रेस विज्ञप्ति",        href: "/press-release" },
   { icon: Gift,          color: "bg-pink-100 text-pink-700",      title: "बधाई एवं शुभकामनाएं",   href: "#greetings" },
   { icon: Heart,         color: "bg-slate-100 text-slate-700",    title: "शोक समाचार",            href: "#condolence" },
   { icon: Newspaper,     color: "bg-blue-100 text-blue-700",      title: "समाज समाचार",           href: "#feed" },
-  { icon: MessageSquare, color: "bg-indigo-100 text-indigo-700",  title: "समाज पोस्ट",            href: "#feed" },
+  { icon: Calendar,      color: "bg-indigo-100 text-indigo-700",  title: "कार्यक्रम",             href: "/events" },
 ]
 
 // ─── HERO SLIDER ─────────────────────────────────────────────────────────────
-// Drop real community images into /public/images/ and update src here.
 
 const SLIDES = [
   { src: "/placeholder.jpg", label: "सामाजिक सभा",     desc: "समाज की एकता का उत्सव" },
@@ -60,22 +66,6 @@ const SLIDES = [
   { src: "/placeholder.jpg", label: "सांस्कृतिक",      desc: "हमारी विरासत, हमारी पहचान" },
 ]
 
-// ─── FEED DATA ───────────────────────────────────────────────────────────────
-
-const NEWS_FEED = [
-  { tag: "घोषणा",   date: "5 Nov 2026",  title: "समाज की वार्षिक महासभा का आयोजन बांसवाड़ा में", desc: "समस्त समाजबंधुओं को सूचित किया जाता है कि इस वर्ष की महासभा दिसम्बर माह में आयोजित की जाएगी। सभी की उपस्थिति अपेक्षित है।" },
-  { tag: "शिक्षा",   date: "3 Nov 2026",  title: "मेधावी छात्रों को छात्रवृत्ति वितरण समारोह", desc: "10वीं एवं 12वीं में उत्कृष्ट प्रदर्शन करने वाले छात्रों को छात्रवृत्ति प्रदान की जाएगी।" },
-  { tag: "स्वास्थ्य", date: "1 Nov 2026",  title: "निशुल्क स्वास्थ्य शिविर — डूंगरपुर", desc: "समाज के सभी सदस्यों के लिए निशुल्क चिकित्सा परीक्षण एवं दवा वितरण का आयोजन किया गया।" },
-  { tag: "आयोजन",   date: "28 Oct 2026", title: "सामूहिक विवाह सम्मेलन — पंजीकरण प्रारंभ", desc: "समाज के युवक-युवतियों के लिए सामूहिक विवाह सम्मेलन का आयोजन। पंजीकरण की अंतिम तिथि 30 नवम्बर।" },
-]
-
-const POSTS_FEED = [
-  { name: "राजेश पंचाल",  loc: "बांसवाड़ा",   time: "2 घंटे पहले",  text: "समाज की एकता ही हमारी सबसे बड़ी ताकत है। आइए, मिलकर समाज को और सशक्त बनाएं। 🙏", likes: 124, comments: 23, avatar: "रा" },
-  { name: "सुनीता पंचाल", loc: "उदयपुर",      time: "5 घंटे पहले",  text: "बच्चों की शिक्षा के लिए समाज का योगदान सराहनीय है। छात्रवृत्ति योजना से कई छात्र लाभान्वित हो रहे हैं।", likes: 89, comments: 15, avatar: "सु" },
-  { name: "महेश पंचाल",   loc: "डूंगरपुर",    time: "1 दिन पहले",   text: "आगामी महासभा में सभी समाजबंधुओं से अनुरोध है कि अधिक से अधिक संख्या में उपस्थित हों।", likes: 201, comments: 45, avatar: "म" },
-  { name: "अनीता पंचाल",  loc: "प्रतापगढ़",   time: "2 दिन पहले",   text: "RAS परीक्षा में सफलता पाकर बहुत खुशी हो रही है। समाज के सभी बड़ों का आशीर्वाद और प्रोत्साहन मिला। 🎉", likes: 342, comments: 78, avatar: "अ" },
-]
-
 // ═══════════════════════════════════════════════════════════════════════════
 // HERO IMAGE SLIDER
 // ═══════════════════════════════════════════════════════════════════════════
@@ -84,82 +74,217 @@ function HeroSlider() {
   const [current, setCurrent] = useState(0)
   const total = SLIDES.length
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
   const go = (idx: number) => setCurrent((idx + total) % total)
-
-  // Auto-advance every 4 s
   useEffect(() => {
     timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 4000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [total])
-
   const pause = () => { if (timerRef.current) clearInterval(timerRef.current) }
   const resume = () => { timerRef.current = setInterval(() => setCurrent(c => (c + 1) % total), 4000) }
-
   return (
-    <div
-      className="relative w-full aspect-square rounded-3xl overflow-hidden shadow-2xl select-none"
-      onMouseEnter={pause}
-      onMouseLeave={resume}
-    >
-      {/* Slides */}
+    <div className="relative w-full aspect-square rounded-3xl overflow-hidden shadow-2xl select-none" onMouseEnter={pause} onMouseLeave={resume}>
       {SLIDES.map((slide, i) => (
-        <div
-          key={i}
-          className={`absolute inset-0 transition-opacity duration-700 ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}
-        >
-          <Image
-            src={slide.src}
-            alt={slide.label}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 50vw"
-            priority={i === 0}
-          />
-          {/* Gradient overlay */}
+        <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
+          <Image src={slide.src} alt={slide.label} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-          {/* Caption */}
           <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
-            <div className="inline-block bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
-              {slide.label}
-            </div>
+            <div className="inline-block bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">{slide.label}</div>
             <p className="text-white text-sm font-medium leading-tight">{slide.desc}</p>
           </div>
         </div>
       ))}
-
-      {/* Prev / Next arrows */}
-      <button
-        onClick={() => go(current - 1)}
-        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all"
-        aria-label="Previous"
-      >
+      <button onClick={() => go(current - 1)} className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all">
         <ChevronLeft className="w-4 h-4 text-gray-700" />
       </button>
-      <button
-        onClick={() => go(current + 1)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all"
-        aria-label="Next"
-      >
+      <button onClick={() => go(current + 1)} className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-all">
         <ChevRight className="w-4 h-4 text-gray-700" />
       </button>
-
-      {/* Dot indicators */}
       <div className="absolute bottom-14 right-4 z-20 flex gap-1.5">
         {SLIDES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => go(i)}
-            className={`rounded-full transition-all duration-300 ${i === current ? "w-5 h-2 bg-orange-400" : "w-2 h-2 bg-white/60 hover:bg-white"}`}
-            aria-label={`Slide ${i + 1}`}
-          />
+          <button key={i} onClick={() => go(i)} className={`rounded-full transition-all duration-300 ${i === current ? "w-5 h-2 bg-orange-400" : "w-2 h-2 bg-white/60 hover:bg-white"}`} />
         ))}
       </div>
+      <div className="absolute top-4 right-4 z-20 bg-black/40 text-white text-xs px-2.5 py-1 rounded-full">{current + 1} / {total}</div>
+    </div>
+  )
+}
 
-      {/* Slide counter */}
-      <div className="absolute top-4 right-4 z-20 bg-black/40 text-white text-xs px-2.5 py-1 rounded-full">
-        {current + 1} / {total}
+// ═══════════════════════════════════════════════════════════════════════════
+// POST CARD
+// ═══════════════════════════════════════════════════════════════════════════
+
+function PostCard({ post }: { post: SamajPost }) {
+  const [liked, setLiked]           = useState(false)
+  const [localLikes, setLocalLikes] = useState(post.likesCount)
+  const [showComments, setShowComments] = useState(false)
+  const [commentText, setCommentText]   = useState("")
+  const [commentName, setCommentName]   = useState("")
+  const toggleLike = useToggleSamajPostLike()
+  const { data: comments } = useSamajPostComments(showComments ? post.id : undefined)
+  const addComment = useAddSamajPostComment(post.id)
+  const initials = (post.authorName || "?").slice(0, 2).toUpperCase()
+  const timeAgo = new Date(post.createdAt).toLocaleDateString("hi-IN", { day: "numeric", month: "short" })
+  const handleLike = () => {
+    setLiked(l => !l)
+    setLocalLikes(n => liked ? n - 1 : n + 1)
+    toggleLike.mutate(post.id)
+  }
+  const handleComment = () => {
+    if (!commentText.trim()) return
+    addComment.mutate({ authorName: commentName || "अज्ञात", content: commentText }, {
+      onSuccess: () => { setCommentText(""); setCommentName("") },
+    })
+  }
+  const sharePost = () => {
+    if (navigator.share) {
+      navigator.share({ title: `${post.authorName} की पोस्ट`, text: post.content, url: window.location.href })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+    }
+  }
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow p-5">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+          {initials}
+        </div>
+        <div className="flex-1">
+          <div className="font-semibold text-gray-800 text-sm">{post.authorName}</div>
+          <div className="text-gray-400 text-xs">{post.authorRole ? `${post.authorRole} · ` : ""}{timeAgo}</div>
+        </div>
       </div>
+      <p className="text-gray-700 text-sm leading-relaxed mb-3">{post.content}</p>
+      {post.imageUrl && (
+        <div className="relative rounded-xl overflow-hidden mb-3 bg-gray-100">
+          <Image src={post.imageUrl} alt="पोस्ट इमेज" width={600} height={400} className="w-full object-cover max-h-64" />
+        </div>
+      )}
+      <div className="flex items-center gap-1 pt-3 border-t border-gray-50">
+        <button onClick={handleLike}
+          className={`flex items-center gap-1.5 text-xs transition-colors px-3 py-1.5 rounded-lg ${liked ? "text-red-500 bg-red-50" : "text-gray-400 hover:text-red-500 hover:bg-red-50"}`}>
+          <Heart className={`w-3.5 h-3.5 ${liked ? "fill-red-500" : ""}`} />
+          {localLikes > 0 && localLikes}
+        </button>
+        <button onClick={() => setShowComments(s => !s)}
+          className="flex items-center gap-1.5 text-gray-400 hover:text-blue-600 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-blue-50">
+          <MessageCircle className="w-3.5 h-3.5" />{post._count?.comments || 0}
+        </button>
+        <button onClick={sharePost}
+          className="flex items-center gap-1.5 text-gray-400 hover:text-green-600 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50 ml-auto">
+          <Share2 className="w-3.5 h-3.5" />शेयर
+        </button>
+      </div>
+      {showComments && (
+        <div className="mt-3 space-y-2 border-t border-gray-50 pt-3">
+          {comments?.map(c => (
+            <div key={c.id} className="flex gap-2">
+              <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold shrink-0">
+                {c.authorName.slice(0, 1)}
+              </div>
+              <div className="bg-gray-50 rounded-xl px-3 py-2 flex-1">
+                <span className="text-xs font-semibold text-gray-700">{c.authorName} </span>
+                <span className="text-xs text-gray-600">{c.content}</span>
+              </div>
+            </div>
+          ))}
+          <div className="flex gap-2 items-center mt-2">
+            <input value={commentName} onChange={e => setCommentName(e.target.value)}
+              placeholder="आपका नाम" className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-24 focus:outline-none focus:border-orange-400" />
+            <input value={commentText} onChange={e => setCommentText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleComment()}
+              placeholder="टिप्पणी करें..." className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1 focus:outline-none focus:border-orange-400" />
+            <button onClick={handleComment} disabled={addComment.isPending}
+              className="p-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CREATE POST BOX
+// ═══════════════════════════════════════════════════════════════════════════
+
+function CreatePostBox() {
+  const [open, setOpen]       = useState(false)
+  const [name, setName]       = useState("")
+  const [role, setRole]       = useState("")
+  const [content, setContent] = useState("")
+  const [imageUrl, setImageUrl] = useState("")
+  const createPost = useCreateSamajPost()
+  const handleSubmit = () => {
+    if (!content.trim()) return
+    createPost.mutate(
+      { authorName: name || "अज्ञात", authorRole: role || undefined, content, imageUrl: imageUrl || undefined },
+      { onSuccess: () => { setContent(""); setName(""); setRole(""); setImageUrl(""); setOpen(false) } }
+    )
+  }
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 mb-4">
+      {!open ? (
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setOpen(true)}>
+          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+            <PlusCircle className="w-5 h-5 text-orange-500" />
+          </div>
+          <div className="flex-1 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-pointer">
+            कुछ साझा करें...
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="आपका नाम *"
+              className="border border-gray-200 rounded-xl px-3 py-2 text-sm flex-1 focus:outline-none focus:border-orange-400" />
+            <input value={role} onChange={e => setRole(e.target.value)} placeholder="भूमिका (वैकल्पिक)"
+              className="border border-gray-200 rounded-xl px-3 py-2 text-sm flex-1 focus:outline-none focus:border-orange-400" />
+          </div>
+          <textarea value={content} onChange={e => setContent(e.target.value)}
+            placeholder="कुछ साझा करें..."
+            rows={3}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 resize-none" />
+          <div className="flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-gray-400 shrink-0" />
+            <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="इमेज URL (वैकल्पिक)"
+              className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1 focus:outline-none focus:border-orange-400" />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setOpen(false)} className="px-4 py-1.5 text-sm text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              रद्द करें
+            </button>
+            <button onClick={handleSubmit} disabled={!content.trim() || createPost.isPending}
+              className="flex items-center gap-1.5 px-5 py-1.5 bg-orange-600 text-white text-sm font-semibold rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-50">
+              {createPost.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              पोस्ट करें
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEWS CARD
+// ═══════════════════════════════════════════════════════════════════════════
+
+function NewsCard({ item }: { item: SamajNews }) {
+  const date = new Date(item.publishedAt).toLocaleDateString("hi-IN", { day: "numeric", month: "short", year: "numeric" })
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer group p-5">
+      {item.imageUrl && (
+        <div className="relative rounded-xl overflow-hidden mb-3 bg-gray-100">
+          <Image src={item.imageUrl} alt={item.title} width={600} height={300} className="w-full object-cover max-h-44" />
+        </div>
+      )}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{item.tag}</span>
+        <span className="text-gray-400 text-xs">{date}</span>
+      </div>
+      <h4 className="font-bold text-gray-800 text-base mb-1.5 group-hover:text-orange-700 transition-colors leading-snug">{item.title}</h4>
+      {item.summary && <p className="text-gray-500 text-sm leading-relaxed">{item.summary}</p>}
     </div>
   )
 }
@@ -178,13 +303,16 @@ export default function CommunityPortal() {
   const [counted,   setCounted]   = useState(false)
   const statsRef = useRef<HTMLDivElement>(null)
 
+  const { data: newsFeed,  isLoading: newsLoading }  = useSamajNews({ take: "5" })
+  const { data: postsFeed, isLoading: postsLoading } = useSamajPosts({ take: "5" })
+  const { data: pressFeed } = useSamajPress({ take: "3" })
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 10)
     window.addEventListener("scroll", fn)
     return () => window.removeEventListener("scroll", fn)
   }, [])
 
-  // Animated counters — left → right stagger
   useEffect(() => {
     if (counted) return
     const el = statsRef.current
@@ -228,33 +356,30 @@ export default function CommunityPortal() {
                 <div className="text-gray-400 text-[11px]">चौदह चौखरा</div>
               </div>
             </Link>
-
             <div className="hidden lg:flex items-center gap-1">
               {NAV_ITEMS.map(item => (
-                <a key={item.href} href={item.href} onClick={() => setActiveNav(item.href)}
+                <Link key={item.href} href={item.href} onClick={() => setActiveNav(item.href)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeNav === item.href ? "bg-orange-100 text-orange-700" : "text-gray-500 hover:text-orange-700 hover:bg-orange-50"}`}>
                   {item.label}
-                </a>
+                </Link>
               ))}
               <Link href="/login"
                 className="ml-3 px-4 py-1.5 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
                 कार्यकारिणी लॉगिन
               </Link>
             </div>
-
             <button onClick={() => setMenuOpen(!menuOpen)} className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-orange-50">
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
-
         {menuOpen && (
           <div className="lg:hidden border-t bg-white px-4 py-3 space-y-1 shadow-lg">
             {NAV_ITEMS.map(item => (
-              <a key={item.href} href={item.href} onClick={() => { setActiveNav(item.href); setMenuOpen(false) }}
+              <Link key={item.href} href={item.href} onClick={() => { setActiveNav(item.href); setMenuOpen(false) }}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700">
                 <item.icon className="w-4 h-4 text-orange-400" />{item.label}
-              </a>
+              </Link>
             ))}
             <Link href="/login" onClick={() => setMenuOpen(false)}
               className="flex items-center justify-center gap-2 mt-2 w-full py-2.5 bg-orange-600 text-white text-sm font-semibold rounded-lg">
@@ -268,35 +393,24 @@ export default function CommunityPortal() {
       <section id="home" className="pt-[60px] min-h-screen flex flex-col justify-center bg-gradient-to-br from-orange-50 via-white to-amber-50">
         <div className="max-w-7xl mx-auto px-4 py-16 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left */}
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 text-xs font-semibold px-4 py-1.5 rounded-full">
                 <Star className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
                 डिजिटल सामाजिक मंच · राजस्थान
               </div>
-
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
                 पंचाल समाज<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-700">
-                  चौदह चौखरा
-                </span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-700">चौदह चौखरा</span>
               </h1>
-
-              <p className="text-orange-600 font-semibold text-sm">
-                बांसवाड़ा – डूंगरपुर – प्रतापगढ़ – उदयपुर, राजस्थान
-              </p>
-
+              <p className="text-orange-600 font-semibold text-sm">बांसवाड़ा – डूंगरपुर – प्रतापगढ़ – उदयपुर, राजस्थान</p>
               <p className="text-2xl sm:text-3xl font-bold text-gray-700 italic border-l-4 border-orange-400 pl-4 leading-snug">
                 "एक समाज, एक पहचान,<br className="hidden sm:block" />एक डिजिटल मंच।"
               </p>
-
               <p className="text-gray-500 text-sm sm:text-base leading-relaxed max-w-lg">
                 पंचाल समाज के सभी परिवारों और सदस्यों को एक डिजिटल मंच पर जोड़ने का प्रयास।
                 समाज की गतिविधियों, समाचारों, उपलब्धियों, शिक्षा, रोजगार और सामाजिक सहयोग की
                 जानकारी अब एक ही स्थान पर।
               </p>
-
               <button
                 onClick={() => {
                   setShowSvc(v => !v)
@@ -308,14 +422,11 @@ export default function CommunityPortal() {
                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSvc ? "rotate-180" : ""}`} />
               </button>
             </div>
-
-            {/* Right – Image slider */}
             <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
               <HeroSlider />
             </div>
           </div>
         </div>
-
         <div className="flex justify-center pb-6 animate-bounce">
           <ChevronDown className="w-6 h-6 text-orange-400" />
         </div>
@@ -340,7 +451,7 @@ export default function CommunityPortal() {
         </div>
       </div>
 
-      {/* ── EXPLORE SERVICES (expand on CTA click) ─────────────────────── */}
+      {/* ── EXPLORE SERVICES ───────────────────────────────────────────── */}
       <div id="services"
         className={`overflow-hidden transition-all duration-500 bg-gray-50 border-b border-gray-100 ${showSvc ? "max-h-[800px] py-10" : "max-h-0 py-0"}`}>
         <div className="max-w-7xl mx-auto px-4">
@@ -373,64 +484,44 @@ export default function CommunityPortal() {
                 <MessageSquare className="w-4 h-4" />पोस्ट
               </button>
             </div>
-            {feedTab === "posts" && (
-              <button className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 transition-colors">
-                <PlusCircle className="w-4 h-4" />पोस्ट करें
-              </button>
-            )}
           </div>
 
           {feedTab === "news" && (
             <div className="space-y-4">
-              {NEWS_FEED.map((n, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer group p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{n.tag}</span>
-                    <span className="text-gray-400 text-xs">{n.date}</span>
-                  </div>
-                  <h4 className="font-bold text-gray-800 text-base mb-1.5 group-hover:text-orange-700 transition-colors leading-snug">{n.title}</h4>
-                  <p className="text-gray-500 text-sm leading-relaxed">{n.desc}</p>
-                  <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-50">
-                    <button className="flex items-center gap-1.5 text-gray-400 hover:text-orange-600 text-xs transition-colors"><ThumbsUp className="w-3.5 h-3.5" />पसंद</button>
-                    <button className="flex items-center gap-1.5 text-gray-400 hover:text-blue-600 text-xs transition-colors"><MessageCircle className="w-3.5 h-3.5" />टिप्पणी</button>
-                    <button className="flex items-center gap-1.5 text-gray-400 hover:text-green-600 text-xs transition-colors ml-auto"><Share2 className="w-3.5 h-3.5" />शेयर</button>
-                  </div>
+              {newsLoading && (
+                <div className="text-center py-10 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
+              )}
+              {!newsLoading && (!newsFeed || newsFeed.length === 0) && (
+                <div className="text-center py-10 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
+              )}
+              {newsFeed?.map(item => <NewsCard key={item.id} item={item} />)}
+              {newsFeed && newsFeed.length > 0 && (
+                <div className="text-center pt-2">
+                  <Link href="/news" className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
+                    सभी समाचार देखें <ChevronRight className="w-4 h-4" />
+                  </Link>
                 </div>
-              ))}
-              <div className="text-center pt-2">
-                <button className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
-                  सभी समाचार देखें <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              )}
             </div>
           )}
 
           {feedTab === "posts" && (
             <div className="space-y-4">
-              {POSTS_FEED.map((p, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow p-5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                      {p.avatar}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-800 text-sm">{p.name}</div>
-                      <div className="text-gray-400 text-xs">{p.loc} · {p.time}</div>
-                    </div>
-                  </div>
-                  <p className="text-gray-700 text-sm leading-relaxed mb-4">{p.text}</p>
-                  <div className="flex items-center gap-1 pt-3 border-t border-gray-50">
-                    <button className="flex items-center gap-1.5 text-gray-400 hover:text-orange-600 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-orange-50"><ThumbsUp className="w-3.5 h-3.5" />{p.likes}</button>
-                    <button className="flex items-center gap-1.5 text-gray-400 hover:text-blue-600 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-blue-50"><MessageCircle className="w-3.5 h-3.5" />{p.comments}</button>
-                    <button className="flex items-center gap-1.5 text-gray-400 hover:text-green-600 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50 ml-auto"><Share2 className="w-3.5 h-3.5" />शेयर</button>
-                  </div>
+              <CreatePostBox />
+              {postsLoading && (
+                <div className="text-center py-10 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
+              )}
+              {!postsLoading && (!postsFeed || postsFeed.length === 0) && (
+                <div className="text-center py-8 text-gray-400 text-sm">सबसे पहले कुछ साझा करें।</div>
+              )}
+              {postsFeed?.map(post => <PostCard key={post.id} post={post} />)}
+              {postsFeed && postsFeed.length > 0 && (
+                <div className="text-center pt-2">
+                  <Link href="/posts" className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
+                    सभी पोस्ट देखें <ChevronRight className="w-4 h-4" />
+                  </Link>
                 </div>
-              ))}
-              <div className="text-center pt-2">
-                <button className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
-                  सभी पोस्ट देखें <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -439,27 +530,34 @@ export default function CommunityPortal() {
       {/* ── PRESS RELEASES ─────────────────────────────────────────────── */}
       <section id="press" className="py-14 px-4 bg-gray-50">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-extrabold text-gray-800 mb-6">प्रेस विज्ञप्ति</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-extrabold text-gray-800">प्रेस विज्ञप्ति</h2>
+            <Link href="/press-release" className="text-teal-600 text-sm font-semibold hover:text-teal-800 inline-flex items-center gap-1">
+              सभी देखें <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
           <div className="space-y-3">
-            {[
-              { title: "समाज की वार्षिक महासभा आयोजन की आधिकारिक घोषणा", by: "समाज अध्यक्ष", date: "1 Nov 2026" },
-              { title: "समाज के शिक्षा कोष में 5 लाख रुपए की वृद्धि का निर्णय", by: "कार्यकारिणी समिति", date: "25 Oct 2026" },
-              { title: "सामूहिक विवाह सम्मेलन — पंजीकरण प्रारंभ", by: "विवाह समिति", date: "20 Oct 2026" },
-            ].map((p, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
+            {pressFeed && pressFeed.length > 0 ? pressFeed.map(p => (
+              <div key={p.id} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
                 <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center shrink-0">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-gray-800 text-sm group-hover:text-teal-700 leading-snug">{p.title}</h4>
-                  <div className="text-gray-400 text-xs mt-0.5">{p.by} · {p.date}</div>
+                  <div className="text-gray-400 text-xs mt-0.5">
+                    {p.publishedBy && `${p.publishedBy} · `}
+                    {new Date(p.publishedAt).toLocaleDateString("hi-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  </div>
                 </div>
-                <div className="flex gap-1.5 shrink-0">
-                  <button className="p-2 hover:bg-gray-100 rounded-lg" title="डाउनलोड"><Download className="w-4 h-4 text-teal-600" /></button>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg" title="शेयर"><Share2 className="w-4 h-4 text-teal-600" /></button>
-                </div>
+                {p.pdfUrl && (
+                  <a href={p.pdfUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-gray-100 rounded-lg" title="डाउनलोड">
+                    <Download className="w-4 h-4 text-teal-600" />
+                  </a>
+                )}
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8 text-gray-400 text-sm">अभी कोई प्रेस विज्ञप्ति नहीं है।</div>
+            )}
           </div>
         </div>
       </section>
@@ -485,16 +583,19 @@ export default function CommunityPortal() {
                 ))}
               </div>
             </div>
-
             <div>
               <h4 className="font-bold text-white text-sm mb-4">समाज पोर्टल</h4>
               <ul className="space-y-2.5">
-                {["हमारे बारे में","कार्यक्रम","समाज समाचार","समाज पोस्ट","प्रेस विज्ञप्ति"].map(l => (
-                  <li key={l}><a href="#" className="text-gray-400 text-xs hover:text-orange-400 transition-colors">{l}</a></li>
+                {[
+                  { label: "समाज समाचार", href: "#feed" },
+                  { label: "समाज पोस्ट", href: "#feed" },
+                  { label: "प्रेस विज्ञप्ति", href: "/press-release" },
+                  { label: "कार्यक्रम", href: "/events" },
+                ].map(l => (
+                  <li key={l.label}><Link href={l.href} className="text-gray-400 text-xs hover:text-orange-400 transition-colors">{l.label}</Link></li>
                 ))}
               </ul>
             </div>
-
             <div>
               <h4 className="font-bold text-white text-sm mb-4">सेवाएं</h4>
               <ul className="space-y-2.5">
@@ -503,7 +604,6 @@ export default function CommunityPortal() {
                 ))}
               </ul>
             </div>
-
             <div>
               <h4 className="font-bold text-white text-sm mb-4">संपर्क करें</h4>
               <ul className="space-y-3">
