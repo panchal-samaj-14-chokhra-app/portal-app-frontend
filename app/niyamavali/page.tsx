@@ -127,21 +127,31 @@ function NiyamavaliInner() {
   const router = useRouter()
   const { data: articles, isLoading } = useNiyamavaliArticles()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const activeId = sp.get("a") || ""
+  const aParam = sp.get("a") || ""
   const overlayRef = useRef<HTMLDivElement>(null)
+
+  // Resolve active article: param can be order-number (readable) or cuid (legacy)
+  const activeId = (() => {
+    if (!articles?.length) return aParam
+    const byOrder = articles.find(a => String(a.order + 1) === aParam)
+    if (byOrder) return byOrder.id
+    return aParam // fallback to raw id
+  })()
 
   // Auto-select first article on load
   useEffect(() => {
-    if (!activeId && articles?.length) {
-      router.replace(`/niyamavali?a=${articles[0].id}`, { scroll: false })
+    if (!aParam && articles?.length) {
+      router.replace(`/niyamavali?a=1`, { scroll: false })
     }
-  }, [articles, activeId, router])
+  }, [articles, aParam, router])
 
   // Close sidebar on overlay click
   const closeSidebar = () => setSidebarOpen(false)
 
   const selectArticle = (id: string) => {
-    router.push(`/niyamavali?a=${id}`, { scroll: false })
+    const article = articles?.find(a => a.id === id)
+    const param = article ? String(article.order + 1) : id
+    router.push(`/niyamavali?a=${param}`, { scroll: false })
     setSidebarOpen(false)
   }
 

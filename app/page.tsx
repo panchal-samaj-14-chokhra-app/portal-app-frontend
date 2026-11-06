@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
-  Menu, X, ChevronRight, Heart, Star, Newspaper,
+  Menu, X, ChevronRight, Heart, Newspaper,
   BookOpen, FileText, Stethoscope,
   Handshake, Vote, Award,
   Phone, Mail, Facebook, Twitter, Youtube, Instagram,
-  Home, GraduationCap, Database, UserCheck,
+  Home, GraduationCap, Database, UserCircle,
   Briefcase, Gift, Flame, Download,
   ChevronDown, Share2, MessageCircle,
   ChevronLeft, ChevronRight as ChevRight,
@@ -19,6 +19,7 @@ import {
 } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajNews, SamajPressRelease } from "@/data-hooks/requests/samaj-content"
 import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
+import { usePortalConfigValue } from "@/data-hooks/mutation-query/usePortalConfig"
 
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
@@ -221,6 +222,11 @@ export default function CommunityPortal() {
   const [showSvc,   setShowSvc]   = useState(false)
 
   const { data: flags } = useFeatureFlags()
+  const portalName     = usePortalConfigValue("portal_name",     "पंचाल समाज")
+  const portalSubtitle = usePortalConfigValue("portal_subtitle", "चौदह चौखरा")
+  const portalLocation = usePortalConfigValue("portal_location", "बांसवाड़ा · डूंगरपुर · प्रतापगढ़ · साबरकांठा — राजस्थान")
+  const portalTagline  = usePortalConfigValue("portal_tagline",  "पंचाल समाज पोर्टल")
+
   const isEnabled = (key: string) => {
     if (!flags) return true
     const f = flags.find(f => f.key === key)
@@ -240,45 +246,49 @@ export default function CommunityPortal() {
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Noto Sans Devanagari','Hind',sans-serif" }}>
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 bg-white transition-shadow duration-300 ${scrolled ? "shadow-md" : ""}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "shadow-lg" : ""}`}
+        style={{ background: scrolled ? "linear-gradient(90deg,#7c2d12 0%,#9a3412 40%,#c2410c 100%)" : "linear-gradient(90deg,#92400e 0%,#b45309 40%,#d97706 100%)" }}>
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between py-3">
+          <div className="flex items-center justify-between py-2.5">
             <Link href="/" className="flex items-center gap-2.5 shrink-0">
-              <Image src="/images/main-logo.png" alt="लोगो" width={40} height={40} className="w-10 h-10 rounded-full border-2 border-orange-200" />
-              <div className="hidden sm:block leading-tight">
-                <div className="font-bold text-orange-700 text-sm">पंचाल समाज</div>
-                <div className="text-gray-400 text-[11px]">चौदह चौखरा</div>
+              <Image src="/images/main-logo.png" alt="लोगो" width={38} height={38} className="w-9 h-9 rounded-full border-2 border-white/40 shadow-sm" />
+              <div className="leading-tight">
+                <div className="font-bold text-white text-sm">{portalName}</div>
+                <div className="text-orange-200 text-[11px]">{portalSubtitle}</div>
               </div>
             </Link>
-            <div className="hidden lg:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-0.5">
               {NAV_ITEMS.filter(item => !item.flagKey || isEnabled(item.flagKey)).map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setActiveNav(item.href)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeNav === item.href ? "bg-orange-100 text-orange-700" : "text-gray-500 hover:text-orange-700 hover:bg-orange-50"}`}>
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${activeNav === item.href ? "bg-white/20 text-white" : "text-orange-100 hover:text-white hover:bg-white/15"}`}>
                   {item.label}
                 </Link>
               ))}
-              <Link href="/login"
-                className="ml-3 px-4 py-1.5 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
-                कार्यकारिणी लॉगिन
+              <Link href="/login" title="कार्यकारिणी लॉगिन"
+                className="ml-2 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all hover:scale-105 shadow-sm">
+                <UserCircle className="w-5 h-5" />
               </Link>
             </div>
-            <button onClick={() => setMenuOpen(!menuOpen)} className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-orange-50">
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            <div className="flex items-center gap-2 lg:hidden">
+              <Link href="/login" title="लॉगिन"
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-all">
+                <UserCircle className="w-4 h-4" />
+              </Link>
+              <button onClick={() => setMenuOpen(!menuOpen)} className="p-1.5 rounded-lg text-white hover:bg-white/20">
+                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
         {menuOpen && (
-          <div className="lg:hidden border-t bg-white px-4 py-3 space-y-1 shadow-lg">
+          <div className="lg:hidden border-t border-white/20 px-4 py-3 space-y-1"
+            style={{ background: "linear-gradient(180deg,#9a3412 0%,#7c2d12 100%)" }}>
             {NAV_ITEMS.filter(item => !item.flagKey || isEnabled(item.flagKey)).map(item => (
               <Link key={item.href} href={item.href} onClick={() => { setActiveNav(item.href); setMenuOpen(false) }}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700">
-                <item.icon className="w-4 h-4 text-orange-400" />{item.label}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-orange-100 hover:bg-white/15 hover:text-white">
+                <item.icon className="w-4 h-4 text-orange-300" />{item.label}
               </Link>
             ))}
-            <Link href="/login" onClick={() => setMenuOpen(false)}
-              className="flex items-center justify-center gap-2 mt-2 w-full py-2.5 bg-orange-600 text-white text-sm font-semibold rounded-lg">
-              <UserCheck className="w-4 h-4" />कार्यकारिणी लॉगिन
-            </Link>
           </div>
         )}
       </nav>
@@ -301,18 +311,18 @@ export default function CommunityPortal() {
               {/* Top label */}
               <div className="flex items-center gap-3">
                 <div className="h-px flex-1 max-w-[40px] bg-gradient-to-r from-orange-400 to-transparent" />
-                <span className="text-orange-600 text-xs font-bold tracking-widest uppercase">पंचाल समाज पोर्टल</span>
+                <span className="text-orange-600 text-xs font-bold tracking-widest uppercase">{portalTagline}</span>
               </div>
               <div>
                 <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-tight text-gray-900">
-                  पंचाल समाज
+                  {portalName}
                 </h1>
                 <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-tight"
                   style={{ WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(90deg,#c2410c,#ea580c,#f97316)", WebkitBackgroundClip: "text" }}>
-                  चौदह चौखरा
+                  {portalSubtitle}
                 </h1>
               </div>
-              <p className="text-orange-600/80 font-medium text-sm tracking-wide">बांसवाड़ा · डूंगरपुर · प्रतापगढ़ · साबरकांठा — राजस्थान</p>
+              <p className="text-orange-600/80 font-medium text-sm tracking-wide">{portalLocation}</p>
 
               {/* 14 Chokhra pills */}
               <div className="flex flex-wrap gap-1.5">
