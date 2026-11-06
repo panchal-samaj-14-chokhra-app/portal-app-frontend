@@ -1,7 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Pencil, Trash2, Loader2, Newspaper, FileText, Calendar, MessageSquare, X, Check } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Newspaper, FileText, Calendar, MessageSquare, Eye, EyeOff } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   useSamajNewsAdmin, useCreateSamajNews, useUpdateSamajNews, useDeleteSamajNews,
   useSamajPressAdmin, useCreateSamajPress, useUpdateSamajPress, useDeleteSamajPress,
@@ -9,41 +22,22 @@ import {
   useSamajPosts, useUpdateSamajPost, useDeleteSamajPost,
 } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajNews, SamajPressRelease, SamajEvent } from "@/data-hooks/requests/samaj-content"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 type Tab = "news" | "press" | "events" | "posts"
 
-const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: "news",   label: "समाचार",          icon: Newspaper },
-  { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText },
-  { id: "events", label: "कार्यक्रम",       icon: Calendar },
-  { id: "posts",  label: "पोस्ट",           icon: MessageSquare },
+const TABS: { id: Tab; label: string; icon: any; desc: string }[] = [
+  { id: "news",   label: "समाचार",          icon: Newspaper,      desc: "समाज के समाचार एवं सूचनाएं" },
+  { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText,       desc: "आधिकारिक विज्ञप्तियां" },
+  { id: "events", label: "कार्यक्रम",       icon: Calendar,       desc: "आगामी एवं बीते आयोजन" },
+  { id: "posts",  label: "पोस्ट मॉडरेशन",  icon: MessageSquare,  desc: "सदस्यों की पोस्ट प्रबंधन" },
 ]
 
-function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-      <Input {...props} />
-    </div>
-  )
+function fmtDate(d?: string) {
+  if (!d) return "—"
+  try { return new Date(d).toLocaleDateString("hi-IN", { year: "numeric", month: "short", day: "numeric" }) } catch { return "—" }
 }
 
-function TextArea({ label, ...props }: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-      <textarea {...props} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400 resize-none" />
-    </div>
-  )
-}
+// ── Confirm Delete ────────────────────────────────────────────────────────────
 
 function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onClose: () => void; onConfirm: () => void; label: string }) {
   return (
@@ -51,7 +45,7 @@ function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onC
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>हटाएं?</AlertDialogTitle>
-          <AlertDialogDescription>"{label}" को स्थायी रूप से हटाया जाएगा।</AlertDialogDescription>
+          <AlertDialogDescription>"{label}" को स्थायी रूप से हटाया जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>रद्द करें</AlertDialogCancel>
@@ -62,219 +56,431 @@ function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onC
   )
 }
 
-// ── News ──────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// NEWS PANEL
+// ══════════════════════════════════════════════════════════════════════════════
 
 function NewsPanel() {
   const { data: items, isLoading } = useSamajNewsAdmin()
   const create = useCreateSamajNews()
   const update = useUpdateSamajNews()
   const remove = useDeleteSamajNews()
-  const [form, setForm]       = useState<Partial<SamajNews>>({})
+  const [open, setOpen]       = useState(false)
+  const [form, setForm]       = useState<Partial<SamajNews>>({ status: "published", tag: "समाचार" })
   const [editing, setEditing] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
+  const saving = create.isPending || update.isPending
 
-  const startEdit = (item: SamajNews) => { setEditing(item.id); setForm(item) }
-  const cancelEdit = () => { setEditing(null); setForm({}) }
+  const openCreate = () => { setEditing(null); setForm({ status: "published", tag: "समाचार" }); setOpen(true) }
+  const openEdit   = (item: SamajNews) => { setEditing(item.id); setForm({ ...item }); setOpen(true) }
+  const closeForm  = () => { setOpen(false); setEditing(null); setForm({ status: "published", tag: "समाचार" }) }
+
   const handleSave = () => {
     if (!form.title) return
-    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: cancelEdit })
-    else create.mutate(form, { onSuccess: cancelEdit })
+    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: closeForm })
+    else create.mutate(form, { onSuccess: closeForm })
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-orange-50 rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-gray-700 text-sm">{editing ? "समाचार अपडेट करें" : "नया समाचार जोड़ें"}</h3>
-        <Field label="शीर्षक *" value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="समाचार का शीर्षक" />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="टैग" value={form.tag || ""} onChange={e => setForm(f => ({ ...f, tag: e.target.value }))} placeholder="समाचार" />
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">स्थिति</label>
-            <Select value={form.status || "published"} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="published">प्रकाशित</SelectItem>
-                <SelectItem value="draft">ड्राफ़्ट</SelectItem>
-              </SelectContent>
-            </Select>
+            <CardTitle className="text-base">समाज समाचार</CardTitle>
+            <CardDescription>समाचार जोड़ें, संपादित करें या हटाएं</CardDescription>
           </div>
-        </div>
-        <TextArea label="सारांश" value={form.summary || ""} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} rows={2} placeholder="संक्षिप्त विवरण..." />
-        <TextArea label="विस्तृत सामग्री" value={form.content || ""} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} rows={3} placeholder="पूरी सामग्री..." />
-        <Field label="इमेज URL" value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
-        <div className="flex gap-2">
-          <Button size="sm" onClick={handleSave} disabled={!form.title || create.isPending || update.isPending}
-            className="bg-orange-600 hover:bg-orange-700 text-white">
-            {(create.isPending || update.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            {editing ? "अपडेट करें" : "जोड़ें"}
+          <Button onClick={openCreate} size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
+            <Plus className="w-4 h-4 mr-1.5" />नया समाचार
           </Button>
-          {editing && <Button size="sm" variant="ghost" onClick={cancelEdit}><X className="w-4 h-4" /> रद्द करें</Button>}
-        </div>
-      </div>
-      {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
-      <div className="space-y-2">
-        {items?.map(item => (
-          <div key={item.id} className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="bg-orange-100 text-orange-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">{item.tag}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.status === "published" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                  {item.status === "published" ? "प्रकाशित" : "ड्राफ़्ट"}
-                </span>
-              </div>
-              <div className="font-semibold text-gray-800 text-sm mt-1 leading-snug">{item.title}</div>
-              {item.summary && <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{item.summary}</div>}
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
             </div>
-            <div className="flex gap-1 shrink-0">
-              <button onClick={() => startEdit(item)} className="p-1.5 hover:bg-orange-50 rounded-lg text-orange-500"><Pencil className="w-4 h-4" /></button>
-              <button onClick={() => setDeleting({ id: item.id, title: item.title })} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
+          ) : !items?.length ? (
+            <div className="text-center py-12 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>शीर्षक</TableHead>
+                  <TableHead className="hidden sm:table-cell">टैग</TableHead>
+                  <TableHead className="hidden md:table-cell">तिथि</TableHead>
+                  <TableHead>स्थिति</TableHead>
+                  <TableHead className="text-right">क्रिया</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map(item => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium max-w-xs">
+                      <div className="truncate">{item.title}</div>
+                      {item.summary && <div className="text-xs text-gray-400 truncate mt-0.5">{item.summary}</div>}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">{item.tag}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-gray-500">{fmtDate(item.publishedAt)}</TableCell>
+                    <TableCell>
+                      <Badge variant={item.status === "published" ? "default" : "secondary"}
+                        className={item.status === "published" ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}>
+                        {item.status === "published" ? "प्रकाशित" : "ड्राफ़्ट"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={open} onOpenChange={v => !v && closeForm()}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "समाचार अपडेट करें" : "नया समाचार जोड़ें"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>शीर्षक *</Label>
+              <Input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="समाचार का शीर्षक" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>टैग</Label>
+                <Input value={form.tag || ""} onChange={e => setForm(f => ({ ...f, tag: e.target.value }))} placeholder="समाचार" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>स्थिति</Label>
+                <Select value={form.status || "published"} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="published">प्रकाशित</SelectItem>
+                    <SelectItem value="draft">ड्राफ़्ट</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>सारांश</Label>
+              <Textarea value={form.summary || ""} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} placeholder="संक्षिप्त विवरण..." rows={2} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>विस्तृत सामग्री</Label>
+              <Textarea value={form.content || ""} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="पूरी सामग्री..." rows={4} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>इमेज URL</Label>
+              <Input value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
             </div>
           </div>
-        ))}
-        {!isLoading && (!items || items.length === 0) && (
-          <div className="text-center py-8 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
-        )}
-      </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeForm}>रद्द करें</Button>
+            <Button onClick={handleSave} disabled={!form.title || saving} className="bg-orange-600 hover:bg-orange-700 text-white">
+              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+              {editing ? "अपडेट करें" : "जोड़ें"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
         onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
-    </div>
+    </>
   )
 }
 
-// ── Press ─────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// PRESS PANEL
+// ══════════════════════════════════════════════════════════════════════════════
 
 function PressPanel() {
   const { data: items, isLoading } = useSamajPressAdmin()
   const create = useCreateSamajPress()
   const update = useUpdateSamajPress()
   const remove = useDeleteSamajPress()
+  const [open, setOpen]       = useState(false)
   const [form, setForm]       = useState<Partial<SamajPressRelease>>({})
   const [editing, setEditing] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
+  const saving = create.isPending || update.isPending
 
-  const startEdit = (item: SamajPressRelease) => { setEditing(item.id); setForm(item) }
-  const cancelEdit = () => { setEditing(null); setForm({}) }
+  const openCreate = () => { setEditing(null); setForm({}); setOpen(true) }
+  const openEdit   = (item: SamajPressRelease) => { setEditing(item.id); setForm({ ...item }); setOpen(true) }
+  const closeForm  = () => { setOpen(false); setEditing(null); setForm({}) }
   const handleSave = () => {
     if (!form.title) return
-    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: cancelEdit })
-    else create.mutate(form, { onSuccess: cancelEdit })
+    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: closeForm })
+    else create.mutate(form, { onSuccess: closeForm })
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-teal-50 rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-gray-700 text-sm">{editing ? "प्रेस विज्ञप्ति अपडेट करें" : "नई प्रेस विज्ञप्ति जोड़ें"}</h3>
-        <Field label="शीर्षक *" value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="विज्ञप्ति का शीर्षक" />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="प्रकाशक" value={form.publishedBy || ""} onChange={e => setForm(f => ({ ...f, publishedBy: e.target.value }))} placeholder="समाज अध्यक्ष" />
-          <Field label="तिथि" type="date" value={form.publishedAt ? new Date(form.publishedAt).toLocaleDateString("en-CA") : ""} onChange={e => setForm(f => ({ ...f, publishedAt: e.target.value }))} />
-        </div>
-        <TextArea label="सारांश" value={form.summary || ""} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} rows={2} placeholder="संक्षिप्त विवरण..." />
-        <TextArea label="विस्तृत सामग्री" value={form.content || ""} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} rows={3} placeholder="पूरी सामग्री..." />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="इमेज URL" value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
-          <Field label="PDF URL" value={form.pdfUrl || ""} onChange={e => setForm(f => ({ ...f, pdfUrl: e.target.value }))} placeholder="https://..." />
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={handleSave} disabled={!form.title || create.isPending || update.isPending}
-            className="bg-teal-600 hover:bg-teal-700 text-white">
-            {(create.isPending || update.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            {editing ? "अपडेट करें" : "जोड़ें"}
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-base">प्रेस विज्ञप्ति</CardTitle>
+            <CardDescription>आधिकारिक विज्ञप्तियां जोड़ें, संपादित करें या हटाएं</CardDescription>
+          </div>
+          <Button onClick={openCreate} size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
+            <Plus className="w-4 h-4 mr-1.5" />नई विज्ञप्ति
           </Button>
-          {editing && <Button size="sm" variant="ghost" onClick={cancelEdit}><X className="w-4 h-4" /> रद्द करें</Button>}
-        </div>
-      </div>
-      {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
-      <div className="space-y-2">
-        {items?.map(item => (
-          <div key={item.id} className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-gray-800 text-sm leading-snug">{item.title}</div>
-              {item.publishedBy && <div className="text-xs text-gray-400 mt-0.5">{item.publishedBy} · {new Date(item.publishedAt).toLocaleDateString("hi-IN")}</div>}
-              {item.summary && <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{item.summary}</div>}
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
             </div>
-            <div className="flex gap-1 shrink-0">
-              <button onClick={() => startEdit(item)} className="p-1.5 hover:bg-teal-50 rounded-lg text-teal-500"><Pencil className="w-4 h-4" /></button>
-              <button onClick={() => setDeleting({ id: item.id, title: item.title })} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
+          ) : !items?.length ? (
+            <div className="text-center py-12 text-gray-400 text-sm">अभी कोई प्रेस विज्ञप्ति नहीं है।</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>शीर्षक</TableHead>
+                  <TableHead className="hidden sm:table-cell">प्रकाशक</TableHead>
+                  <TableHead className="hidden md:table-cell">तिथि</TableHead>
+                  <TableHead className="text-right">क्रिया</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map(item => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium max-w-xs">
+                      <div className="truncate">{item.title}</div>
+                      {item.summary && <div className="text-xs text-gray-400 truncate mt-0.5">{item.summary}</div>}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-sm text-gray-500">{item.publishedBy || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-gray-500">{fmtDate(item.publishedAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={open} onOpenChange={v => !v && closeForm()}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "प्रेस विज्ञप्ति अपडेट करें" : "नई प्रेस विज्ञप्ति जोड़ें"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>शीर्षक *</Label>
+              <Input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="विज्ञप्ति का शीर्षक" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>प्रकाशक</Label>
+                <Input value={form.publishedBy || ""} onChange={e => setForm(f => ({ ...f, publishedBy: e.target.value }))} placeholder="समाज अध्यक्ष" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>तिथि</Label>
+                <Input type="date" value={form.publishedAt ? new Date(form.publishedAt).toLocaleDateString("en-CA") : ""} onChange={e => setForm(f => ({ ...f, publishedAt: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>सारांश</Label>
+              <Textarea value={form.summary || ""} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} placeholder="संक्षिप्त विवरण..." rows={2} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>विस्तृत सामग्री</Label>
+              <Textarea value={form.content || ""} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="पूरी सामग्री..." rows={4} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>इमेज URL</Label>
+                <Input value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label>PDF URL</Label>
+                <Input value={form.pdfUrl || ""} onChange={e => setForm(f => ({ ...f, pdfUrl: e.target.value }))} placeholder="https://..." />
+              </div>
             </div>
           </div>
-        ))}
-        {!isLoading && (!items || items.length === 0) && (
-          <div className="text-center py-8 text-gray-400 text-sm">अभी कोई प्रेस विज्ञप्ति नहीं है।</div>
-        )}
-      </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeForm}>रद्द करें</Button>
+            <Button onClick={handleSave} disabled={!form.title || saving} className="bg-orange-600 hover:bg-orange-700 text-white">
+              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+              {editing ? "अपडेट करें" : "जोड़ें"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
         onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
-    </div>
+    </>
   )
 }
 
-// ── Events ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// EVENTS PANEL
+// ══════════════════════════════════════════════════════════════════════════════
 
 function EventsPanel() {
   const { data: items, isLoading } = useSamajEventsAdmin()
   const create = useCreateSamajEvent()
   const update = useUpdateSamajEvent()
   const remove = useDeleteSamajEvent()
+  const [open, setOpen]       = useState(false)
   const [form, setForm]       = useState<Partial<SamajEvent>>({})
   const [editing, setEditing] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
+  const saving = create.isPending || update.isPending
 
-  const startEdit = (item: SamajEvent) => { setEditing(item.id); setForm(item) }
-  const cancelEdit = () => { setEditing(null); setForm({}) }
+  const openCreate = () => { setEditing(null); setForm({}); setOpen(true) }
+  const openEdit   = (item: SamajEvent) => { setEditing(item.id); setForm({ ...item }); setOpen(true) }
+  const closeForm  = () => { setOpen(false); setEditing(null); setForm({}) }
   const handleSave = () => {
     if (!form.title || !form.date) return
-    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: cancelEdit })
-    else create.mutate(form, { onSuccess: cancelEdit })
+    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: closeForm })
+    else create.mutate(form, { onSuccess: closeForm })
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-indigo-50 rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-gray-700 text-sm">{editing ? "कार्यक्रम अपडेट करें" : "नया कार्यक्रम जोड़ें"}</h3>
-        <Field label="कार्यक्रम का नाम *" value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="कार्यक्रम का शीर्षक" />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="तिथि *" type="date" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-          <Field label="समय" value={form.time || ""} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} placeholder="सुबह 10 बजे" />
-        </div>
-        <Field label="स्थान / पता" value={form.venue || ""} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))} placeholder="बांसवाड़ा, राजस्थान" />
-        <Field label="संपर्क नंबर" value={form.contact || ""} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} placeholder="+91 XXXXX XXXXX" />
-        <Field label="इमेज URL" value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
-        <TextArea label="विवरण" value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="कार्यक्रम का विवरण..." />
-        <div className="flex gap-2">
-          <Button size="sm" onClick={handleSave} disabled={!form.title || !form.date || create.isPending || update.isPending}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            {(create.isPending || update.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            {editing ? "अपडेट करें" : "जोड़ें"}
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-base">कार्यक्रम एवं आयोजन</CardTitle>
+            <CardDescription>आगामी एवं बीते कार्यक्रम प्रबंधित करें</CardDescription>
+          </div>
+          <Button onClick={openCreate} size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
+            <Plus className="w-4 h-4 mr-1.5" />नया कार्यक्रम
           </Button>
-          {editing && <Button size="sm" variant="ghost" onClick={cancelEdit}><X className="w-4 h-4" /> रद्द करें</Button>}
-        </div>
-      </div>
-      {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
-      <div className="space-y-2">
-        {items?.map(item => (
-          <div key={item.id} className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-gray-800 text-sm leading-snug">{item.title}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{item.date}{item.time && ` · ${item.time}`}{item.venue && ` · ${item.venue}`}</div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
             </div>
-            <div className="flex gap-1 shrink-0">
-              <button onClick={() => startEdit(item)} className="p-1.5 hover:bg-indigo-50 rounded-lg text-indigo-500"><Pencil className="w-4 h-4" /></button>
-              <button onClick={() => setDeleting({ id: item.id, title: item.title })} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
+          ) : !items?.length ? (
+            <div className="text-center py-12 text-gray-400 text-sm">अभी कोई कार्यक्रम नहीं है।</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>कार्यक्रम</TableHead>
+                  <TableHead className="hidden sm:table-cell">तिथि</TableHead>
+                  <TableHead className="hidden md:table-cell">स्थान</TableHead>
+                  <TableHead className="text-right">क्रिया</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map(item => {
+                  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
+                  const isUpcoming = !item.date || item.date >= today
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {item.title}
+                          <Badge variant={isUpcoming ? "default" : "secondary"}
+                            className={isUpcoming ? "bg-green-100 text-green-700 hover:bg-green-100 text-[10px]" : "text-[10px]"}>
+                            {isUpcoming ? "आगामी" : "बीता"}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm text-gray-500">{item.date || "—"}{item.time ? ` · ${item.time}` : ""}</TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-gray-500 max-w-[180px] truncate">{item.venue || "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={open} onOpenChange={v => !v && closeForm()}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "कार्यक्रम अपडेट करें" : "नया कार्यक्रम जोड़ें"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>कार्यक्रम का नाम *</Label>
+              <Input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="कार्यक्रम का शीर्षक" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>तिथि *</Label>
+                <Input type="date" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>समय</Label>
+                <Input value={form.time || ""} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} placeholder="सुबह 10 बजे" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>स्थान / पता</Label>
+              <Input value={form.venue || ""} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))} placeholder="बांसवाड़ा, राजस्थान" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>संपर्क नंबर</Label>
+              <Input value={form.contact || ""} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} placeholder="+91 XXXXX XXXXX" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>इमेज URL</Label>
+              <Input value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label>विवरण</Label>
+              <Textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="कार्यक्रम का विवरण..." rows={3} />
             </div>
           </div>
-        ))}
-        {!isLoading && (!items || items.length === 0) && (
-          <div className="text-center py-8 text-gray-400 text-sm">अभी कोई कार्यक्रम नहीं है।</div>
-        )}
-      </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeForm}>रद्द करें</Button>
+            <Button onClick={handleSave} disabled={!form.title || !form.date || saving} className="bg-orange-600 hover:bg-orange-700 text-white">
+              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+              {editing ? "अपडेट करें" : "जोड़ें"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
         onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
-    </div>
+    </>
   )
 }
 
-// ── Posts (moderate) ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// POSTS MODERATION PANEL
+// ══════════════════════════════════════════════════════════════════════════════
 
 function PostsPanel() {
   const { data: posts, isLoading } = useSamajPosts({ status: "all" })
@@ -283,58 +489,109 @@ function PostsPanel() {
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-2">
-        सदस्यों की पोस्ट यहाँ दिखती हैं। पोस्ट को छिपाएं या हटाएं।
-      </p>
-      {isLoading && <div className="text-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>}
-      {posts?.map(post => (
-        <div key={post.id} className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
-          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-xs shrink-0">
-            {post.authorName.slice(0, 1)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-800 text-xs">{post.authorName}{post.authorRole && ` · ${post.authorRole}`}</div>
-            <div className="text-xs text-gray-600 mt-0.5 line-clamp-2">{post.content}</div>
-            <div className="text-[10px] text-gray-400 mt-0.5">{new Date(post.createdAt).toLocaleString("hi-IN")} · {post.likesCount} लाइक · {post._count?.comments || 0} टिप्पणी</div>
-          </div>
-          <div className="flex gap-1 shrink-0 items-center">
-            <button
-              onClick={() => update.mutate({ id: post.id, payload: { status: post.status === "published" ? "hidden" : "published" } })}
-              className={`px-2 py-1 rounded-lg text-[10px] font-semibold ${post.status === "published" ? "bg-gray-100 text-gray-500 hover:bg-gray-200" : "bg-green-100 text-green-700 hover:bg-green-200"}`}>
-              {post.status === "published" ? "छिपाएं" : "दिखाएं"}
-            </button>
-            <button onClick={() => setDeleting({ id: post.id, title: post.content.slice(0, 40) })} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
-          </div>
-        </div>
-      ))}
-      {!isLoading && (!posts || posts.length === 0) && (
-        <div className="text-center py-8 text-gray-400 text-sm">अभी कोई पोस्ट नहीं है।</div>
-      )}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">पोस्ट मॉडरेशन</CardTitle>
+          <CardDescription>सदस्यों की पोस्ट देखें और प्रबंधित करें। पोस्ट को छिपाएं या हटाएं।</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
+            </div>
+          ) : !posts?.length ? (
+            <div className="text-center py-12 text-gray-400 text-sm">अभी कोई पोस्ट नहीं है।</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>सदस्य</TableHead>
+                  <TableHead>पोस्ट</TableHead>
+                  <TableHead className="hidden md:table-cell">तिथि</TableHead>
+                  <TableHead className="hidden sm:table-cell">स्थिति</TableHead>
+                  <TableHead className="text-right">क्रिया</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {posts.map(post => (
+                  <TableRow key={post.id}>
+                    <TableCell className="font-medium whitespace-nowrap">
+                      <div>{post.authorName}</div>
+                      {post.authorRole && <div className="text-xs text-gray-400">{post.authorRole}</div>}
+                    </TableCell>
+                    <TableCell className="max-w-xs">
+                      <div className="text-sm text-gray-700 line-clamp-2">{post.content}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{post.likesCount} लाइक · {post._count?.comments || 0} टिप्पणी</div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-gray-500 whitespace-nowrap">{fmtDate(post.createdAt)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={post.status === "published" ? "default" : "secondary"}
+                        className={post.status === "published" ? "bg-green-100 text-green-700 hover:bg-green-100" : "bg-yellow-100 text-yellow-700 hover:bg-yellow-100"}>
+                        {post.status === "published" ? "दिखाई दे रही" : "छिपी"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500 hover:bg-gray-100"
+                          title={post.status === "published" ? "छिपाएं" : "दिखाएं"}
+                          onClick={() => update.mutate({ id: post.id, payload: { status: post.status === "published" ? "hidden" : "published" } })}>
+                          {post.status === "published" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50"
+                          onClick={() => setDeleting({ id: post.id, title: post.content.slice(0, 40) })}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
         onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
-    </div>
+    </>
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// PAGE
+// ══════════════════════════════════════════════════════════════════════════════
 
 export default function SamajContentPage() {
   const [tab, setTab] = useState<Tab>("news")
+  const active = TABS.find(t => t.id === tab)!
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-extrabold text-gray-800">समाज पोर्टल प्रबंधन</h2>
-        <p className="text-gray-400 text-sm mt-0.5">समाचार, प्रेस विज्ञप्ति, कार्यक्रम और पोस्ट प्रबंधित करें।</p>
+    <div className="space-y-6">
+      {/* Section header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-xl bg-orange-100">
+          <active.icon className="w-5 h-5 text-orange-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">समाज पोर्टल प्रबंधन</h2>
+          <p className="text-sm text-gray-500">{active.desc}</p>
+        </div>
       </div>
+
+      {/* Tab bar — matches existing admin tab style */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${tab === t.id ? "bg-white text-orange-700 shadow" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+              tab === t.id
+                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-white hover:text-orange-700"
+            }`}>
             <t.icon className="w-4 h-4" />{t.label}
           </button>
         ))}
       </div>
+
       {tab === "news"   && <NewsPanel />}
       {tab === "press"  && <PressPanel />}
       {tab === "events" && <EventsPanel />}
