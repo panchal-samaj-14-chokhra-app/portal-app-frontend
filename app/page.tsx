@@ -1,238 +1,156 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card/card"
-import { Users, Shield, BarChart3, HelpCircle, ChevronRight, MapPin, Database } from "lucide-react"
+import { Users, MapPin, Heart, Star, ChevronRight, Phone } from "lucide-react"
 
-export default function Home() {
+export default function CommunityHome() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
+
       {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/5"></div>
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 relative">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-2 sm:space-x-4 text-center">
-              <div className="relative">
-                <Image
-                  src="/images/main-logo.png"
-                  alt="Panchal Samaj Logo"
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg border-2 border-white/20"
-                />
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-sm"></div>
-              </div>
-              <div className="text-left">
-                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-white leading-tight">
-                  पंचाल समाज 14 चोखरा
-                </h1>
-                <p className="text-orange-100 text-xs sm:text-sm md:text-lg font-medium">डिजिटल जनगणना 2025</p>
-                <div className="flex items-center mt-1 text-orange-200">
-                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                  <span className="text-xs sm:text-sm">Digital Census Platform</span>
-                </div>
-              </div>
+      <header className="bg-gradient-to-r from-orange-600 to-orange-500 shadow-xl">
+        <div className="container mx-auto px-4 py-5">
+          <div className="flex items-center justify-center gap-4">
+            <Image
+              src="/images/main-logo.png"
+              alt="पंचाल समाज लोगो"
+              width={64}
+              height={64}
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white/40 shadow-lg"
+            />
+            <div className="text-center sm:text-left">
+              <h1 className="text-xl sm:text-3xl font-bold text-white leading-tight">
+                पंचाल समाज चौदह चौखरा
+              </h1>
+              <p className="text-orange-100 text-xs sm:text-sm mt-0.5">एकता · सेवा · प्रगति</p>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
-            Welcome to the Village Hub
+      {/* Hero */}
+      <section className="relative py-14 sm:py-20 text-center px-4 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-orange-200/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl" />
+        </div>
+        <div className="relative max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 text-xs sm:text-sm font-medium px-4 py-1.5 rounded-full mb-6">
+            <Star className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
+            हमारे समाज में आपका स्वागत है
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-gray-800 leading-tight mb-4">
+            पंचाल समाज<br />
+            <span className="text-orange-600">चौदह चौखरा</span>
           </h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            A comprehensive digital census and management platform designed for
-            <span className="font-semibold text-orange-600"> Panchal Samaj 14 Chokhra</span>
+          <p className="text-gray-600 text-sm sm:text-lg leading-relaxed max-w-xl mx-auto mb-8">
+            हमारी समाज की जड़ें, हमारी पहचान। एक मजबूत और संगठित समाज के निर्माण में सहभागी बनें।
           </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/community-hub">
+              <Button className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg text-sm sm:text-base">
+                समाज की जानकारी देखें
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="outline" className="w-full sm:w-auto border-orange-300 text-orange-700 hover:bg-orange-50 font-semibold px-8 py-3 rounded-xl text-sm sm:text-base">
+                <Users className="w-4 h-4 mr-2" />
+                सदस्य लॉगिन
+              </Button>
+            </Link>
+          </div>
         </div>
+      </section>
 
-        {/* Main Card */}
+      {/* Values */}
+      <section className="py-10 sm:py-14 px-4 bg-white/60">
+        <div className="max-w-5xl mx-auto">
+          <h3 className="text-center text-xl sm:text-2xl font-bold text-gray-800 mb-8">हमारे मूल्य</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              { icon: Heart, color: "from-rose-400 to-rose-500", title: "एकता", desc: "चौदह चौखरों के सभी परिवार एक सूत्र में बंधे हुए हैं। मिलकर हम सशक्त हैं।" },
+              { icon: Users, color: "from-orange-400 to-orange-500", title: "सेवा", desc: "समाज के हर सदस्य की सहायता और उत्थान हमारा प्रथम कर्तव्य है।" },
+              { icon: Star, color: "from-amber-400 to-amber-500", title: "प्रगति", desc: "शिक्षा, रोजगार और सामाजिक विकास में हम एक-दूसरे के साथ कदम-से-कदम मिलाकर चलते हैं।" },
+            ].map(({ icon: Icon, color, title, desc }) => (
+              <div key={title} className="bg-white rounded-2xl p-6 shadow-md border border-orange-100 text-center hover:shadow-lg transition-shadow">
+                <div className={`w-14 h-14 bg-gradient-to-br ${color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow`}>
+                  <Icon className="w-7 h-7 text-white" />
+                </div>
+                <h4 className="font-bold text-gray-800 text-lg mb-2">{title}</h4>
+                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Chaukhra list */}
+      <section className="py-10 sm:py-14 px-4">
         <div className="max-w-4xl mx-auto">
-          <Card className="bg-gradient-to-br from-white to-orange-50/50 border-orange-200 shadow-2xl backdrop-blur-sm">
-            <CardHeader className="text-center pb-4 sm:pb-6">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 sm:p-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full shadow-lg">
-                  <Database className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                </div>
+          <h3 className="text-center text-xl sm:text-2xl font-bold text-gray-800 mb-2">चौदह चौखरे</h3>
+          <p className="text-center text-gray-500 text-sm mb-8">हमारे समाज के चौदह प्रमुख चौखरे</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {[
+              "चौखरा १", "चौखरा २", "चौखरा ३", "चौखरा ४",
+              "चौखरा ५", "चौखरा ६", "चौखरा ७", "चौखरा ८",
+              "चौखरा ९", "चौखरा १०", "चौखरा ११", "चौखरा १२",
+              "चौखरा १३", "चौखरा १४",
+            ].map((name) => (
+              <div key={name} className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 shadow-sm border border-orange-100 hover:border-orange-300 transition-colors">
+                <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                <span className="text-sm text-gray-700 font-medium">{name}</span>
               </div>
-              <CardTitle className="text-xl sm:text-2xl md:text-3xl text-orange-700 mb-2">
-                Digital Census Platform
-              </CardTitle>
-              <CardDescription className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                Explore, connect, and manage village and family data for the 2025 census.
-                <br className="hidden sm:block" />
-                <span className="text-orange-700 font-medium">Secure • Efficient • Comprehensive</span>
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-6 sm:space-y-8">
-              {/* Features Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="flex items-start space-x-3 p-3 sm:p-4 bg-white/60 rounded-lg border border-orange-100 shadow-sm">
-                  <div className="p-2 bg-orange-100 rounded-lg shrink-0">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-1">Family Management</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                      Register and manage all family members with detailed information
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3 p-3 sm:p-4 bg-white/60 rounded-lg border border-orange-100 shadow-sm">
-                  <div className="p-2 bg-orange-100 rounded-lg shrink-0">
-                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-1">Secure Access</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                      Role-based access for Super Admin, Village, and Chokhla members
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3 p-3 sm:p-4 bg-white/60 rounded-lg border border-orange-100 shadow-sm">
-                  <div className="p-2 bg-orange-100 rounded-lg shrink-0">
-                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-1">Analytics & Reports</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                      Generate comprehensive reports and statistical analysis
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3 p-3 sm:p-4 bg-white/60 rounded-lg border border-orange-100 shadow-sm">
-                  <div className="p-2 bg-orange-100 rounded-lg shrink-0">
-                    <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-1">Support System</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                      Access help resources and technical support when needed
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Key Benefits */}
-              <div className="bg-gradient-to-r from-orange-50 to-orange-100/50 rounded-xl p-4 sm:p-6 border border-orange-200">
-                <h3 className="font-bold text-base sm:text-lg text-orange-800 mb-3 sm:mb-4 text-center">
-                  Platform Benefits
-                </h3>
-                <ul className="space-y-2 sm:space-y-3">
-                  <li className="flex items-center text-xs sm:text-sm text-orange-800">
-                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-orange-600 shrink-0" />
-                    <span>Complete village and family data management system</span>
-                  </li>
-                  <li className="flex items-center text-xs sm:text-sm text-orange-800">
-                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-orange-600 shrink-0" />
-                    <span>Secure authentication with role-based permissions</span>
-                  </li>
-                  <li className="flex items-center text-xs sm:text-sm text-orange-800">
-                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-orange-600 shrink-0" />
-                    <span>Real-time data synchronization and backup</span>
-                  </li>
-                  <li className="flex items-center text-xs sm:text-sm text-orange-800">
-                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-orange-600 shrink-0" />
-                    <span>Mobile-responsive design for all devices</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* CTA Section */}
-              <div className="text-center space-y-4">
-                <Link href="/community-hub" className="block">
-                  <Button className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-sm sm:text-lg py-3 sm:py-4 px-6 sm:px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-
-                    चोखरे की जनगणना की जानकारी देखें
-                  </Button>
-                </Link>
-                <Link href="/login" className="block">
-                  <Button className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-sm sm:text-lg py-3 sm:py-4 px-6 sm:px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    लॉगिन करें (Login)
-                  </Button>
-                </Link>
-                <p className="text-xs sm:text-sm text-gray-500">Secure access to your census dashboard</p>
-              </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-4">सटीक नाम एवं विवरण के लिए समाज कार्यालय से संपर्क करें</p>
         </div>
+      </section>
 
-        {/* Additional Info Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12 max-w-6xl mx-auto">
-          <Card className="bg-white/80 border-orange-100 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Database className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </div>
-              <h3 className="font-bold text-sm sm:text-base text-gray-800 mb-2">Data Security</h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                Your data is protected with enterprise-grade security measures
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-orange-100 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </div>
-              <h3 className="font-bold text-sm sm:text-base text-gray-800 mb-2">Real-time Analytics</h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                Get instant insights with comprehensive reporting tools
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-orange-100 shadow-lg hover:shadow-xl transition-all duration-300 sm:col-span-2 lg:col-span-1">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <HelpCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </div>
-              <h3 className="font-bold text-sm sm:text-base text-gray-800 mb-2">24/7 Support</h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                Get help whenever you need it with our dedicated support team
-              </p>
-            </CardContent>
-          </Card>
+      {/* CTA Banner */}
+      <section className="py-10 sm:py-14 px-4">
+        <div className="max-w-3xl mx-auto bg-gradient-to-r from-orange-500 to-orange-600 rounded-3xl p-8 sm:p-12 text-center shadow-2xl">
+          <Image
+            src="/images/main-logo.png"
+            alt="लोगो"
+            width={56}
+            height={56}
+            className="w-14 h-14 rounded-full mx-auto mb-4 border-2 border-white/30"
+          />
+          <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">समाज पोर्टल में लॉगिन करें</h3>
+          <p className="text-orange-100 text-sm sm:text-base mb-6">
+            परिवार पंजीकरण, जनगणना डेटा और समाज की पूरी जानकारी के लिए अपने खाते में प्रवेश करें।
+          </p>
+          <Link href="/login">
+            <Button className="bg-white text-orange-600 hover:bg-orange-50 font-bold px-10 py-3 rounded-xl shadow-lg text-base">
+              लॉगिन करें
+            </Button>
+          </Link>
         </div>
-      </main>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-6 sm:py-8 mt-12 sm:mt-16">
-        <div className="container mx-auto px-3 sm:px-4">
-          <div className="text-center space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-center space-x-2">
-              <Image
-                src="/images/main-logo.png"
-                alt="Panchal Samaj Logo"
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-full"
-              />
-              <span className="font-semibold text-sm sm:text-base">पंचाल समाज 14 चोखरा</span>
-            </div>
-            <p className="text-orange-100 text-xs sm:text-sm leading-relaxed max-w-2xl mx-auto">
-              © 2025 पंचाल समाज 14 चोखरा डिजिटल जनगणना। सभी अधिकार सुरक्षित।
-              <br className="hidden sm:block" />
-              <span className="text-orange-200">Empowering communities through digital transformation</span>
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-orange-200">
-              <span>Secure Platform</span>
-              <span>•</span>
-              <span>Mobile Responsive</span>
-              <span>•</span>
-              <span>24/7 Available</span>
-            </div>
+      <footer className="bg-gray-900 text-gray-300 py-8 px-4 mt-4">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="flex items-center justify-center gap-3">
+            <Image
+              src="/images/main-logo.png"
+              alt="लोगो"
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full"
+            />
+            <span className="font-semibold text-white text-sm">पंचाल समाज चौदह चौखरा</span>
+          </div>
+          <p className="text-xs text-gray-500">
+            © {new Date().getFullYear()} पंचाल समाज चौदह चौखरा। सर्वाधिकार सुरक्षित।
+          </p>
+          <div className="flex justify-center gap-4 text-xs text-gray-500">
+            <Link href="/community-hub" className="hover:text-orange-400 transition-colors">समाज जानकारी</Link>
+            <span>·</span>
+            <Link href="/login" className="hover:text-orange-400 transition-colors">लॉगिन</Link>
+            <span>·</span>
+            <Link href="/help" className="hover:text-orange-400 transition-colors">सहायता</Link>
           </div>
         </div>
       </footer>
