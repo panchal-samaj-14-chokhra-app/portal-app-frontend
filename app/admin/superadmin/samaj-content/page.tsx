@@ -1,7 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Pencil, Trash2, Loader2, Newspaper, FileText, Calendar, MessageSquare, Eye, EyeOff } from "lucide-react"
+import {
+  Plus, Pencil, Trash2, Loader2, Newspaper, FileText, Calendar, MessageSquare,
+  Eye, EyeOff, Upload, ChevronUp, ChevronDown, Save,
+} from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +18,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useToast } from "@/hooks/use-toast"
+import { uploadBlogImage } from "@/data-hooks/requests/blog"
 import {
   useSamajNewsAdmin, useCreateSamajNews, useUpdateSamajNews, useDeleteSamajNews,
   useSamajPressAdmin, useCreateSamajPress, useUpdateSamajPress, useDeleteSamajPress,
@@ -37,6 +42,62 @@ function fmtDate(d?: string) {
   try { return new Date(d).toLocaleDateString("hi-IN", { year: "numeric", month: "short", day: "numeric" }) } catch { return "—" }
 }
 
+// ── Upload helpers (mirrors ContentSectionEditor) ─────────────────────────────
+
+function ImageUploadField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { toast } = useToast()
+  const [busy, setBusy] = useState(false)
+  const upload = async (f?: File) => {
+    if (!f) return
+    try { setBusy(true); onChange(await uploadBlogImage(f)) }
+    catch (e: any) { toast({ title: "अपलोड त्रुटि", description: e?.message, variant: "destructive" }) }
+    finally { setBusy(false) }
+  }
+  return (
+    <div className="space-y-1">
+      <div className="flex gap-2">
+        <Input value={value || ""} onChange={e => onChange(e.target.value)} placeholder="इमेज URL या अपलोड करें" className="flex-1" />
+        <label className="inline-flex items-center px-3 py-2 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 cursor-pointer text-sm whitespace-nowrap">
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          <input type="file" accept="image/*" className="hidden" onChange={e => { upload(e.target.files?.[0]); e.currentTarget.value = "" }} />
+        </label>
+      </div>
+      {value && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="" className="h-16 rounded object-cover border" onError={e => ((e.target as HTMLImageElement).style.display = "none")} />
+      )}
+    </div>
+  )
+}
+
+const MAX_PDF_SIZE = 2 * 1024 * 1024
+
+function PdfUploadField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { toast } = useToast()
+  const [busy, setBusy] = useState(false)
+  const upload = async (f?: File) => {
+    if (!f) return
+    if (f.type !== "application/pdf") {
+      toast({ title: "अमान्य फ़ाइल", description: "कृपया केवल PDF फ़ाइल चुनें", variant: "destructive" }); return
+    }
+    if (f.size > MAX_PDF_SIZE) {
+      toast({ title: "फ़ाइल बड़ी है", description: "PDF का आकार अधिकतम 2MB होना चाहिए", variant: "destructive" }); return
+    }
+    try { setBusy(true); onChange(await uploadBlogImage(f)) }
+    catch (e: any) { toast({ title: "अपलोड त्रुटि", description: e?.message, variant: "destructive" }) }
+    finally { setBusy(false) }
+  }
+  return (
+    <div className="flex gap-2">
+      <Input value={value || ""} onChange={e => onChange(e.target.value)} placeholder="PDF URL या अपलोड करें (अधिकतम 2MB)" className="flex-1" />
+      <label className="inline-flex items-center px-3 py-2 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 cursor-pointer text-sm whitespace-nowrap">
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+        <input type="file" accept="application/pdf" className="hidden" onChange={e => { upload(e.target.files?.[0]); e.currentTarget.value = "" }} />
+      </label>
+    </div>
+  )
+}
+
 // ── Confirm Delete ────────────────────────────────────────────────────────────
 
 function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onClose: () => void; onConfirm: () => void; label: string }) {
@@ -45,7 +106,7 @@ function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onC
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>हटाएं?</AlertDialogTitle>
-          <AlertDialogDescription>"{label}" को स्थायी रूप से हटाया जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।</AlertDialogDescription>
+          <AlertDialogDescription>"{label}" को स्थायी रूप से हटाया जाएगा।</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>रद्द करें</AlertDialogCancel>
@@ -61,6 +122,7 @@ function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onC
 // ══════════════════════════════════════════════════════════════════════════════
 
 function NewsPanel() {
+  const { toast } = useToast()
   const { data: items, isLoading } = useSamajNewsAdmin()
   const create = useCreateSamajNews()
   const update = useUpdateSamajNews()
@@ -77,8 +139,12 @@ function NewsPanel() {
 
   const handleSave = () => {
     if (!form.title) return
-    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: closeForm })
-    else create.mutate(form, { onSuccess: closeForm })
+    const cb = {
+      onSuccess: () => { toast({ title: editing ? "अपडेट हो गया" : "जोड़ा गया", variant: "success" }); closeForm() },
+      onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+    }
+    if (editing) update.mutate({ id: editing, payload: form }, cb)
+    else create.mutate(form, cb)
   }
 
   return (
@@ -95,9 +161,7 @@ function NewsPanel() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
-            </div>
+            <div className="flex items-center justify-center py-12 text-gray-400"><Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...</div>
           ) : !items?.length ? (
             <div className="text-center py-12 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
           ) : (
@@ -130,12 +194,8 @@ function NewsPanel() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -148,9 +208,7 @@ function NewsPanel() {
 
       <Dialog open={open} onOpenChange={v => !v && closeForm()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editing ? "समाचार अपडेट करें" : "नया समाचार जोड़ें"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "समाचार अपडेट करें" : "नया समाचार जोड़ें"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>शीर्षक *</Label>
@@ -181,48 +239,66 @@ function NewsPanel() {
               <Textarea value={form.content || ""} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="पूरी सामग्री..." rows={4} />
             </div>
             <div className="space-y-1.5">
-              <Label>इमेज URL</Label>
-              <Input value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
+              <Label>इमेज</Label>
+              <ImageUploadField value={form.imageUrl || ""} onChange={v => setForm(f => ({ ...f, imageUrl: v }))} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeForm}>रद्द करें</Button>
             <Button onClick={handleSave} disabled={!form.title || saving} className="bg-orange-600 hover:bg-orange-700 text-white">
-              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
-              {editing ? "अपडेट करें" : "जोड़ें"}
+              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}{editing ? "अपडेट करें" : "जोड़ें"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
-        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => { toast({ title: "हटा दिया गया", variant: "success" }); setDeleting(null) }, onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }) }) }} />
     </>
   )
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PRESS PANEL
+// PRESS RELEASE PANEL — full mandir-style editor
 // ══════════════════════════════════════════════════════════════════════════════
 
 function PressPanel() {
+  const { toast } = useToast()
   const { data: items, isLoading } = useSamajPressAdmin()
   const create = useCreateSamajPress()
   const update = useUpdateSamajPress()
   const remove = useDeleteSamajPress()
-  const [open, setOpen]       = useState(false)
-  const [form, setForm]       = useState<Partial<SamajPressRelease>>({})
-  const [editing, setEditing] = useState<string | null>(null)
+  const [open, setOpen]         = useState(false)
+  const [form, setForm]         = useState<Partial<SamajPressRelease>>({})
+  const [editing, setEditing]   = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
   const saving = create.isPending || update.isPending
 
   const openCreate = () => { setEditing(null); setForm({}); setOpen(true) }
   const openEdit   = (item: SamajPressRelease) => { setEditing(item.id); setForm({ ...item }); setOpen(true) }
   const closeForm  = () => { setOpen(false); setEditing(null); setForm({}) }
+
   const handleSave = () => {
     if (!form.title) return
-    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: closeForm })
-    else create.mutate(form, { onSuccess: closeForm })
+    const cb = {
+      onSuccess: () => { toast({ title: editing ? "विज्ञप्ति अपडेट हुई" : "विज्ञप्ति जोड़ी गई", variant: "success" }); closeForm() },
+      onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+    }
+    if (editing) update.mutate({ id: editing, payload: form }, cb)
+    else create.mutate(form, cb)
+  }
+
+  // reorder items in the displayed list (locally triggers individual updates)
+  const moveItem = (item: SamajPressRelease, dir: -1 | 1) => {
+    if (!items) return
+    const idx = items.findIndex(i => i.id === item.id)
+    const other = items[idx + dir]
+    if (!other) return
+    // swap publishedAt dates so the sort order reflects the visual order
+    const dateA = item.publishedAt
+    const dateB = other.publishedAt
+    update.mutate({ id: item.id,  payload: { publishedAt: dateB } })
+    update.mutate({ id: other.id, payload: { publishedAt: dateA } })
   }
 
   return (
@@ -231,7 +307,9 @@ function PressPanel() {
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
             <CardTitle className="text-base">प्रेस विज्ञप्ति</CardTitle>
-            <CardDescription>आधिकारिक विज्ञप्तियां जोड़ें, संपादित करें या हटाएं</CardDescription>
+            <CardDescription>
+              इमेज व PDF अपलोड के साथ विज्ञप्तियां जोड़ें। सबसे नई विज्ञप्ति पोर्टल पर सबसे ऊपर दिखती है।
+            </CardDescription>
           </div>
           <Button onClick={openCreate} size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
             <Plus className="w-4 h-4 mr-1.5" />नई विज्ञप्ति
@@ -239,38 +317,58 @@ function PressPanel() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
-            </div>
+            <div className="flex items-center justify-center py-12 text-gray-400"><Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...</div>
           ) : !items?.length ? (
             <div className="text-center py-12 text-gray-400 text-sm">अभी कोई प्रेस विज्ञप्ति नहीं है।</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 pl-4">क्रम</TableHead>
                   <TableHead>शीर्षक</TableHead>
                   <TableHead className="hidden sm:table-cell">प्रकाशक</TableHead>
                   <TableHead className="hidden md:table-cell">तिथि</TableHead>
+                  <TableHead className="hidden sm:table-cell">फ़ाइल</TableHead>
                   <TableHead className="text-right">क्रिया</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map(item => (
+                {items.map((item, idx) => (
                   <TableRow key={item.id}>
+                    {/* reorder buttons */}
+                    <TableCell className="pl-2">
+                      <div className="flex flex-col">
+                        <Button size="sm" variant="ghost" className="h-6 px-1 text-gray-400 hover:text-orange-600"
+                          disabled={idx === 0 || update.isPending}
+                          onClick={() => moveItem(item, -1)}><ChevronUp className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="ghost" className="h-6 px-1 text-gray-400 hover:text-orange-600"
+                          disabled={idx === items.length - 1 || update.isPending}
+                          onClick={() => moveItem(item, 1)}><ChevronDown className="w-3.5 h-3.5" /></Button>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium max-w-xs">
                       <div className="truncate">{item.title}</div>
                       {item.summary && <div className="text-xs text-gray-400 truncate mt-0.5">{item.summary}</div>}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-sm text-gray-500">{item.publishedBy || "—"}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-gray-500">{fmtDate(item.publishedAt)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="flex items-center gap-1.5">
+                        {item.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.imageUrl} alt="" className="h-8 w-8 rounded object-cover border" onError={e => ((e.target as HTMLImageElement).style.display = "none")} />
+                        )}
+                        {item.pdfUrl && (
+                          <a href={item.pdfUrl} target="_blank" rel="noreferrer"
+                            className="text-xs text-orange-600 underline hover:text-orange-700 whitespace-nowrap">PDF</a>
+                        )}
+                        {!item.imageUrl && !item.pdfUrl && <span className="text-gray-300 text-xs">—</span>}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -281,57 +379,68 @@ function PressPanel() {
         </CardContent>
       </Card>
 
+      {/* Create / Edit dialog — full mandir-style fields */}
       <Dialog open={open} onOpenChange={v => !v && closeForm()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "प्रेस विज्ञप्ति अपडेट करें" : "नई प्रेस विज्ञप्ति जोड़ें"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {/* शीर्षक */}
             <div className="space-y-1.5">
               <Label>शीर्षक *</Label>
               <Input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="विज्ञप्ति का शीर्षक" />
             </div>
+
+            {/* प्रकाशक + तिथि */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>प्रकाशक</Label>
                 <Input value={form.publishedBy || ""} onChange={e => setForm(f => ({ ...f, publishedBy: e.target.value }))} placeholder="समाज अध्यक्ष" />
               </div>
               <div className="space-y-1.5">
-                <Label>तिथि</Label>
-                <Input type="date" value={form.publishedAt ? new Date(form.publishedAt).toLocaleDateString("en-CA") : ""} onChange={e => setForm(f => ({ ...f, publishedAt: e.target.value }))} />
+                <Label>दिनांक</Label>
+                <Input type="date" value={form.publishedAt ? new Date(form.publishedAt).toLocaleDateString("en-CA") : ""}
+                  onChange={e => setForm(f => ({ ...f, publishedAt: e.target.value }))} />
               </div>
             </div>
+
+            {/* सारांश */}
             <div className="space-y-1.5">
               <Label>सारांश</Label>
               <Textarea value={form.summary || ""} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} placeholder="संक्षिप्त विवरण..." rows={2} />
             </div>
+
+            {/* विस्तृत सामग्री */}
             <div className="space-y-1.5">
               <Label>विस्तृत सामग्री</Label>
               <Textarea value={form.content || ""} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="पूरी सामग्री..." rows={4} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>इमेज URL</Label>
-                <Input value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
-              </div>
-              <div className="space-y-1.5">
-                <Label>PDF URL</Label>
-                <Input value={form.pdfUrl || ""} onChange={e => setForm(f => ({ ...f, pdfUrl: e.target.value }))} placeholder="https://..." />
-              </div>
+
+            {/* इमेज — with upload */}
+            <div className="space-y-1.5">
+              <Label>इमेज <span className="text-xs text-gray-400">(वैकल्पिक — शेयर करने पर लिंक के साथ दिखेगी)</span></Label>
+              <ImageUploadField value={form.imageUrl || ""} onChange={v => setForm(f => ({ ...f, imageUrl: v }))} />
+            </div>
+
+            {/* PDF — with upload, 2MB limit */}
+            <div className="space-y-1.5">
+              <Label>PDF / लिंक <span className="text-xs text-gray-400">(अधिकतम 2MB)</span></Label>
+              <PdfUploadField value={form.pdfUrl || ""} onChange={v => setForm(f => ({ ...f, pdfUrl: v }))} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeForm}>रद्द करें</Button>
             <Button onClick={handleSave} disabled={!form.title || saving} className="bg-orange-600 hover:bg-orange-700 text-white">
-              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
-              {editing ? "अपडेट करें" : "जोड़ें"}
+              {saving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Save className="w-4 h-4 mr-1.5" />}
+              {editing ? "सहेजें" : "जोड़ें"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
-        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => { toast({ title: "हटा दिया गया", variant: "success" }); setDeleting(null) }, onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }) }) }} />
     </>
   )
 }
@@ -341,6 +450,7 @@ function PressPanel() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function EventsPanel() {
+  const { toast } = useToast()
   const { data: items, isLoading } = useSamajEventsAdmin()
   const create = useCreateSamajEvent()
   const update = useUpdateSamajEvent()
@@ -356,8 +466,12 @@ function EventsPanel() {
   const closeForm  = () => { setOpen(false); setEditing(null); setForm({}) }
   const handleSave = () => {
     if (!form.title || !form.date) return
-    if (editing) update.mutate({ id: editing, payload: form }, { onSuccess: closeForm })
-    else create.mutate(form, { onSuccess: closeForm })
+    const cb = {
+      onSuccess: () => { toast({ title: editing ? "कार्यक्रम अपडेट हुआ" : "कार्यक्रम जोड़ा गया", variant: "success" }); closeForm() },
+      onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+    }
+    if (editing) update.mutate({ id: editing, payload: form }, cb)
+    else create.mutate(form, cb)
   }
 
   return (
@@ -374,9 +488,7 @@ function EventsPanel() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
-            </div>
+            <div className="flex items-center justify-center py-12 text-gray-400"><Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...</div>
           ) : !items?.length ? (
             <div className="text-center py-12 text-gray-400 text-sm">अभी कोई कार्यक्रम नहीं है।</div>
           ) : (
@@ -408,12 +520,8 @@ function EventsPanel() {
                       <TableCell className="hidden md:table-cell text-sm text-gray-500 max-w-[180px] truncate">{item.venue || "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeleting({ id: item.id, title: item.title })}><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -427,9 +535,7 @@ function EventsPanel() {
 
       <Dialog open={open} onOpenChange={v => !v && closeForm()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editing ? "कार्यक्रम अपडेट करें" : "नया कार्यक्रम जोड़ें"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "कार्यक्रम अपडेट करें" : "नया कार्यक्रम जोड़ें"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>कार्यक्रम का नाम *</Label>
@@ -454,8 +560,8 @@ function EventsPanel() {
               <Input value={form.contact || ""} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} placeholder="+91 XXXXX XXXXX" />
             </div>
             <div className="space-y-1.5">
-              <Label>इमेज URL</Label>
-              <Input value={form.imageUrl || ""} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
+              <Label>इमेज</Label>
+              <ImageUploadField value={form.imageUrl || ""} onChange={v => setForm(f => ({ ...f, imageUrl: v }))} />
             </div>
             <div className="space-y-1.5">
               <Label>विवरण</Label>
@@ -465,15 +571,14 @@ function EventsPanel() {
           <DialogFooter>
             <Button variant="outline" onClick={closeForm}>रद्द करें</Button>
             <Button onClick={handleSave} disabled={!form.title || !form.date || saving} className="bg-orange-600 hover:bg-orange-700 text-white">
-              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
-              {editing ? "अपडेट करें" : "जोड़ें"}
+              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}{editing ? "अपडेट करें" : "जोड़ें"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
-        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => { toast({ title: "हटा दिया गया", variant: "success" }); setDeleting(null) }, onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }) }) }} />
     </>
   )
 }
@@ -483,7 +588,8 @@ function EventsPanel() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function PostsPanel() {
-  const { data: posts, isLoading } = useSamajPosts({ status: "all" })
+  const { toast } = useToast()
+  const { data: posts, isLoading } = useSamajPosts()
   const update = useUpdateSamajPost()
   const remove = useDeleteSamajPost()
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
@@ -497,9 +603,7 @@ function PostsPanel() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
-            </div>
+            <div className="flex items-center justify-center py-12 text-gray-400"><Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...</div>
           ) : !posts?.length ? (
             <div className="text-center py-12 text-gray-400 text-sm">अभी कोई पोस्ट नहीं है।</div>
           ) : (
@@ -535,7 +639,7 @@ function PostsPanel() {
                       <div className="flex items-center justify-end gap-1">
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500 hover:bg-gray-100"
                           title={post.status === "published" ? "छिपाएं" : "दिखाएं"}
-                          onClick={() => update.mutate({ id: post.id, payload: { status: post.status === "published" ? "hidden" : "published" } })}>
+                          onClick={() => update.mutate({ id: post.id, payload: { status: post.status === "published" ? "hidden" : "published" } }, { onSuccess: () => toast({ title: post.status === "published" ? "पोस्ट छिपाई गई" : "पोस्ट दिखाई गई", variant: "success" }) })}>
                           {post.status === "published" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50"
@@ -552,7 +656,7 @@ function PostsPanel() {
         </CardContent>
       </Card>
       <ConfirmDelete open={!!deleting} onClose={() => setDeleting(null)} label={deleting?.title || ""}
-        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) }) }} />
+        onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSuccess: () => { toast({ title: "पोस्ट हटाई गई", variant: "success" }); setDeleting(null) }, onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }) }) }} />
     </>
   )
 }
@@ -567,7 +671,6 @@ export default function SamajContentPage() {
 
   return (
     <div className="space-y-6">
-      {/* Section header */}
       <div className="flex items-center gap-3">
         <div className="p-2.5 rounded-xl bg-orange-100">
           <active.icon className="w-5 h-5 text-orange-600" />
@@ -578,7 +681,6 @@ export default function SamajContentPage() {
         </div>
       </div>
 
-      {/* Tab bar — matches existing admin tab style */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
