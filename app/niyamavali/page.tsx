@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft, Download } from "lucide-react"
+import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft, Download, List } from "lucide-react"
 import Link from "next/link"
 import { useNiyamavaliArticles, useNiyamavaliArticle } from "@/data-hooks/mutation-query/useNiyamavali"
 import { NIYAMAVALI_GROUPS } from "@/data-hooks/requests/niyamavali"
@@ -154,7 +154,8 @@ function NiyamavaliInner() {
         {/* Decorative top strip */}
         <div className="h-1" style={{ background: "repeating-linear-gradient(90deg,#fbbf24 0,#fbbf24 8px,#c2410c 8px,#c2410c 16px)" }} />
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2 sm:gap-3">
-          <Link href="/" className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0">
+          {/* Back button — hidden on mobile (shown as fixed bottom button) */}
+          <Link href="/" className="hidden sm:flex p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           {/* Mobile hamburger */}
@@ -163,15 +164,12 @@ function NiyamavaliInner() {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="p-1.5 bg-white/15 rounded-lg shrink-0">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
             <div className="min-w-0">
               <h1 className="text-white font-extrabold text-sm sm:text-base lg:text-lg leading-tight truncate">समाज नियमावली</h1>
               <p className="text-orange-200 text-xs hidden md:block">पंचाल समाज चौदह चौखरा — सामाजिक संविधान</p>
             </div>
           </div>
-          {/* Download button */}
+          {/* Download button — round icon only */}
           <button
             onClick={() => {
               const prev = document.title
@@ -179,10 +177,9 @@ function NiyamavaliInner() {
               window.print()
               setTimeout(() => { document.title = prev }, 1000)
             }}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-orange-700 hover:bg-orange-50 transition-colors text-xs font-bold shadow-sm"
+            className="shrink-0 w-10 h-10 rounded-full bg-white text-orange-700 hover:bg-orange-50 transition-colors shadow-sm flex items-center justify-center"
             title="नियमावली डाउनलोड करें (PDF)">
             <Download className="w-4 h-4" />
-            <span className="hidden xs:inline sm:inline">डाउनलोड</span>
           </button>
         </div>
       </header>
@@ -284,7 +281,7 @@ function NiyamavaliInner() {
         )}
 
         {/* ── Main content ── */}
-        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6">
           {!activeId ? (
             /* Welcome / landing */
             <div className="text-center py-16">
@@ -326,6 +323,24 @@ function NiyamavaliInner() {
             <ArticleReader articleId={activeId} />
           )}
         </main>
+      </div>
+
+      {/* ── Mobile floating bottom bar ── */}
+      <div className="fixed bottom-5 left-0 right-0 flex items-center justify-between px-5 lg:hidden print:hidden z-40 pointer-events-none">
+        {/* Back button */}
+        <Link href="/"
+          className="pointer-events-auto w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white transition-all active:scale-95"
+          style={{ background: "linear-gradient(135deg, #9a3412, #c2410c)" }}>
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        {/* Open article list */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="pointer-events-auto flex items-center gap-2 px-5 py-3 rounded-full shadow-lg text-white font-bold text-sm transition-all active:scale-95"
+          style={{ background: "linear-gradient(135deg, #9a3412, #c2410c)" }}>
+          <List className="w-4 h-4" />
+          अनुच्छेद सूची
+        </button>
       </div>
 
       {/* Print styles */}
