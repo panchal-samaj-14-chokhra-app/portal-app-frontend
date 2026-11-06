@@ -1,24 +1,23 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
   Menu, X, ChevronRight, Users, MapPin, Heart, Star, Newspaper,
-  MessageSquare, BookOpen, Building2, Stethoscope, FileText,
-  Handshake, Vote, Camera, ArrowRight, Award,
+  BookOpen, Stethoscope, FileText,
+  Handshake, Vote, Award,
   Phone, Mail, Facebook, Twitter, Youtube, Instagram,
-  Home, Info, GraduationCap, Database, UserCheck,
-  Briefcase, Gift, Flame, TrendingUp, ExternalLink, Download,
-  MessageCircle, Share2, PlusCircle, ChevronDown, Send,
-  Image as ImageIcon, ChevronLeft, ChevronRight as ChevRight,
+  Home, GraduationCap, Database, UserCheck,
+  Briefcase, Gift, Flame, Download,
+  ChevronDown,
+  ChevronLeft, ChevronRight as ChevRight,
   Calendar, Loader2,
 } from "lucide-react"
 import {
-  useSamajPosts, useSamajNews, useSamajPress,
-  useCreateSamajPost, useToggleSamajPostLike, useAddSamajPostComment, useSamajPostComments,
+  useSamajNews, useSamajPress,
 } from "@/data-hooks/mutation-query/useSamajContent"
-import type { SamajPost, SamajNews, SamajPressRelease } from "@/data-hooks/requests/samaj-content"
+import type { SamajNews, SamajPressRelease } from "@/data-hooks/requests/samaj-content"
 import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
 
 // ─── NAV ────────────────────────────────────────────────────────────────────
@@ -29,15 +28,6 @@ const NAV_ITEMS = [
   { label: "प्रेस विज्ञप्ति", href: "/press-release", icon: FileText,  flagKey: "press_release" },
   { label: "कार्यक्रम",    href: "/events",        icon: Calendar,  flagKey: "events" },
   { label: "नियमावली",     href: "/niyamavali",    icon: BookOpen,  flagKey: "niyamavali" },
-]
-
-// ─── STATS ──────────────────────────────────────────────────────────────────
-
-const STATS = [
-  { target: 14000, suffix: "+", label: "पंजीकृत परिवार",  icon: Users },
-  { target: 75000, suffix: "+", label: "समाज के सदस्य",   icon: UserCheck },
-  { target: 200,   suffix: "+", label: "समाज के गांव",    icon: MapPin },
-  { target: 50,    suffix: "+", label: "वार्षिक कार्यक्रम", icon: GraduationCap },
 ]
 
 // ─── SERVICES ───────────────────────────────────────────────────────────────
@@ -153,163 +143,6 @@ function HeroSlider({ darshanEnabled = true }: { darshanEnabled?: boolean }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// POST CARD
-// ═══════════════════════════════════════════════════════════════════════════
-
-function PostCard({ post }: { post: SamajPost }) {
-  const [liked, setLiked]           = useState(false)
-  const [localLikes, setLocalLikes] = useState(post.likesCount)
-  const [showComments, setShowComments] = useState(false)
-  const [commentText, setCommentText]   = useState("")
-  const [commentName, setCommentName]   = useState("")
-  const toggleLike = useToggleSamajPostLike()
-  const { data: comments } = useSamajPostComments(showComments ? post.id : undefined)
-  const addComment = useAddSamajPostComment(post.id)
-  const initials = (post.authorName || "?").slice(0, 2).toUpperCase()
-  const timeAgo = new Date(post.createdAt).toLocaleDateString("hi-IN", { day: "numeric", month: "short" })
-  const handleLike = () => {
-    setLiked(l => !l)
-    setLocalLikes(n => liked ? n - 1 : n + 1)
-    toggleLike.mutate(post.id)
-  }
-  const handleComment = () => {
-    if (!commentText.trim()) return
-    addComment.mutate({ authorName: commentName || "अज्ञात", content: commentText }, {
-      onSuccess: () => { setCommentText(""); setCommentName("") },
-    })
-  }
-  const sharePost = () => {
-    if (navigator.share) {
-      navigator.share({ title: `${post.authorName} की पोस्ट`, text: post.content, url: window.location.href })
-    } else {
-      navigator.clipboard.writeText(window.location.href)
-    }
-  }
-  return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow p-5">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-          {initials}
-        </div>
-        <div className="flex-1">
-          <div className="font-semibold text-gray-800 text-sm">{post.authorName}</div>
-          <div className="text-gray-400 text-xs">{post.authorRole ? `${post.authorRole} · ` : ""}{timeAgo}</div>
-        </div>
-      </div>
-      <p className="text-gray-700 text-sm leading-relaxed mb-3">{post.content}</p>
-      {post.imageUrl && (
-        <div className="relative rounded-xl overflow-hidden mb-3 bg-gray-100">
-          <Image src={post.imageUrl} alt="पोस्ट इमेज" width={600} height={400} className="w-full object-cover max-h-64" />
-        </div>
-      )}
-      <div className="flex items-center gap-1 pt-3 border-t border-gray-50">
-        <button onClick={handleLike}
-          className={`flex items-center gap-1.5 text-xs transition-colors px-3 py-1.5 rounded-lg ${liked ? "text-red-500 bg-red-50" : "text-gray-400 hover:text-red-500 hover:bg-red-50"}`}>
-          <Heart className={`w-3.5 h-3.5 ${liked ? "fill-red-500" : ""}`} />
-          {localLikes > 0 && localLikes}
-        </button>
-        <button onClick={() => setShowComments(s => !s)}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-blue-600 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-blue-50">
-          <MessageCircle className="w-3.5 h-3.5" />{post._count?.comments || 0}
-        </button>
-        <button onClick={sharePost}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-green-600 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50 ml-auto">
-          <Share2 className="w-3.5 h-3.5" />शेयर
-        </button>
-      </div>
-      {showComments && (
-        <div className="mt-3 space-y-2 border-t border-gray-50 pt-3">
-          {comments?.map(c => (
-            <div key={c.id} className="flex gap-2">
-              <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold shrink-0">
-                {c.authorName.slice(0, 1)}
-              </div>
-              <div className="bg-gray-50 rounded-xl px-3 py-2 flex-1">
-                <span className="text-xs font-semibold text-gray-700">{c.authorName} </span>
-                <span className="text-xs text-gray-600">{c.content}</span>
-              </div>
-            </div>
-          ))}
-          <div className="flex gap-2 items-center mt-2">
-            <input value={commentName} onChange={e => setCommentName(e.target.value)}
-              placeholder="आपका नाम" className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-24 focus:outline-none focus:border-orange-400" />
-            <input value={commentText} onChange={e => setCommentText(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleComment()}
-              placeholder="टिप्पणी करें..." className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1 focus:outline-none focus:border-orange-400" />
-            <button onClick={handleComment} disabled={addComment.isPending}
-              className="p-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// CREATE POST BOX
-// ═══════════════════════════════════════════════════════════════════════════
-
-function CreatePostBox() {
-  const [open, setOpen]       = useState(false)
-  const [name, setName]       = useState("")
-  const [role, setRole]       = useState("")
-  const [content, setContent] = useState("")
-  const [imageUrl, setImageUrl] = useState("")
-  const createPost = useCreateSamajPost()
-  const handleSubmit = () => {
-    if (!content.trim()) return
-    createPost.mutate(
-      { authorName: name || "अज्ञात", authorRole: role || undefined, content, imageUrl: imageUrl || undefined },
-      { onSuccess: () => { setContent(""); setName(""); setRole(""); setImageUrl(""); setOpen(false) } }
-    )
-  }
-  return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 mb-4">
-      {!open ? (
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setOpen(true)}>
-          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-            <PlusCircle className="w-5 h-5 text-orange-500" />
-          </div>
-          <div className="flex-1 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-pointer">
-            कुछ साझा करें...
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="आपका नाम *"
-              className="border border-gray-200 rounded-xl px-3 py-2 text-sm flex-1 focus:outline-none focus:border-orange-400" />
-            <input value={role} onChange={e => setRole(e.target.value)} placeholder="भूमिका (वैकल्पिक)"
-              className="border border-gray-200 rounded-xl px-3 py-2 text-sm flex-1 focus:outline-none focus:border-orange-400" />
-          </div>
-          <textarea value={content} onChange={e => setContent(e.target.value)}
-            placeholder="कुछ साझा करें..."
-            rows={3}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 resize-none" />
-          <div className="flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-gray-400 shrink-0" />
-            <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="इमेज URL (वैकल्पिक)"
-              className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1 focus:outline-none focus:border-orange-400" />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setOpen(false)} className="px-4 py-1.5 text-sm text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-              रद्द करें
-            </button>
-            <button onClick={handleSubmit} disabled={!content.trim() || createPost.isPending}
-              className="flex items-center gap-1.5 px-5 py-1.5 bg-orange-600 text-white text-sm font-semibold rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-50">
-              {createPost.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              पोस्ट करें
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // NEWS CARD
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -341,10 +174,6 @@ export default function CommunityPortal() {
   const [scrolled,  setScrolled]  = useState(false)
   const [activeNav, setActiveNav] = useState("#home")
   const [showSvc,   setShowSvc]   = useState(false)
-  const [feedTab,   setFeedTab]   = useState<"news" | "posts">("news")
-  const [counts,    setCounts]    = useState([0, 0, 0, 0])
-  const [counted,   setCounted]   = useState(false)
-  const statsRef = useRef<HTMLDivElement>(null)
 
   const { data: flags } = useFeatureFlags()
   const isEnabled = (key: string) => {
@@ -354,7 +183,6 @@ export default function CommunityPortal() {
   }
 
   const { data: newsFeed,  isLoading: newsLoading }  = useSamajNews({ take: "5" })
-  const { data: postsFeed, isLoading: postsLoading } = useSamajPosts({ take: "5" })
   const { data: pressFeed } = useSamajPress({ take: "3" })
 
   useEffect(() => {
@@ -362,35 +190,6 @@ export default function CommunityPortal() {
     window.addEventListener("scroll", fn)
     return () => window.removeEventListener("scroll", fn)
   }, [])
-
-  useEffect(() => {
-    if (counted) return
-    const el = statsRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
-      setCounted(true)
-      STATS.forEach((stat, i) => {
-        const delay = i * 220
-        const dur   = 1400
-        const steps = 60
-        setTimeout(() => {
-          let step = 0
-          const id = setInterval(() => {
-            step++
-            const eased = Math.round(stat.target * (1 - Math.pow(1 - step / steps, 3)))
-            setCounts(prev => { const n = [...prev]; n[i] = eased; return n })
-            if (step >= steps) {
-              clearInterval(id)
-              setCounts(prev => { const n = [...prev]; n[i] = stat.target; return n })
-            }
-          }, dur / steps)
-        }, delay)
-      })
-    }, { threshold: 0.4 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [counted])
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Noto Sans Devanagari','Hind',sans-serif" }}>
@@ -482,25 +281,6 @@ export default function CommunityPortal() {
         </div>
       </section>
 
-      {/* ── STATS ──────────────────────────────────────────────────────── */}
-      <div ref={statsRef} className="bg-gradient-to-r from-orange-600 to-orange-500">
-        <div className="max-w-5xl mx-auto px-4 py-10">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-10">
-            {STATS.map((s, i) => (
-              <div key={s.label} className="text-center">
-                <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center mx-auto mb-2">
-                  <s.icon className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-white tabular-nums">
-                  {counts[i].toLocaleString("en-IN")}{s.suffix}
-                </div>
-                <div className="text-orange-100 text-xs mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* ── EXPLORE SERVICES ───────────────────────────────────────────── */}
       <div id="services"
         className={`overflow-hidden transition-all duration-500 bg-gray-50 border-b border-gray-100 ${showSvc ? "max-h-[800px] py-10" : "max-h-0 py-0"}`}>
@@ -520,60 +300,30 @@ export default function CommunityPortal() {
         </div>
       </div>
 
-      {/* ── SOCIAL FEED ────────────────────────────────────────────────── */}
+      {/* ── NEWS FEED ──────────────────────────────────────────────────── */}
       {isEnabled("news_feed") && <section id="feed" className="py-10 sm:py-14 px-4 bg-white">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <div className="inline-flex bg-gray-100 rounded-xl p-1 gap-1">
-              <button onClick={() => setFeedTab("news")}
-                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${feedTab === "news" ? "bg-white text-orange-700 shadow" : "text-gray-500 hover:text-gray-700"}`}>
-                <Newspaper className="w-4 h-4" />समाचार
-              </button>
-              <button onClick={() => setFeedTab("posts")}
-                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${feedTab === "posts" ? "bg-white text-orange-700 shadow" : "text-gray-500 hover:text-gray-700"}`}>
-                <MessageSquare className="w-4 h-4" />पोस्ट
-              </button>
-            </div>
+            <h2 className="flex items-center gap-2 text-xl font-extrabold text-gray-800">
+              <Newspaper className="w-5 h-5 text-orange-500" />समाज समाचार
+            </h2>
           </div>
-
-          {feedTab === "news" && (
-            <div className="space-y-4">
-              {newsLoading && (
-                <div className="text-center py-10 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
-              )}
-              {!newsLoading && (!newsFeed || newsFeed.length === 0) && (
-                <div className="text-center py-10 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
-              )}
-              {newsFeed?.map(item => <NewsCard key={item.id} item={item} />)}
-              {newsFeed && newsFeed.length > 0 && (
-                <div className="text-center pt-2">
-                  <Link href="/news" className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
-                    सभी समाचार देखें <ChevronRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
-          {feedTab === "posts" && (
-            <div className="space-y-4">
-              <CreatePostBox />
-              {postsLoading && (
-                <div className="text-center py-10 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
-              )}
-              {!postsLoading && (!postsFeed || postsFeed.length === 0) && (
-                <div className="text-center py-8 text-gray-400 text-sm">सबसे पहले कुछ साझा करें।</div>
-              )}
-              {postsFeed?.map(post => <PostCard key={post.id} post={post} />)}
-              {postsFeed && postsFeed.length > 0 && (
-                <div className="text-center pt-2">
-                  <Link href="/posts" className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
-                    सभी पोस्ट देखें <ChevronRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="space-y-4">
+            {newsLoading && (
+              <div className="text-center py-10 text-gray-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
+            )}
+            {!newsLoading && (!newsFeed || newsFeed.length === 0) && (
+              <div className="text-center py-10 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
+            )}
+            {newsFeed?.map(item => <NewsCard key={item.id} item={item} />)}
+            {newsFeed && newsFeed.length > 0 && (
+              <div className="text-center pt-2">
+                <Link href="/news" className="text-orange-600 text-sm font-semibold hover:text-orange-800 inline-flex items-center gap-1">
+                  सभी समाचार देखें <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </section>}
 
