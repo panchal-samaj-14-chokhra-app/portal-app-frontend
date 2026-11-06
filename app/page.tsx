@@ -23,10 +23,11 @@ import type { SamajPost, SamajNews, SamajPressRelease } from "@/data-hooks/reque
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: "होम",           href: "#home",   icon: Home },
-  { label: "समाचार",        href: "#feed",   icon: Newspaper },
+  { label: "होम",           href: "#home",         icon: Home },
+  { label: "समाचार",        href: "#feed",         icon: Newspaper },
   { label: "प्रेस विज्ञप्ति", href: "/press-release", icon: FileText },
-  { label: "कार्यक्रम",    href: "/events", icon: Calendar },
+  { label: "कार्यक्रम",    href: "/events",       icon: Calendar },
+  { label: "नियमावली",     href: "/niyamavali",   icon: BookOpen },
 ]
 
 // ─── STATS ──────────────────────────────────────────────────────────────────
