@@ -1,4 +1,5 @@
 import request from "@/config/request"
+import publicRequest from "@/config/public-request"
 
 export type HeroFeedType = "badhai" | "shok" | "shubhkamna" | "janmdin" | "vivah" | "other"
 
@@ -26,9 +27,20 @@ export interface HeroFeedComment {
 
 const BASE = "/hero-feed"
 
+// Public endpoints — routed through /api/proxy to hide backend URL
 export const getHeroFeed      = (params?: { take?: string }) =>
-  request.get<{ success: boolean; data: HeroFeed[] }>(BASE, { params }).then(r => r.data.data)
+  publicRequest.get<{ success: boolean; data: HeroFeed[] }>(BASE, { params }).then(r => r.data.data)
 
+export const likeHeroFeed     = (id: string) =>
+  publicRequest.post(`${BASE}/${id}/like`)
+
+export const getHeroFeedComments = (id: string) =>
+  publicRequest.get<{ success: boolean; data: HeroFeedComment[] }>(`${BASE}/${id}/comments`).then(r => r.data.data)
+
+export const addHeroFeedComment = (id: string, body: { authorName: string; content: string }) =>
+  publicRequest.post<{ success: boolean; data: HeroFeedComment }>(`${BASE}/${id}/comments`, body).then(r => r.data.data)
+
+// Admin endpoints — authenticated, use regular request
 export const getHeroFeedAdmin = (params?: { take?: string }) =>
   request.get<{ success: boolean; data: HeroFeed[] }>(`${BASE}/admin/all`, { params }).then(r => r.data.data)
 
@@ -40,15 +52,6 @@ export const updateHeroFeed   = (id: string, body: Partial<HeroFeed>) =>
 
 export const deleteHeroFeed   = (id: string) =>
   request.delete(`${BASE}/${id}`)
-
-export const likeHeroFeed     = (id: string) =>
-  request.post(`${BASE}/${id}/like`)
-
-export const getHeroFeedComments = (id: string) =>
-  request.get<{ success: boolean; data: HeroFeedComment[] }>(`${BASE}/${id}/comments`).then(r => r.data.data)
-
-export const addHeroFeedComment = (id: string, body: { authorName: string; content: string }) =>
-  request.post<{ success: boolean; data: HeroFeedComment }>(`${BASE}/${id}/comments`, body).then(r => r.data.data)
 
 export const FEED_TYPES: { value: HeroFeedType; label: string; color: string; bg: string }[] = [
   { value: "badhai",   label: "बधाई संदेश",      color: "text-green-700",  bg: "bg-green-100" },

@@ -1,5 +1,6 @@
 import Chokhla from "@/app/admin/chokhla/[chokhlaId]/page";
 import request from "@/config/request";
+import publicRequest from "@/config/public-request";
 
 export const getApiCall = async () => {
   const { data } = await request.get('/')
@@ -73,7 +74,7 @@ export const getAllChokhlas = async () => {
 
 // Public endpoint — no auth required, safe to call from public pages
 export const getPublicChokhlas = async (): Promise<{ id: string; name: string }[]> => {
-  const { data } = await request.get('/chokhla/public/summary');
+  const { data } = await publicRequest.get('/chokhla/public/summary');
   return data;
 }
 

@@ -13,7 +13,7 @@ export interface ChokhlaSummary {
 
 export async function getAllChokhlasServer(): Promise<ChokhlaSummary[]> {
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_URL}/chokhla/public/summary`, {
+        const res = await fetch(`${process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_REQUEST_URL}/chokhla/public/summary`, {
             cache: 'no-store',
         })
 

@@ -44,6 +44,12 @@ request.interceptors.response.use(
         });
       }
       const { status, data } = error.response;
+      // Extract the human-readable message the server sent so callers see it via e.message
+      const serverMessage: string | undefined =
+        data?.message || data?.error || data?.details;
+      if (serverMessage) {
+        error.message = serverMessage;
+      }
       switch (status) {
         case 400:
           console.error('Bad Request:', data);

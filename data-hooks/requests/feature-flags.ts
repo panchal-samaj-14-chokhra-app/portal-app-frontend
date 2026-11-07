@@ -1,4 +1,5 @@
 import request from "@/config/request"
+import publicRequest from "@/config/public-request"
 
 export interface FeatureFlag {
   id: string
@@ -10,7 +11,7 @@ export interface FeatureFlag {
 }
 
 export const getFeatureFlags = async (section?: string): Promise<FeatureFlag[]> => {
-  const { data } = await request.get("/feature-flags", { params: section ? { section } : {} })
+  const { data } = await publicRequest.get("/feature-flags", { params: section ? { section } : {} })
   return data.data
 }
 

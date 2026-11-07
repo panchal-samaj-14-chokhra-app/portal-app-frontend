@@ -1,4 +1,5 @@
 import request from "@/config/request"
+import publicRequest from "@/config/public-request"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,7 +120,7 @@ export const deleteSamajPostComment = async (postId: string, commentId: string) 
 // ── News ──────────────────────────────────────────────────────────────────────
 
 export const getSamajNews = async (params?: Record<string, string>): Promise<SamajNews[]> => {
-  const { data } = await request.get("/samaj-news", { params })
+  const { data } = await publicRequest.get("/samaj-news", { params })
   return data.data
 }
 
@@ -144,29 +145,29 @@ export const deleteSamajNews = async (id: string) => {
 }
 
 export const getSamajNewsById = async (id: string): Promise<SamajNews> => {
-  const { data } = await request.get(`/samaj-news/${id}`)
+  const { data } = await publicRequest.get(`/samaj-news/${id}`)
   return data.data
 }
 
 export const likeSamajNews = async (id: string): Promise<{ likesCount: number }> => {
-  const { data } = await request.post(`/samaj-news/${id}/like`)
+  const { data } = await publicRequest.post(`/samaj-news/${id}/like`)
   return data.data
 }
 
 export const getSamajNewsComments = async (id: string): Promise<SamajNewsComment[]> => {
-  const { data } = await request.get(`/samaj-news/${id}/comments`)
+  const { data } = await publicRequest.get(`/samaj-news/${id}/comments`)
   return data.data
 }
 
 export const addSamajNewsComment = async (id: string, payload: { authorName: string; content: string }): Promise<SamajNewsComment> => {
-  const { data } = await request.post(`/samaj-news/${id}/comments`, payload)
+  const { data } = await publicRequest.post(`/samaj-news/${id}/comments`, payload)
   return data.data
 }
 
 // ── Press Releases ────────────────────────────────────────────────────────────
 
 export const getSamajPress = async (params?: Record<string, string>): Promise<SamajPressRelease[]> => {
-  const { data } = await request.get("/samaj-press", { params })
+  const { data } = await publicRequest.get("/samaj-press", { params })
   return data.data
 }
 
