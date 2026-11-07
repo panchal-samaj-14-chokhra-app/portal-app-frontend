@@ -47,6 +47,7 @@ const COMING_SOON = [
 ]
 
 const PORTAL_URL = "https://panchalpragati.panchalsamaj.online"
+const PORTAL_REGISTER_URL = "https://panchalpragati.panchalsamaj.online/"
 
 export default function EducationPage() {
   return (
@@ -117,7 +118,7 @@ export default function EducationPage() {
               <ChevronRight className="w-4 h-4" />
             </Link>
             <Link
-              href={`${PORTAL_URL}/register`}
+              href={PORTAL_REGISTER_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-white/15 border border-white/40 text-white font-bold px-6 py-3 rounded-xl hover:bg-white/25 transition-colors text-sm"
@@ -193,7 +194,7 @@ export default function EducationPage() {
               Login करें
             </Link>
             <Link
-              href={`${PORTAL_URL}/register`}
+              href={PORTAL_REGISTER_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 border-2 border-[#6633CC] text-[#6633CC] font-bold px-6 py-3 rounded-xl hover:bg-purple-50 transition-colors text-sm"
