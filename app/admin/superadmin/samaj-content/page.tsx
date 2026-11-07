@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import {
   Plus, Pencil, Trash2, Loader2, Newspaper, FileText, Calendar, MessageSquare,
-  Eye, EyeOff, Upload, ChevronUp, ChevronDown, Save,
+  Eye, EyeOff, Upload, ChevronUp, ChevronDown, Save, AlertTriangle, CheckCircle, Clock,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,9 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { uploadBlogImage } from "@/data-hooks/requests/blog"
+import { getSubmissions, updateSubmission, deleteSubmission } from "@/data-hooks/requests/submissions"
+import type { Submission, SubmissionStatus } from "@/data-hooks/requests/submissions"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import SectionFeatureFlags from "@/components/superadmin/section-feature-flags"
 import { ToggleLeft } from "lucide-react"
 import {
@@ -37,16 +40,17 @@ import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
 import { Heart, LayoutTemplate } from "lucide-react"
 import { usePortalConfig, useUpdatePortalConfig } from "@/data-hooks/mutation-query/usePortalConfig"
 
-type Tab = "hero" | "news" | "press" | "events" | "posts" | "feed" | "flags"
+type Tab = "hero" | "news" | "press" | "events" | "posts" | "feed" | "grievances" | "flags"
 
 const TABS: { id: Tab; label: string; icon: any; desc: string }[] = [
-  { id: "hero",   label: "होमपेज हीरो",     icon: LayoutTemplate, desc: "होमपेज का शीर्षक, उपशीर्षक, स्थान एवं टैगलाइन" },
-  { id: "news",   label: "समाचार",          icon: Newspaper,      desc: "समाज के समाचार एवं सूचनाएं" },
-  { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText,       desc: "आधिकारिक विज्ञप्तियां" },
-  { id: "events", label: "कार्यक्रम",       icon: Calendar,       desc: "आगामी एवं बीते आयोजन" },
-  { id: "posts",  label: "पोस्ट मॉडरेशन",  icon: MessageSquare,  desc: "सदस्यों की पोस्ट प्रबंधन" },
-  { id: "feed",   label: "हीरो फीड",        icon: Heart,          desc: "होमपेज हीरो सेक्शन — बधाई · जन्मदिवस · शोक संदेश" },
-  { id: "flags",  label: "फ़ीचर फ्लैग्स",   icon: ToggleLeft,     desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
+  { id: "hero",       label: "होमपेज हीरो",     icon: LayoutTemplate,  desc: "होमपेज का शीर्षक, उपशीर्षक, स्थान एवं टैगलाइन" },
+  { id: "news",       label: "समाचार",           icon: Newspaper,       desc: "समाज के समाचार एवं सूचनाएं" },
+  { id: "press",      label: "प्रेस विज्ञप्ति",  icon: FileText,        desc: "आधिकारिक विज्ञप्तियां" },
+  { id: "events",     label: "कार्यक्रम",        icon: Calendar,        desc: "आगामी एवं बीते आयोजन" },
+  { id: "posts",      label: "पोस्ट मॉडरेशन",   icon: MessageSquare,   desc: "सदस्यों की पोस्ट प्रबंधन" },
+  { id: "feed",       label: "हीरो फीड",         icon: Heart,           desc: "होमपेज हीरो सेक्शन — बधाई · जन्मदिवस · शोक संदेश" },
+  { id: "grievances", label: "शिकायतें",         icon: AlertTriangle,   desc: "नियमावली पृष्ठ से प्राप्त शिकायतें" },
+  { id: "flags",      label: "फ़ीचर फ्लैग्स",    icon: ToggleLeft,      desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
 ]
 
 function fmtDate(d?: string) {
@@ -1074,6 +1078,249 @@ function HeroFeedPanel() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// GRIEVANCES PANEL
+// ══════════════════════════════════════════════════════════════════════════════
+
+const STATUS_LABELS: Record<SubmissionStatus, { label: string; color: string }> = {
+  new:         { label: "नई",        color: "bg-red-100 text-red-700" },
+  in_progress: { label: "विचाराधीन", color: "bg-yellow-100 text-yellow-700" },
+  resolved:    { label: "हल हुई",    color: "bg-green-100 text-green-700" },
+}
+
+function GrievancesPanel() {
+  const { toast } = useToast()
+  const qc = useQueryClient()
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [q, setQ] = useState("")
+  const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState<Submission | null>(null)
+  const [adminNote, setAdminNote] = useState("")
+  const [savingNote, setSavingNote] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["admin-grievances", statusFilter, q, page],
+    queryFn: () => getSubmissions({ kind: "grievance", status: statusFilter !== "all" ? statusFilter : undefined, q: q || undefined, page }),
+    staleTime: 30_000,
+  })
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: { status?: SubmissionStatus; adminNote?: string } }) =>
+      updateSubmission(id, payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-grievances"] }); toast({ title: "अपडेट हो गया", variant: "success" }) },
+    onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteSubmission(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-grievances"] }); setDeletingId(null); toast({ title: "शिकायत हटाई गई", variant: "success" }) },
+    onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+  })
+
+  const openDetail = (g: Submission) => { setSelected(g); setAdminNote(g.adminNote || "") }
+  const closeDetail = () => setSelected(null)
+
+  const saveNote = async () => {
+    if (!selected) return
+    setSavingNote(true)
+    try {
+      await updateSubmission(selected.id, { adminNote })
+      qc.invalidateQueries({ queryKey: ["admin-grievances"] })
+      toast({ title: "नोट सहेजा गया", variant: "success" })
+      setSelected(prev => prev ? { ...prev, adminNote } : null)
+    } catch (e: any) {
+      toast({ title: "त्रुटि", description: e?.message, variant: "destructive" })
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
+  const items = data?.data || []
+  const total = data?.total || 0
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-500" />शिकायतें
+            {total > 0 && <span className="text-xs font-normal text-gray-400 ml-1">({total} कुल)</span>}
+          </CardTitle>
+          <CardDescription>नियमावली पृष्ठ से प्राप्त शिकायतें</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input value={q} onChange={e => { setQ(e.target.value); setPage(1) }}
+              placeholder="नाम, मोबाइल या विवरण खोजें..."
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
+            <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-400">
+              <option value="all">सभी स्थिति</option>
+              <option value="new">नई</option>
+              <option value="in_progress">विचाराधीन</option>
+              <option value="resolved">हल हुई</option>
+            </select>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400"><Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...</div>
+          ) : !items.length ? (
+            <div className="text-center py-12 text-gray-400 text-sm">कोई शिकायत नहीं मिली।</div>
+          ) : (
+            <div className={`space-y-2 transition-opacity ${isFetching ? "opacity-60" : ""}`}>
+              {items.map(g => {
+                const st = STATUS_LABELS[g.status] || STATUS_LABELS.new
+                return (
+                  <div key={g.id} className="border border-gray-100 rounded-xl p-4 hover:border-orange-200 hover:bg-orange-50/30 transition-all cursor-pointer"
+                    onClick={() => openDetail(g)}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-bold text-orange-700 text-sm">{g.ref}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${st.color}`}>{st.label}</span>
+                          {g.name === "अज्ञात" && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">अज्ञात</span>}
+                        </div>
+                        {g.subject && <p className="text-sm font-semibold text-red-700 mb-0.5">{g.subject}</p>}
+                        <p className="text-sm text-gray-600 line-clamp-2">{g.message}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                          {g.name !== "अज्ञात" && <span>👤 {g.name}</span>}
+                          {g.phone && <span>📞 {g.phone}</span>}
+                          {g.place && <span>📍 {g.place}</span>}
+                          <span>{fmtDate(g.createdAt)}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:bg-red-50"
+                          onClick={e => { e.stopPropagation(); setDeletingId(g.id) }}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {total > 20 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-gray-400">पृष्ठ {page}</p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage(p => p - 1)}>पिछला</Button>
+                <Button size="sm" variant="outline" disabled={items.length < 20} onClick={() => setPage(p => p + 1)}>अगला</Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!selected} onOpenChange={v => !v && closeDetail()}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <span className="text-orange-600">{selected.ref}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_LABELS[selected.status]?.color}`}>
+                    {STATUS_LABELS[selected.status]?.label}
+                  </span>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2">
+                {/* Against person */}
+                {selected.subject && (
+                  <div className="bg-red-50 border border-red-100 rounded-xl p-3">
+                    <p className="text-xs font-bold text-red-600 mb-1">जिसके खिलाफ शिकायत</p>
+                    <p className="text-sm text-red-800 font-semibold">{selected.subject}</p>
+                  </div>
+                )}
+
+                {/* Complainant */}
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-1.5 text-sm">
+                  <p className="text-xs font-bold text-gray-500 mb-1">शिकायतकर्ता</p>
+                  <div className="flex items-center gap-2"><span className="text-gray-400 w-16">नाम:</span><span className="font-medium">{selected.name}</span></div>
+                  {selected.phone && <div className="flex items-center gap-2"><span className="text-gray-400 w-16">मोबाइल:</span><span>{selected.phone}</span></div>}
+                  {selected.email && <div className="flex items-center gap-2"><span className="text-gray-400 w-16">ईमेल:</span><span>{selected.email}</span></div>}
+                  {selected.place && <div className="flex items-center gap-2"><span className="text-gray-400 w-16">गांव:</span><span>{selected.place}</span></div>}
+                </div>
+
+                {/* Message */}
+                <div>
+                  <p className="text-xs font-bold text-gray-500 mb-1.5">शिकायत का विवरण</p>
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap border border-gray-100 rounded-xl p-3 bg-white">{selected.message}</p>
+                </div>
+
+                {/* Images */}
+                {selected.images?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-gray-500 mb-1.5">फ़ोटो</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {selected.images.map((url, i) => (
+                        <a key={i} href={url} target="_blank" rel="noreferrer" className="block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt={`फ़ोटो ${i + 1}`} className="w-full h-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Status update */}
+                <div>
+                  <p className="text-xs font-bold text-gray-500 mb-1.5">स्थिति बदलें</p>
+                  <div className="flex gap-2">
+                    {(["new", "in_progress", "resolved"] as SubmissionStatus[]).map(s => (
+                      <button key={s} onClick={() => updateMut.mutate({ id: selected.id, payload: { status: s } })}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${selected.status === s ? STATUS_LABELS[s].color + " border-current" : "border-gray-200 text-gray-500 hover:border-gray-400"}`}>
+                        {STATUS_LABELS[s].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Admin note */}
+                <div>
+                  <p className="text-xs font-bold text-gray-500 mb-1.5">आंतरिक नोट</p>
+                  <Textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} rows={3}
+                    placeholder="कार्यवाही, टिप्पणी आदि..." className="text-sm resize-none" />
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={closeDetail}>बंद करें</Button>
+                <Button onClick={saveNote} disabled={savingNote} className="bg-orange-500 hover:bg-orange-600 text-white">
+                  {savingNote ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                  नोट सहेजें
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <AlertDialog open={!!deletingId} onOpenChange={v => !v && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>शिकायत हटाएं?</AlertDialogTitle>
+            <AlertDialogDescription>यह क्रिया पूर्ववत नहीं की जा सकती। फ़ोटो भी हट जाएंगी।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>रद्द करें</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deletingId && deleteMut.mutate(deletingId)}
+              className="bg-red-600 hover:bg-red-700 text-white">हटाएं</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // PAGE
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -1106,12 +1353,13 @@ export default function SamajContentPage() {
         ))}
       </div>
 
-      {tab === "hero"   && <HeroSectionPanel />}
-      {tab === "news"   && <NewsPanel />}
-      {tab === "press"  && <PressPanel />}
-      {tab === "events" && <EventsPanel />}
-      {tab === "posts"  && <PostsPanel />}
-      {tab === "feed"   && <HeroFeedPanel />}
+      {tab === "hero"       && <HeroSectionPanel />}
+      {tab === "news"       && <NewsPanel />}
+      {tab === "press"      && <PressPanel />}
+      {tab === "events"     && <EventsPanel />}
+      {tab === "posts"      && <PostsPanel />}
+      {tab === "feed"       && <HeroFeedPanel />}
+      {tab === "grievances" && <GrievancesPanel />}
       {tab === "flags"  && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <SectionFeatureFlags

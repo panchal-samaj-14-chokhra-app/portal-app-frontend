@@ -6,7 +6,7 @@ import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, 
 import Link from "next/link"
 import { useNiyamavaliArticles, useNiyamavaliArticle } from "@/data-hooks/mutation-query/useNiyamavali"
 import { NIYAMAVALI_GROUPS } from "@/data-hooks/requests/niyamavali"
-import { submitGrievancePublic } from "@/data-hooks/requests/submissions"
+
 
 // ── Decorative divider ────────────────────────────────────────────────────────
 function OrnamentDivider() {
@@ -123,45 +123,77 @@ function ArticleReader({ articleId }: { articleId: string }) {
 }
 
 // ── Grievance modal ───────────────────────────────────────────────────────────
+const INPUT_CLS = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+const LABEL_CLS = "block text-sm font-bold text-gray-700 mb-1"
+
 function GrievanceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [anonymous, setAnonymous] = useState(false)
-  const [name, setName]       = useState("")
-  const [village, setVillage] = useState("")
-  const [phone, setPhone]     = useState("")
-  const [subject, setSubject] = useState("")
+  const [anonymous, setAnonymous] = useState(true)
+
+  // Against-person fields
+  const [againstName,    setAgainstName]    = useState("")
+  const [againstVillage, setAgainstVillage] = useState("")
+  const [againstChokhla, setAgainstChokhla] = useState("")
+
+  // Complainant fields (named only)
+  const [myName,  setMyName]  = useState("")
+  const [myVillage, setMyVillage] = useState("")
+  const [phone,   setPhone]   = useState("")
+  const [email,   setEmail]   = useState("")
+
+  // Complaint
   const [message, setMessage] = useState("")
-  const [busy, setBusy]       = useState(false)
-  const [refNo, setRefNo]     = useState<string | null>(null)
-  const [error, setError]     = useState("")
+  const [photos,  setPhotos]  = useState<File[]>([])
+
+  const [busy,  setBusy]  = useState(false)
+  const [refNo, setRefNo] = useState<string | null>(null)
+  const [error, setError] = useState("")
 
   const reset = () => {
-    setAnonymous(false); setName(""); setVillage(""); setPhone("")
-    setSubject(""); setMessage(""); setBusy(false); setRefNo(null); setError("")
+    setAnonymous(true); setAgainstName(""); setAgainstVillage(""); setAgainstChokhla("")
+    setMyName(""); setMyVillage(""); setPhone(""); setEmail("")
+    setMessage(""); setPhotos([]); setBusy(false); setRefNo(null); setError("")
   }
-
   const handleClose = () => { reset(); onClose() }
+
+  const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, 3)
+    setPhotos(files)
+    e.target.value = ""
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    if (!phone.trim() || phone.replace(/\D/g, "").length !== 10) {
-      setError("कृपया सही 10 अंकों का मोबाइल नंबर लिखें"); return
+    if (!againstName.trim()) { setError("जिसके खिलाफ शिकायत है उनका नाम लिखें"); return }
+    if (!anonymous) {
+      if (!myName.trim())  { setError("आपका नाम लिखें"); return }
+      if (!phone.trim() || phone.replace(/\D/g, "").length !== 10) {
+        setError("सही 10 अंकों का मोबाइल नंबर लिखें"); return
+      }
     }
-    if (message.trim().length < 10) {
-      setError("शिकायत का विवरण कम से कम 10 अक्षरों में लिखें"); return
-    }
+    if (message.trim().length < 10) { setError("शिकायत का विवरण कम से कम 10 अक्षरों में लिखें"); return }
+
     try {
       setBusy(true)
-      const result = await submitGrievancePublic({
-        name: anonymous ? "अज्ञात" : (name.trim() || "अज्ञात"),
-        phone: phone.replace(/\D/g, ""),
-        place: village.trim() || undefined,
-        subject: subject.trim() || undefined,
-        message: message.trim(),
-      })
-      setRefNo(result?.ref ?? "—")
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "कुछ गड़बड़ हुई, दोबारा कोशिश करें")
+      const form = new FormData()
+      form.append("name",           anonymous ? "" : myName.trim())
+      form.append("againstName",    againstName.trim())
+      form.append("againstVillage", againstVillage.trim())
+      form.append("againstChokhla", againstChokhla.trim())
+      form.append("message",        message.trim())
+      if (!anonymous) {
+        form.append("phone", phone.replace(/\D/g, ""))
+        if (email.trim())     form.append("email", email.trim())
+        if (myVillage.trim()) form.append("place", myVillage.trim())
+      }
+      photos.forEach(f => form.append("images", f))
+
+      const { data } = await (await import("@/config/request")).default.post(
+        "/submissions/grievance", form, { headers: { "Content-Type": "multipart/form-data" } }
+      )
+      setRefNo(data?.data?.ref ?? "—")
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || "कुछ गड़बड़ हुई, दोबारा कोशिश करें")
     } finally {
       setBusy(false)
     }
@@ -172,11 +204,9 @@ function GrievanceModal({ open, onClose }: { open: boolean; onClose: () => void 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ fontFamily: "'Noto Sans Devanagari','Hind',sans-serif" }}>
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
-      {/* Sheet */}
-      <div className="relative w-full sm:max-w-md bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95dvh]">
+      <div className="relative w-full sm:max-w-lg bg-white sm:rounded-2xl shadow-2xl flex flex-col max-h-[95dvh]">
         {/* Header */}
         <div className="px-5 py-4 flex items-center justify-between shrink-0"
           style={{ background: "linear-gradient(90deg,#9a3412,#c2410c)" }}>
@@ -184,95 +214,126 @@ function GrievanceModal({ open, onClose }: { open: boolean; onClose: () => void 
             <h2 className="text-white font-extrabold text-base">शिकायत दर्ज करें</h2>
             <p className="text-orange-200 text-xs mt-0.5">पंचाल समाज चौदह चौखरा</p>
           </div>
-          <button onClick={handleClose} className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition-colors">
+          <button onClick={handleClose} className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Success state */}
+        {/* Success */}
         {refNo ? (
-          <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+          <div className="flex flex-col items-center justify-center gap-4 px-6 py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
               <CheckCircle2 className="w-9 h-9 text-green-600" />
             </div>
             <div>
               <h3 className="font-extrabold text-gray-900 text-lg mb-1">शिकायत दर्ज हो गई!</h3>
-              <p className="text-gray-500 text-sm mb-3">आपकी शिकायत समाज कार्यकारिणी को भेज दी गई है।</p>
-              <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 inline-block">
-                <p className="text-xs text-orange-500 font-semibold">संदर्भ संख्या</p>
-                <p className="text-orange-800 font-extrabold text-lg tracking-widest">{refNo}</p>
+              <p className="text-gray-500 text-sm mb-4">आपकी शिकायत समाज कार्यकारिणी को भेज दी गई है।</p>
+              <div className="bg-orange-50 border border-orange-200 rounded-xl px-5 py-3 inline-block">
+                <p className="text-xs text-orange-500 font-semibold mb-0.5">शिकायत संख्या</p>
+                <p className="text-orange-800 font-extrabold text-2xl tracking-widest">{refNo}</p>
+                <p className="text-xs text-gray-400 mt-1">इसे नोट कर लें</p>
               </div>
             </div>
             <button onClick={handleClose}
-              className="mt-2 px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors">
+              className="px-8 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors">
               बंद करें
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="overflow-y-auto">
-            <div className="px-5 pt-5 pb-6 space-y-4">
+            <div className="px-5 pt-5 pb-6 space-y-5">
 
-              {/* Anonymous toggle */}
-              <div className="flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer select-none"
+              {/* ── Anonymous toggle ── */}
+              <div className="flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer select-none transition-all"
                 style={{ borderColor: anonymous ? "#c2410c" : "#e5e7eb", background: anonymous ? "#fff7ed" : "#f9fafb" }}
                 onClick={() => setAnonymous(v => !v)}>
-                <div className={`w-10 h-6 rounded-full relative transition-colors duration-200 shrink-0 ${anonymous ? "bg-orange-600" : "bg-gray-300"}`}>
-                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 ${anonymous ? "left-[18px]" : "left-0.5"}`} />
+                <div className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${anonymous ? "bg-orange-600" : "bg-gray-300"}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${anonymous ? "left-5" : "left-0.5"}`} />
                 </div>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {anonymous
-                    ? <UserX className="w-4 h-4 text-orange-600 shrink-0" />
-                    : <User className="w-4 h-4 text-gray-400 shrink-0" />}
+                <div className="flex items-center gap-2">
+                  {anonymous ? <UserX className="w-4 h-4 text-orange-600 shrink-0" /> : <User className="w-4 h-4 text-gray-400 shrink-0" />}
                   <div>
                     <p className={`text-sm font-bold ${anonymous ? "text-orange-800" : "text-gray-700"}`}>
                       {anonymous ? "बिना नाम के शिकायत दर्ज करें" : "नाम के साथ शिकायत दर्ज करें"}
                     </p>
-                    <p className="text-xs text-gray-400">{anonymous ? "आपकी पहचान गुप्त रहेगी" : "आपका नाम दर्ज होगा"}</p>
+                    <p className="text-xs text-gray-400">{anonymous ? "आपकी पहचान गुप्त रहेगी" : "आपकी जानकारी दर्ज होगी"}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Name — only when not anonymous */}
+              {/* ── Against person section ── */}
+              <div className="rounded-xl border border-red-100 bg-red-50/40 p-4 space-y-3">
+                <p className="text-xs font-bold text-red-700 uppercase tracking-wide">जिसके खिलाफ शिकायत है</p>
+                <div>
+                  <label className={LABEL_CLS}>नाम <span className="text-red-500">*</span></label>
+                  <input value={againstName} onChange={e => setAgainstName(e.target.value)}
+                    placeholder="व्यक्ति का पूरा नाम" className={INPUT_CLS} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={LABEL_CLS}>गांव</label>
+                    <input value={againstVillage} onChange={e => setAgainstVillage(e.target.value)}
+                      placeholder="गांव का नाम" className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={LABEL_CLS}>चोखला</label>
+                    <input value={againstChokhla} onChange={e => setAgainstChokhla(e.target.value)}
+                      placeholder="चोखला का नाम" className={INPUT_CLS} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Complainant info (named only) ── */}
               {!anonymous && (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-gray-700">आपका नाम <span className="text-red-500">*</span></label>
-                  <input value={name} onChange={e => setName(e.target.value)} required={!anonymous}
-                    placeholder="पूरा नाम लिखें"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+                <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 space-y-3">
+                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">आपकी जानकारी</p>
+                  <div>
+                    <label className={LABEL_CLS}>आपका नाम <span className="text-red-500">*</span></label>
+                    <input value={myName} onChange={e => setMyName(e.target.value)}
+                      placeholder="आपका पूरा नाम" className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={LABEL_CLS}>आपका गांव</label>
+                    <input value={myVillage} onChange={e => setMyVillage(e.target.value)}
+                      placeholder="आपका गांव" className={INPUT_CLS} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={LABEL_CLS}>मोबाइल नंबर <span className="text-red-500">*</span></label>
+                      <input value={phone} onChange={e => setPhone(e.target.value)}
+                        placeholder="10 अंक" inputMode="numeric" maxLength={10} className={INPUT_CLS} />
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>ईमेल <span className="text-gray-400 font-normal">(वैकल्पिक)</span></label>
+                      <input value={email} onChange={e => setEmail(e.target.value)}
+                        type="email" placeholder="email@example.com" className={INPUT_CLS} />
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Village */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">गांव / स्थान <span className="text-red-500">*</span></label>
-                <input value={village} onChange={e => setVillage(e.target.value)} required
-                  placeholder="अपना गांव या शहर लिखें"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+              {/* ── Complaint details ── */}
+              <div>
+                <label className={LABEL_CLS}>शिकायत का विवरण <span className="text-red-500">*</span></label>
+                <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4}
+                  placeholder="अपनी शिकायत विस्तार से लिखें..."
+                  className={`${INPUT_CLS} resize-none`} />
+                <p className="text-xs text-gray-400 text-right mt-1">{message.length} / 3000</p>
               </div>
 
-              {/* Phone */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">मोबाइल नंबर <span className="text-red-500">*</span></label>
-                <input value={phone} onChange={e => setPhone(e.target.value)} required
-                  placeholder="10 अंकों का नंबर" inputMode="numeric" maxLength={10}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
-              </div>
-
-              {/* Subject */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">विषय <span className="text-gray-400 font-normal">(वैकल्पिक)</span></label>
-                <input value={subject} onChange={e => setSubject(e.target.value)}
-                  placeholder="जैसे: सड़क, पानी, समाज कार्य आदि"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
-              </div>
-
-              {/* Message */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">शिकायत का विवरण <span className="text-red-500">*</span></label>
-                <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={4}
-                  placeholder="अपनी शिकायत यहाँ विस्तार से लिखें..."
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all resize-none" />
-                <p className="text-xs text-gray-400 text-right">{message.length} / 3000</p>
+              {/* ── Photo upload ── */}
+              <div>
+                <label className={LABEL_CLS}>फ़ोटो जोड़ें <span className="text-gray-400 font-normal">(अधिकतम 3, JPG/PNG, 2MB प्रत्येक)</span></label>
+                <label className="flex items-center gap-3 w-full border-2 border-dashed border-orange-200 rounded-xl px-4 py-3 cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-all">
+                  <span className="text-2xl">📷</span>
+                  <div className="flex-1 min-w-0">
+                    {photos.length === 0
+                      ? <span className="text-sm text-gray-400">फ़ोटो चुनें...</span>
+                      : <span className="text-sm text-orange-700 font-semibold">{photos.map(f => f.name).join(", ")}</span>
+                    }
+                  </div>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
+                </label>
               </div>
 
               {/* Error */}
@@ -283,7 +344,6 @@ function GrievanceModal({ open, onClose }: { open: boolean; onClose: () => void 
                 </div>
               )}
 
-              {/* Submit */}
               <button type="submit" disabled={busy}
                 className="w-full py-3 rounded-xl text-white font-extrabold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
                 style={{ background: "linear-gradient(135deg,#9a3412,#c2410c)" }}>
