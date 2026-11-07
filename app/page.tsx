@@ -41,7 +41,7 @@ const SERVICES = [
   { icon: GraduationCap, color: "bg-green-100 text-green-700",    title: "शिक्षा पोर्टल",          href: "#education" },
   { icon: Database,      color: "bg-orange-100 text-orange-700",  title: "डिजिटल जनगणना",         href: "/community-hub" },
   { icon: Handshake,     color: "bg-red-100 text-red-700",        title: "वैवाहिक परिचय",         href: "/admin/matrimonial" },
-  { icon: Briefcase,     color: "bg-yellow-100 text-yellow-700",  title: "व्यवसाय निर्देशिका",     href: "#business" },
+  { icon: Briefcase,     color: "bg-yellow-100 text-yellow-700",  title: "व्यवसाय निर्देशिका",     href: "https://business-directory.panchalsamaj.online/", external: true },
   { icon: Stethoscope,   color: "bg-cyan-100 text-cyan-700",      title: "स्वास्थ्य एवं चिकित्सा", href: "#health" },
   { icon: Vote,          color: "bg-violet-100 text-violet-700",  title: "समाज की योजनाएं",        href: "#schemes" },
   { icon: Award,         color: "bg-amber-100 text-amber-700",    title: "उपलब्धियां",             href: "#highlights" },
@@ -523,6 +523,7 @@ export default function CommunityPortal() {
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {SERVICES.map(svc => (
               <Link key={svc.title} href={svc.href}
+                {...((svc as any).external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 className="flex flex-col items-center gap-2 bg-white rounded-2xl p-4 shadow-sm border border-orange-50 hover:border-orange-200 hover:shadow-md transition-all group text-center">
                 <div className={`w-10 h-10 rounded-xl ${svc.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                   <svc.icon className="w-5 h-5" />
