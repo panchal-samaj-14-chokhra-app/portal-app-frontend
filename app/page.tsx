@@ -320,7 +320,7 @@ export default function CommunityPortal() {
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────── */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "shadow-lg" : ""}`}
-        style={{ background: scrolled ? "linear-gradient(90deg,#7c2d12 0%,#9a3412 40%,#c2410c 100%)" : "linear-gradient(90deg,#92400e 0%,#b45309 40%,#d97706 100%)" }}>
+        style={{ background: scrolled ? "linear-gradient(90deg,#6b0000 0%,#8B0000 50%,#a30000 100%)" : "linear-gradient(90deg,#8B0000 0%,#a30000 50%,#c2410c 100%)" }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between py-2.5">
             <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -355,7 +355,7 @@ export default function CommunityPortal() {
         </div>
         {menuOpen && (
           <div className="lg:hidden border-t border-white/20 px-4 py-3 space-y-1"
-            style={{ background: "linear-gradient(180deg,#9a3412 0%,#7c2d12 100%)" }}>
+            style={{ background: "linear-gradient(180deg,#8B0000 0%,#6b0000 100%)" }}>
             {NAV_ITEMS.filter(item => !item.flagKey || isEnabled(item.flagKey)).map(item => (
               <Link key={item.href} href={item.href} onClick={() => { setActiveNav(item.href); setMenuOpen(false) }}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-orange-100 hover:bg-white/15 hover:text-white">
@@ -367,85 +367,150 @@ export default function CommunityPortal() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────── */}
-      <section id="home" className="relative pt-[60px] min-h-screen flex flex-col justify-center overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fffbf5 40%, #fef3c7 100%)" }} />
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle, #fb923c, transparent 70%)" }} />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-15 blur-3xl" style={{ background: "radial-gradient(circle, #f97316, transparent 70%)" }} />
-          {/* Decorative pattern */}
-          <div className="absolute inset-0 opacity-[0.03]"
-            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c2410c' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+      <section id="home" className="relative pt-[60px] min-h-screen flex flex-col justify-center overflow-hidden"
+        style={{ background: "linear-gradient(135deg, #FFFAF4 0%, #FFF3E2 60%, #fff7e6 100%)" }}>
+
+        {/* Mandala decoration — top left */}
+        <div className="absolute top-0 left-0 w-72 h-72 opacity-[0.07] pointer-events-none select-none -translate-x-1/4 -translate-y-1/4">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="98" stroke="#8B0000" strokeWidth="1.5"/>
+            <circle cx="100" cy="100" r="80" stroke="#8B0000" strokeWidth="1"/>
+            <circle cx="100" cy="100" r="60" stroke="#D9A441" strokeWidth="1.5"/>
+            <circle cx="100" cy="100" r="40" stroke="#8B0000" strokeWidth="1"/>
+            <circle cx="100" cy="100" r="20" stroke="#D9A441" strokeWidth="1.5"/>
+            {[0,30,60,90,120,150,180,210,240,270,300,330].map(a => (
+              <g key={a} transform={`rotate(${a} 100 100)`}>
+                <line x1="100" y1="2" x2="100" y2="40" stroke="#8B0000" strokeWidth="0.8"/>
+                <ellipse cx="100" cy="50" rx="4" ry="10" fill="#D9A441" opacity="0.6"/>
+                <line x1="100" y1="60" x2="100" y2="80" stroke="#8B0000" strokeWidth="0.8"/>
+              </g>
+            ))}
+          </svg>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-12 w-full">
+        {/* Mandala — bottom right */}
+        <div className="absolute bottom-16 right-0 w-56 h-56 opacity-[0.05] pointer-events-none select-none translate-x-1/4 translate-y-1/4">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="98" stroke="#F47700" strokeWidth="1.5"/>
+            <circle cx="100" cy="100" r="70" stroke="#8B0000" strokeWidth="1"/>
+            <circle cx="100" cy="100" r="45" stroke="#D9A441" strokeWidth="1.5"/>
+            {[0,45,90,135,180,225,270,315].map(a => (
+              <g key={a} transform={`rotate(${a} 100 100)`}>
+                <ellipse cx="100" cy="30" rx="6" ry="12" fill="#8B0000" opacity="0.5"/>
+              </g>
+            ))}
+          </svg>
+        </div>
+
+        {/* Right-side warm gradient wash */}
+        <div className="absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none"
+          style={{ background: "linear-gradient(to left, rgba(244,119,0,0.08) 0%, transparent 100%)" }} />
+
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-4 py-12 w-full relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <div className="space-y-7 order-2 lg:order-1">
-              {/* Top label */}
+
+            {/* ── Left: Text ── */}
+            <div className="space-y-6 order-2 lg:order-1">
+
+              {/* Gold divider + tagline */}
               <div className="flex items-center gap-3">
-                <div className="h-px flex-1 max-w-[40px] bg-gradient-to-r from-orange-400 to-transparent" />
-                <span className="text-orange-600 text-xs font-bold tracking-widest uppercase">{portalTagline}</span>
+                <div className="w-6 h-px" style={{ background: "#D9A441" }} />
+                <div className="w-1.5 h-1.5 rotate-45" style={{ background: "#D9A441" }} />
+                <span className="text-xs font-bold tracking-widest uppercase" style={{ color: "#8B0000" }}>{portalTagline}</span>
+                <div className="w-1.5 h-1.5 rotate-45" style={{ background: "#D9A441" }} />
+                <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, #D9A441, transparent)" }} />
               </div>
+
+              {/* Heading */}
               <div>
-                <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-tight text-gray-900">
+                <h1 className="text-4xl sm:text-5xl lg:text-[3.2rem] font-extrabold leading-tight"
+                  style={{ color: "#8B0000" }}>
                   {portalName}
                 </h1>
-                <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-tight"
-                  style={{ WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(90deg,#c2410c,#ea580c,#f97316)", WebkitBackgroundClip: "text" }}>
+                <h1 className="text-4xl sm:text-5xl lg:text-[3.2rem] font-extrabold leading-tight"
+                  style={{ background: "linear-gradient(90deg,#F47700,#D9A441)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   {portalSubtitle}
                 </h1>
               </div>
-              <p className="text-orange-600/80 font-medium text-sm tracking-wide">{portalLocation}</p>
 
-              {/* Chokhla pills — from admin-managed list */}
+              {/* Location — gold line */}
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-px" style={{ background: "#D9A441" }} />
+                <p className="text-sm font-medium" style={{ color: "#8B0000", opacity: 0.75 }}>{portalLocation}</p>
+              </div>
+
+              {/* Chokhla pills */}
               <div className="flex flex-wrap gap-1.5">
                 {chokhlaNames.map((name, i) => (
                   <span key={name}
                     className="px-2.5 py-1 text-xs font-semibold rounded-full border transition-all hover:scale-105 cursor-default"
                     style={{
-                      background: i % 3 === 0 ? "rgba(234,88,12,0.08)" : i % 3 === 1 ? "rgba(251,191,36,0.1)" : "rgba(194,65,12,0.06)",
-                      borderColor: i % 3 === 0 ? "rgba(234,88,12,0.25)" : i % 3 === 1 ? "rgba(217,119,6,0.3)" : "rgba(194,65,12,0.2)",
-                      color: i % 3 === 0 ? "#c2410c" : i % 3 === 1 ? "#92400e" : "#9a3412",
+                      background: i % 2 === 0 ? "rgba(139,0,0,0.06)" : "rgba(217,164,65,0.1)",
+                      borderColor: i % 2 === 0 ? "rgba(139,0,0,0.2)" : "rgba(217,164,65,0.35)",
+                      color: i % 2 === 0 ? "#8B0000" : "#92400e",
                     }}>
                     {name}
                   </span>
                 ))}
               </div>
 
-              {/* CTA buttons */}
-              <div className="flex flex-wrap gap-3">
+              {/* CTA */}
+              <div className="flex flex-wrap gap-3 pt-1">
                 <button
                   onClick={() => {
                     setShowSvc(v => !v)
                     setTimeout(() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
                   }}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold shadow-lg shadow-orange-200 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
-                  style={{ background: "linear-gradient(135deg, #c2410c 0%, #ea580c 60%, #f97316 100%)" }}>
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: "linear-gradient(135deg, #8B0000 0%, #c2410c 60%, #F47700 100%)", boxShadow: "0 4px 20px rgba(139,0,0,0.3)" }}>
                   डिजिटल सेवाएं
                   <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSvc ? "rotate-180" : ""}`} />
                 </button>
               </div>
             </div>
 
-            {/* Hero Feed Slider */}
+            {/* ── Right: Hero Feed Slider ── */}
             <div className="order-1 lg:order-2 w-full max-w-xs mx-auto lg:mx-0 lg:ml-auto">
               <div className="relative">
-                <div className="absolute -inset-3 rounded-3xl opacity-20 blur-xl" style={{ background: "linear-gradient(135deg,#f97316,#c2410c)" }} />
-                <div className="relative">
-                  <HeroFeedSlider />
+                {/* Glow ring behind card */}
+                <div className="absolute -inset-4 rounded-3xl opacity-25 blur-2xl pointer-events-none"
+                  style={{ background: "radial-gradient(circle, #F47700, #8B0000)" }} />
+                {/* Gold border frame */}
+                <div className="relative rounded-3xl p-[2px]"
+                  style={{ background: "linear-gradient(135deg, #D9A441, #F47700, #8B0000, #D9A441)" }}>
+                  <div className="rounded-3xl overflow-hidden bg-white">
+                    <HeroFeedSlider />
+                  </div>
                 </div>
-                {/* Floating badge */}
-                <div className="absolute -bottom-3 -right-3 bg-white rounded-2xl px-3 py-2 shadow-lg border border-orange-100 flex items-center gap-2 z-10">
-                  <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-                  <span className="text-xs font-semibold text-gray-700">समाज संदेश</span>
+                {/* Badge */}
+                <div className="absolute -bottom-3 -right-3 rounded-2xl px-3 py-2 shadow-lg flex items-center gap-2 z-10 border"
+                  style={{ background: "#FFF3E2", borderColor: "#D9A441" }}>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#F47700" }} />
+                  <span className="text-xs font-semibold" style={{ color: "#8B0000" }}>समाज संदेश</span>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
 
-        <div className="flex justify-center pb-6 animate-bounce">
-          <ChevronDown className="w-5 h-5 text-orange-300" />
+        {/* Om + gold divider row */}
+        <div className="relative z-10 flex items-center justify-center gap-4 pb-4">
+          <div className="flex-1 max-w-[120px] h-px ml-auto" style={{ background: "linear-gradient(to right, transparent, #D9A441)" }} />
+          <div className="w-1.5 h-1.5 rotate-45" style={{ background: "#D9A441" }} />
+          <span className="text-2xl font-bold select-none" style={{ color: "#8B0000", opacity: 0.5 }}>ॐ</span>
+          <div className="w-1.5 h-1.5 rotate-45" style={{ background: "#D9A441" }} />
+          <div className="flex-1 max-w-[120px] h-px mr-auto" style={{ background: "linear-gradient(to left, transparent, #D9A441)" }} />
+        </div>
+
+        {/* Curved wave bottom border */}
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ lineHeight: 0 }}>
+          <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full" style={{ height: "60px" }}>
+            <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,10 1440,40 L1440,80 L0,80 Z" fill="#8B0000" opacity="0.12"/>
+            <path d="M0,55 C240,20 480,70 720,50 C960,30 1200,65 1440,50 L1440,80 L0,80 Z" fill="#8B0000" opacity="0.08"/>
+            <path d="M0,65 C360,45 720,75 1080,55 C1260,45 1380,60 1440,65 L1440,80 L0,80 Z" fill="#D9A441" opacity="0.15"/>
+          </svg>
         </div>
       </section>
 
