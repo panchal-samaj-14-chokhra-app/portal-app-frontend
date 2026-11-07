@@ -45,7 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import * as XLSX from "xlsx"
+// xlsx loaded dynamically inside handleDownloadReport to keep initial bundle lean
 import { calculateAge } from "@/components/group-component/family-form/utils"
 
 // TypeScript interfaces for type safety
@@ -439,7 +439,7 @@ export default function FamilyDetailPage() {
     fullName: member.fullName || `${member.firstName || ""} ${member.lastName || ""}`.trim(),
   }))
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = async () => {
     if (!familyDetail) return
     // Prepare data for Excel
     const familySheet = [
@@ -502,6 +502,7 @@ export default function FamilyDetailPage() {
         : "",
     }))
 
+    const XLSX = await import("xlsx")
     // Create workbook and add sheets
     const wb = XLSX.utils.book_new()
     const wsFamily = XLSX.utils.json_to_sheet(familySheet)

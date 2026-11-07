@@ -10,8 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import autoTable from "jspdf-autotable";
-import jsPDF from "jspdf";
+// jspdf loaded dynamically to avoid adding ~1MB to initial bundle
 
 
 // Icons
@@ -34,7 +33,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import * as XLSX from "xlsx";
+// xlsx loaded dynamically to avoid adding ~500KB to initial bundle
 import { useDownloadFamilyData, useStaticData } from "@/data-hooks/mutation-query/useQueryAndMutation";
 import { Button } from "../ui/button";
 
@@ -50,13 +49,16 @@ const StatisticsView: React.FC = () => {
 
   const api = data?.data;
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
     const doc = new jsPDF();
 
     const chokhlaStats = data.data.chokhlaStats;
 
-    // 🔥 Flatten data
-    const tableData = chokhlaStats.map(item => [
+    const tableData = chokhlaStats.map((item: any) => [
       item.chokhlaName,
       item.gender.male,
       item.gender.female,
@@ -70,25 +72,12 @@ const StatisticsView: React.FC = () => {
       item.genderRatio,
     ]);
 
-    // Table headers
     const headers = [[
-      "Chokhla",
-      "Male",
-      "Female",
-      "Other",
-      "Insured",
-      "Interested",
-      "Bank Acc",
-      "JanDhan",
-      "Gov Benefit",
-      "Financial Assist",
-      "Ratio"
+      "Chokhla", "Male", "Female", "Other", "Insured",
+      "Interested", "Bank Acc", "JanDhan", "Gov Benefit", "Financial Assist", "Ratio"
     ]];
 
-    // Add title
     doc.text("Chokhla Statistics Report", 14, 15);
-
-    // Create table
     autoTable(doc, {
       head: headers,
       body: tableData,
@@ -96,50 +85,34 @@ const StatisticsView: React.FC = () => {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [22, 160, 133] },
     });
-
-    // Download
     doc.save("chokhla_stats.pdf");
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    const XLSX = await import("xlsx");
     const chokhlaStats = data.data.chokhlaStats;
 
-    // 🔥 Flatten data
-    const flatData = chokhlaStats.map(item => ({
+    const flatData = chokhlaStats.map((item: any) => ({
       chokhlaName: item.chokhlaName,
-
       male: item.gender.male,
       female: item.gender.female,
       other: item.gender.other,
-
       insured: item.health.insured,
       interested: item.health.interested,
-
       bankAccount: item.social.bankAccount,
       janDhan: item.social.janDhan,
       govBenefit: item.social.govBenefit,
       financialAssistance: item.social.financialAssistance,
-
       genderRatio: item.genderRatio,
     }));
 
-    // Convert JSON → Sheet
     const worksheet = XLSX.utils.json_to_sheet(flatData);
-
-    // Optional: column width
     worksheet["!cols"] = [
-      { wch: 15 }, // chokhlaName
-      { wch: 10 }, { wch: 10 }, { wch: 10 },
-      { wch: 12 }, { wch: 12 },
-      { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
-      { wch: 12 },
+      { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+      { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 12 },
     ];
-
-    // Create workbook
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Chokhla Stats");
-
-    // Download file
     XLSX.writeFile(workbook, "chokhla_stats.xlsx");
   };
   // ===============================================
