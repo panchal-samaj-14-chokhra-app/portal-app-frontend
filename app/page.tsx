@@ -28,11 +28,12 @@ import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: "होम",           href: "/",              icon: Home,      flagKey: null },
-  { label: "समाचार",        href: "/news",          icon: Newspaper, flagKey: "news_feed" },
-  { label: "प्रेस विज्ञप्ति", href: "/press-release", icon: FileText,  flagKey: "press_release" },
-  { label: "कार्यक्रम",    href: "/events",        icon: Calendar,  flagKey: "events" },
-  { label: "नियमावली",     href: "/niyamavali",    icon: BookOpen,  flagKey: "niyamavali" },
+  { label: "होम",              href: "/",                                             icon: Home,      flagKey: null,            external: false },
+  { label: "समाचार",           href: "/news",                                         icon: Newspaper, flagKey: "news_feed",      external: false },
+  { label: "प्रेस विज्ञप्ति",  href: "/press-release",                                icon: FileText,  flagKey: "press_release",  external: false },
+  { label: "कार्यक्रम",       href: "/events",                                        icon: Calendar,  flagKey: "events",         external: false },
+  { label: "नियमावली",        href: "/niyamavali",                                    icon: BookOpen,  flagKey: "niyamavali",     external: false },
+  { label: "व्यापार",          href: "https://business-directory.panchalsamaj.online/", icon: Briefcase, flagKey: null,            external: true  },
 ]
 
 // ─── SERVICES ───────────────────────────────────────────────────────────────
@@ -333,6 +334,7 @@ export default function CommunityPortal() {
             <div className="hidden lg:flex items-center gap-0.5">
               {NAV_ITEMS.filter(item => !item.flagKey || isEnabled(item.flagKey)).map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setActiveNav(item.href)}
+                  {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${activeNav === item.href ? "bg-white/20 text-white" : "text-orange-100 hover:text-white hover:bg-white/15"}`}>
                   {item.label}
                 </Link>
@@ -358,6 +360,7 @@ export default function CommunityPortal() {
             style={{ background: "linear-gradient(180deg,#8B0000 0%,#6b0000 100%)" }}>
             {NAV_ITEMS.filter(item => !item.flagKey || isEnabled(item.flagKey)).map(item => (
               <Link key={item.href} href={item.href} onClick={() => { setActiveNav(item.href); setMenuOpen(false) }}
+                {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-orange-100 hover:bg-white/15 hover:text-white">
                 <item.icon className="w-4 h-4 text-orange-300" />{item.label}
               </Link>
