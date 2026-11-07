@@ -34,17 +34,19 @@ import {
 } from "@/data-hooks/mutation-query/useHeroFeed"
 import type { HeroFeed } from "@/data-hooks/requests/hero-feed"
 import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
-import { Heart } from "lucide-react"
+import { Heart, LayoutTemplate } from "lucide-react"
+import { usePortalConfig, useUpdatePortalConfig } from "@/data-hooks/mutation-query/usePortalConfig"
 
-type Tab = "news" | "press" | "events" | "posts" | "feed" | "flags"
+type Tab = "hero" | "news" | "press" | "events" | "posts" | "feed" | "flags"
 
 const TABS: { id: Tab; label: string; icon: any; desc: string }[] = [
-  { id: "news",   label: "समाचार",          icon: Newspaper,     desc: "समाज के समाचार एवं सूचनाएं" },
-  { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText,      desc: "आधिकारिक विज्ञप्तियां" },
-  { id: "events", label: "कार्यक्रम",       icon: Calendar,      desc: "आगामी एवं बीते आयोजन" },
-  { id: "posts",  label: "पोस्ट मॉडरेशन",  icon: MessageSquare, desc: "सदस्यों की पोस्ट प्रबंधन" },
-  { id: "feed",   label: "हीरो फीड",        icon: Heart,         desc: "होमपेज हीरो सेक्शन — बधाई · जन्मदिवस · शोक संदेश" },
-  { id: "flags",  label: "फ़ीचर फ्लैग्स",   icon: ToggleLeft,    desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
+  { id: "hero",   label: "होमपेज हीरो",     icon: LayoutTemplate, desc: "होमपेज का शीर्षक, उपशीर्षक, स्थान एवं टैगलाइन" },
+  { id: "news",   label: "समाचार",          icon: Newspaper,      desc: "समाज के समाचार एवं सूचनाएं" },
+  { id: "press",  label: "प्रेस विज्ञप्ति", icon: FileText,       desc: "आधिकारिक विज्ञप्तियां" },
+  { id: "events", label: "कार्यक्रम",       icon: Calendar,       desc: "आगामी एवं बीते आयोजन" },
+  { id: "posts",  label: "पोस्ट मॉडरेशन",  icon: MessageSquare,  desc: "सदस्यों की पोस्ट प्रबंधन" },
+  { id: "feed",   label: "हीरो फीड",        icon: Heart,          desc: "होमपेज हीरो सेक्शन — बधाई · जन्मदिवस · शोक संदेश" },
+  { id: "flags",  label: "फ़ीचर फ्लैग्स",   icon: ToggleLeft,     desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
 ]
 
 function fmtDate(d?: string) {
@@ -124,6 +126,115 @@ function ConfirmDelete({ open, onClose, onConfirm, label }: { open: boolean; onC
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HERO SECTION PANEL
+// ══════════════════════════════════════════════════════════════════════════════
+
+const HERO_FIELDS = [
+  { key: "portal_name",     label: "पोर्टल नाम",   placeholder: "पंचाल समाज",        hint: "नेवबार और होमपेज मुख्य शीर्षक पर दिखता है" },
+  { key: "portal_subtitle", label: "उपशीर्षक",     placeholder: "चौदह चौखरा",        hint: "पोर्टल नाम के नीचे दिखता है (ग्रेडिएंट रंग में)" },
+  { key: "portal_tagline",  label: "टैगलाइन",      placeholder: "पंचाल समाज पोर्टल", hint: "शीर्षक के ऊपर छोटी लाइन" },
+  { key: "portal_location", label: "स्थान / जिले", placeholder: "बांसवाड़ा · डूंगरपुर · प्रतापगढ़ · साबरकांठा — राजस्थान", hint: "होमपेज हीरो में स्थान पंक्ति" },
+]
+
+function HeroSectionPanel() {
+  const { toast } = useToast()
+  const { data: config, isLoading } = usePortalConfig()
+  const updateConfig = useUpdatePortalConfig()
+
+  const [form, setForm] = useState<Record<string, string>>({})
+  const [dirty, setDirty] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    if (!config) return
+    const vals: Record<string, string> = {}
+    HERO_FIELDS.forEach(f => {
+      vals[f.key] = config.find(c => c.key === f.key)?.value ?? ""
+    })
+    setForm(vals)
+    setDirty({})
+  }, [config])
+
+  const handleChange = (key: string, value: string) => {
+    setForm(f => ({ ...f, [key]: value }))
+    setDirty(d => ({ ...d, [key]: true }))
+  }
+
+  const handleSave = (key: string) => {
+    updateConfig.mutate(
+      { key, value: form[key] },
+      {
+        onSuccess: () => {
+          toast({ title: "सहेज लिया गया", variant: "success" })
+          setDirty(d => ({ ...d, [key]: false }))
+        },
+        onError: (e: any) => toast({ title: "त्रुटि", description: e?.message, variant: "destructive" }),
+      }
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">होमपेज हीरो सेक्शन</CardTitle>
+        <CardDescription>होमपेज पर दिखने वाला मुख्य शीर्षक, उपशीर्षक, टैगलाइन और स्थान संपादित करें। प्रत्येक फ़ील्ड अलग से सहेजी जाती है।</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12 text-gray-400">
+            <Loader2 className="w-5 h-5 animate-spin mr-2" />लोड हो रहा है...
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Live preview */}
+            <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 p-5">
+              <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-3">लाइव प्रीव्यू</p>
+              <p className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-1">{form.portal_tagline || "—"}</p>
+              <p className="text-2xl font-extrabold text-gray-900 leading-tight">{form.portal_name || "—"}</p>
+              <p className="text-2xl font-extrabold leading-tight mb-1"
+                style={{ WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(90deg,#c2410c,#ea580c,#f97316)", WebkitBackgroundClip: "text" }}>
+                {form.portal_subtitle || "—"}
+              </p>
+              <p className="text-orange-600/80 text-xs font-medium">{form.portal_location || "—"}</p>
+            </div>
+
+            {/* Fields */}
+            {HERO_FIELDS.map(field => (
+              <div key={field.key} className="space-y-1.5">
+                <Label className="font-semibold text-gray-700">{field.label}</Label>
+                {field.key === "portal_location" ? (
+                  <Input
+                    value={form[field.key] || ""}
+                    onChange={e => handleChange(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                  />
+                ) : (
+                  <Input
+                    value={form[field.key] || ""}
+                    onChange={e => handleChange(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                  />
+                )}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-400">{field.hint}</p>
+                  <Button
+                    size="sm"
+                    onClick={() => handleSave(field.key)}
+                    disabled={!dirty[field.key] || updateConfig.isPending}
+                    className="bg-orange-600 hover:bg-orange-700 text-white h-7 px-3 text-xs">
+                    {updateConfig.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                    सहेजें
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -967,7 +1078,7 @@ function HeroFeedPanel() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export default function SamajContentPage() {
-  const [tab, setTab] = useState<Tab>("news")
+  const [tab, setTab] = useState<Tab>("hero")
   const active = TABS.find(t => t.id === tab)!
 
   return (
@@ -995,6 +1106,7 @@ export default function SamajContentPage() {
         ))}
       </div>
 
+      {tab === "hero"   && <HeroSectionPanel />}
       {tab === "news"   && <NewsPanel />}
       {tab === "press"  && <PressPanel />}
       {tab === "events" && <EventsPanel />}
