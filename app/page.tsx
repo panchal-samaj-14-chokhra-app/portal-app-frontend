@@ -20,6 +20,7 @@ import {
 import type { SamajNews } from "@/data-hooks/requests/samaj-content"
 import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
 import { usePortalConfigValue } from "@/data-hooks/mutation-query/usePortalConfig"
+import { useAllChokhlas } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useHeroFeed, useLikeHeroFeed, useHeroFeedComments, useAddHeroFeedComment } from "@/data-hooks/mutation-query/useHeroFeed"
 import type { HeroFeed } from "@/data-hooks/requests/hero-feed"
 import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
@@ -305,6 +306,8 @@ export default function CommunityPortal() {
 
   const { data: newsFeed,  isLoading: newsLoading }  = useSamajNews({ take: "5" })
   const { data: pressFeed } = useSamajPress({ take: "3" })
+  const { data: chokhlasData } = useAllChokhlas()
+  const chokhlaNames: string[] = chokhlasData?.map((c: any) => c.name).filter(Boolean) ?? []
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 10)
@@ -394,9 +397,9 @@ export default function CommunityPortal() {
               </div>
               <p className="text-orange-600/80 font-medium text-sm tracking-wide">{portalLocation}</p>
 
-              {/* 14 Chokhra pills */}
+              {/* Chokhla pills — from admin-managed list */}
               <div className="flex flex-wrap gap-1.5">
-                {["चौरासी","डूंगरपुर","बोरी","पाठोक","बेताली","तरपोट","मैयोड","खमेरा","बांसवाड़ा","लोहारिया","सागवाड़ा","परसोला","परतापुर","खड़क"].map((name, i) => (
+                {chokhlaNames.map((name, i) => (
                   <span key={name}
                     className="px-2.5 py-1 text-xs font-semibold rounded-full border transition-all hover:scale-105 cursor-default"
                     style={{
