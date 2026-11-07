@@ -176,6 +176,7 @@ function GrievanceModal({ open, onClose }: { open: boolean; onClose: () => void 
     try {
       setBusy(true)
       const form = new FormData()
+      form.append("source",         "samaj_niyamavali")
       form.append("name",           anonymous ? "" : myName.trim())
       form.append("againstName",    againstName.trim())
       form.append("againstVillage", againstVillage.trim())

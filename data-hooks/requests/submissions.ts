@@ -14,6 +14,7 @@ export type Submission = {
   subject: string | null
   message: string | null
   images: string[]
+  source: string | null
   status: SubmissionStatus
   adminNote: string | null
   createdAt: string
@@ -27,7 +28,7 @@ export type SubmissionList = {
   counts: { kind: SubmissionKind; status: SubmissionStatus; n: number }[]
 }
 
-export const getSubmissions = async (params: { kind: SubmissionKind; status?: string; q?: string; page?: number }): Promise<SubmissionList> => {
+export const getSubmissions = async (params: { kind: SubmissionKind; source?: string; status?: string; q?: string; page?: number }): Promise<SubmissionList> => {
   const { data } = await request.get("/submissions", { params: { pageSize: 20, ...params } })
   return data
 }

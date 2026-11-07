@@ -1100,7 +1100,7 @@ function GrievancesPanel() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["admin-grievances", statusFilter, q, page],
-    queryFn: () => getSubmissions({ kind: "grievance", status: statusFilter !== "all" ? statusFilter : undefined, q: q || undefined, page }),
+    queryFn: () => getSubmissions({ kind: "grievance", source: "samaj_niyamavali", status: statusFilter !== "all" ? statusFilter : undefined, q: q || undefined, page }),
     staleTime: 30_000,
   })
 
