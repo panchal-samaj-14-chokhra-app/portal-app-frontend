@@ -1,9 +1,8 @@
 "use client"
 
-import { GraduationCap, BookOpen, Laptop, Trophy, Users, BriefcaseBusiness, ChevronRight, LogIn, UserPlus } from "lucide-react"
+import { GraduationCap, BookOpen, Laptop, Trophy, Users, BriefcaseBusiness, ChevronRight, LogIn, UserPlus, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import PageHeader from "@/components/ui/PageHeader"
 
 const PLATFORM_FEATURES = [
   {
@@ -52,12 +51,32 @@ const PORTAL_URL = "https://panchalpragati.panchalsamaj.online"
 export default function EducationPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50/40 to-white">
-      <PageHeader
-        title="शिक्षा पोर्टल"
-        subtitle="Education Portal"
-        icon={GraduationCap}
-        backHref="/"
-      />
+      {/* Custom Header — Panchal Pragati Branding */}
+      <header className="sticky top-0 z-30"
+        style={{ background: "linear-gradient(90deg,#4B0082 0%,#6633CC 50%,#9933FF 100%)", boxShadow: "0 2px 16px rgba(102,51,204,0.35)" }}>
+        <div className="h-1" style={{ background: "repeating-linear-gradient(90deg,#D9A441 0,#D9A441 8px,#9933FF 8px,#9933FF 16px)" }} />
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-3">
+          <Link href="/"
+            className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all shrink-0">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Image
+              src="/images/panchal-pragati-logo.png"
+              alt="Panchal Pragati"
+              width={120}
+              height={40}
+              className="h-9 w-auto object-contain shrink-0"
+              unoptimized
+            />
+            <div className="hidden sm:block w-px h-8 bg-white/25" />
+            <div className="min-w-0">
+              <h1 className="text-white font-extrabold text-sm sm:text-base leading-tight">पंचाल प्रगति शिक्षा पोर्टल</h1>
+              <p className="text-purple-200 text-[11px]">Panchal Pragati Education Portal</p>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <main className="max-w-4xl mx-auto px-4 py-10 space-y-10">
 

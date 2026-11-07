@@ -28,12 +28,13 @@ import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
 // ─── NAV ────────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: "होम",              href: "/",                                             icon: Home,      flagKey: null,            external: false },
-  { label: "समाचार",           href: "/news",                                         icon: Newspaper, flagKey: "news_feed",      external: false },
-  { label: "प्रेस विज्ञप्ति",  href: "/press-release",                                icon: FileText,  flagKey: "press_release",  external: false },
-  { label: "कार्यक्रम",       href: "/events",                                        icon: Calendar,  flagKey: "events",         external: false },
-  { label: "नियमावली",        href: "/niyamavali",                                    icon: BookOpen,  flagKey: "niyamavali",     external: false },
-  { label: "व्यापार",          href: "https://business-directory.panchalsamaj.online/", icon: Briefcase, flagKey: null,            external: true  },
+  { label: "होम",              href: "/",                                             icon: Home,          flagKey: null,            external: false },
+  { label: "समाचार",           href: "/news",                                         icon: Newspaper,     flagKey: "news_feed",      external: false },
+  { label: "प्रेस विज्ञप्ति",  href: "/press-release",                                icon: FileText,      flagKey: "press_release",  external: false },
+  { label: "कार्यक्रम",       href: "/events",                                        icon: Calendar,      flagKey: "events",         external: false },
+  { label: "नियमावली",        href: "/niyamavali",                                    icon: BookOpen,      flagKey: "niyamavali",     external: false },
+  { label: "शिक्षा",           href: "/education",                                    icon: GraduationCap, flagKey: null,             external: false },
+  { label: "व्यापार",          href: "https://business-directory.panchalsamaj.online/", icon: Briefcase,   flagKey: null,             external: true  },
 ]
 
 // ─── SERVICES ───────────────────────────────────────────────────────────────
@@ -464,6 +465,18 @@ export default function CommunityPortal() {
                   डिजिटल सेवाएं
                   <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSvc ? "rotate-180" : ""}`} />
                 </button>
+                <Link href="/admin/matrimonial"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ borderColor: "#8B0000", color: "#8B0000", background: "rgba(139,0,0,0.05)" }}>
+                  <Heart className="w-4 h-4" />
+                  वैवाहिक परिचय
+                </Link>
+                <Link href="/education"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ borderColor: "#6633CC", color: "#6633CC", background: "rgba(102,51,204,0.05)" }}>
+                  <GraduationCap className="w-4 h-4" />
+                  शिक्षा पोर्टल
+                </Link>
               </div>
             </div>
 
