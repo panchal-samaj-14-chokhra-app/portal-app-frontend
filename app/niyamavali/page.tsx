@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft, Download, List } from "lucide-react"
+import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft, List, AlertCircle, CheckCircle2, UserX, User } from "lucide-react"
 import Link from "next/link"
 import { useNiyamavaliArticles, useNiyamavaliArticle } from "@/data-hooks/mutation-query/useNiyamavali"
 import { NIYAMAVALI_GROUPS } from "@/data-hooks/requests/niyamavali"
+import { submitGrievancePublic } from "@/data-hooks/requests/submissions"
 
 // ── Decorative divider ────────────────────────────────────────────────────────
 function OrnamentDivider() {
@@ -121,12 +122,189 @@ function ArticleReader({ articleId }: { articleId: string }) {
   )
 }
 
+// ── Grievance modal ───────────────────────────────────────────────────────────
+function GrievanceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [anonymous, setAnonymous] = useState(false)
+  const [name, setName]       = useState("")
+  const [village, setVillage] = useState("")
+  const [phone, setPhone]     = useState("")
+  const [subject, setSubject] = useState("")
+  const [message, setMessage] = useState("")
+  const [busy, setBusy]       = useState(false)
+  const [refNo, setRefNo]     = useState<string | null>(null)
+  const [error, setError]     = useState("")
+
+  const reset = () => {
+    setAnonymous(false); setName(""); setVillage(""); setPhone("")
+    setSubject(""); setMessage(""); setBusy(false); setRefNo(null); setError("")
+  }
+
+  const handleClose = () => { reset(); onClose() }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    if (!phone.trim() || phone.replace(/\D/g, "").length !== 10) {
+      setError("कृपया सही 10 अंकों का मोबाइल नंबर लिखें"); return
+    }
+    if (message.trim().length < 10) {
+      setError("शिकायत का विवरण कम से कम 10 अक्षरों में लिखें"); return
+    }
+    try {
+      setBusy(true)
+      const result = await submitGrievancePublic({
+        name: anonymous ? "अज्ञात" : (name.trim() || "अज्ञात"),
+        phone: phone.replace(/\D/g, ""),
+        place: village.trim() || undefined,
+        subject: subject.trim() || undefined,
+        message: message.trim(),
+      })
+      setRefNo(result?.ref ?? "—")
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || "कुछ गड़बड़ हुई, दोबारा कोशिश करें")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ fontFamily: "'Noto Sans Devanagari','Hind',sans-serif" }}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+
+      {/* Sheet */}
+      <div className="relative w-full sm:max-w-md bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95dvh]">
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center justify-between shrink-0"
+          style={{ background: "linear-gradient(90deg,#9a3412,#c2410c)" }}>
+          <div>
+            <h2 className="text-white font-extrabold text-base">शिकायत दर्ज करें</h2>
+            <p className="text-orange-200 text-xs mt-0.5">पंचाल समाज चौदह चौखरा</p>
+          </div>
+          <button onClick={handleClose} className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Success state */}
+        {refNo ? (
+          <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="w-9 h-9 text-green-600" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-gray-900 text-lg mb-1">शिकायत दर्ज हो गई!</h3>
+              <p className="text-gray-500 text-sm mb-3">आपकी शिकायत समाज कार्यकारिणी को भेज दी गई है।</p>
+              <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 inline-block">
+                <p className="text-xs text-orange-500 font-semibold">संदर्भ संख्या</p>
+                <p className="text-orange-800 font-extrabold text-lg tracking-widest">{refNo}</p>
+              </div>
+            </div>
+            <button onClick={handleClose}
+              className="mt-2 px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors">
+              बंद करें
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="overflow-y-auto">
+            <div className="px-5 pt-5 pb-6 space-y-4">
+
+              {/* Anonymous toggle */}
+              <div className="flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer select-none"
+                style={{ borderColor: anonymous ? "#c2410c" : "#e5e7eb", background: anonymous ? "#fff7ed" : "#f9fafb" }}
+                onClick={() => setAnonymous(v => !v)}>
+                <div className={`w-10 h-6 rounded-full relative transition-colors duration-200 shrink-0 ${anonymous ? "bg-orange-600" : "bg-gray-300"}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 ${anonymous ? "left-[18px]" : "left-0.5"}`} />
+                </div>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {anonymous
+                    ? <UserX className="w-4 h-4 text-orange-600 shrink-0" />
+                    : <User className="w-4 h-4 text-gray-400 shrink-0" />}
+                  <div>
+                    <p className={`text-sm font-bold ${anonymous ? "text-orange-800" : "text-gray-700"}`}>
+                      {anonymous ? "बिना नाम के शिकायत दर्ज करें" : "नाम के साथ शिकायत दर्ज करें"}
+                    </p>
+                    <p className="text-xs text-gray-400">{anonymous ? "आपकी पहचान गुप्त रहेगी" : "आपका नाम दर्ज होगा"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Name — only when not anonymous */}
+              {!anonymous && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-gray-700">आपका नाम <span className="text-red-500">*</span></label>
+                  <input value={name} onChange={e => setName(e.target.value)} required={!anonymous}
+                    placeholder="पूरा नाम लिखें"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+                </div>
+              )}
+
+              {/* Village */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">गांव / स्थान <span className="text-red-500">*</span></label>
+                <input value={village} onChange={e => setVillage(e.target.value)} required
+                  placeholder="अपना गांव या शहर लिखें"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">मोबाइल नंबर <span className="text-red-500">*</span></label>
+                <input value={phone} onChange={e => setPhone(e.target.value)} required
+                  placeholder="10 अंकों का नंबर" inputMode="numeric" maxLength={10}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+              </div>
+
+              {/* Subject */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">विषय <span className="text-gray-400 font-normal">(वैकल्पिक)</span></label>
+                <input value={subject} onChange={e => setSubject(e.target.value)}
+                  placeholder="जैसे: सड़क, पानी, समाज कार्य आदि"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+              </div>
+
+              {/* Message */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">शिकायत का विवरण <span className="text-red-500">*</span></label>
+                <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={4}
+                  placeholder="अपनी शिकायत यहाँ विस्तार से लिखें..."
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all resize-none" />
+                <p className="text-xs text-gray-400 text-right">{message.length} / 3000</p>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+
+              {/* Submit */}
+              <button type="submit" disabled={busy}
+                className="w-full py-3 rounded-xl text-white font-extrabold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+                style={{ background: "linear-gradient(135deg,#9a3412,#c2410c)" }}>
+                {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+                {busy ? "भेज रहे हैं..." : "शिकायत दर्ज करें"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 function NiyamavaliInner() {
   const sp = useSearchParams()
   const router = useRouter()
   const { data: articles, isLoading } = useNiyamavaliArticles()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [grievanceOpen, setGrievanceOpen] = useState(false)
   const aParam = sp.get("a") || ""
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -179,17 +357,12 @@ function NiyamavaliInner() {
               <p className="text-orange-200 text-xs hidden md:block">पंचाल समाज चौदह चौखरा — सामाजिक संविधान</p>
             </div>
           </div>
-          {/* Download button — round icon only */}
-          <button
-            onClick={() => {
-              const prev = document.title
-              document.title = "पंचाल समाज नियमावली"
-              window.print()
-              setTimeout(() => { document.title = prev }, 1000)
-            }}
-            className="shrink-0 w-10 h-10 rounded-full bg-white text-orange-700 hover:bg-orange-50 transition-colors shadow-sm flex items-center justify-center"
-            title="नियमावली डाउनलोड करें (PDF)">
-            <Download className="w-4 h-4" />
+          {/* Grievance button */}
+          <button onClick={() => setGrievanceOpen(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-orange-700 hover:bg-orange-50 transition-colors shadow-sm font-bold text-xs sm:text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span className="hidden xs:inline sm:inline">शिकायत दर्ज करें</span>
+            <span className="xs:hidden sm:hidden">शिकायत</span>
           </button>
         </div>
       </header>
@@ -352,6 +525,9 @@ function NiyamavaliInner() {
           अनुच्छेद सूची
         </button>
       </div>
+
+      {/* Grievance modal */}
+      <GrievanceModal open={grievanceOpen} onClose={() => setGrievanceOpen(false)} />
 
       {/* Print styles */}
       <style>{`

@@ -41,3 +41,20 @@ export const deleteSubmission = async (id: string) => {
   const { data } = await request.delete(`/submissions/${id}`)
   return data
 }
+
+export type GrievancePayload = {
+  name: string
+  phone: string
+  place?: string
+  subject?: string
+  message: string
+}
+
+export const submitGrievancePublic = async (payload: GrievancePayload): Promise<{ ref: string }> => {
+  const form = new FormData()
+  Object.entries(payload).forEach(([k, v]) => { if (v) form.append(k, v) })
+  const { data } = await request.post("/submissions/grievance", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+  return data.data
+}
