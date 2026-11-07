@@ -402,9 +402,21 @@ export default function CommunityPortal() {
           </svg>
         </div>
 
-        {/* Right-side warm gradient wash */}
-        <div className="absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none"
-          style={{ background: "linear-gradient(to left, rgba(244,119,0,0.08) 0%, transparent 100%)" }} />
+        {/* Temple image — right side, fades into cream on the left */}
+        <div className="absolute top-0 right-0 bottom-0 w-[55%] pointer-events-none hidden lg:block overflow-hidden">
+          <Image
+            src="/images/samaj-mandir.png"
+            alt="समाज मंदिर"
+            fill
+            className="object-cover object-center"
+            style={{ opacity: 0.18 }}
+            priority
+          />
+          {/* Fade left edge into cream */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to right, #FFFAF4 0%, transparent 35%)" }} />
+          {/* Saffron tint overlay */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, transparent 40%, rgba(244,119,0,0.12) 100%)" }} />
+        </div>
 
         {/* Content */}
         <div className="max-w-7xl mx-auto px-4 py-12 w-full relative z-10">
