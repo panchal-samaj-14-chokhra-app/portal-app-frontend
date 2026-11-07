@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, updateVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, getReportFile, getReportDashboard, getReportAnalytics, } from '../requests/village-family';
+import { createFamily, deleteFamilyWithId, getFamilyDetails, getVillageDetails, updateFamily, getAllVillages, createVillage, updateVillage, getChokhlaDetails, updateChokhla, getAllChokhlas, createChokhla, getAllVillagesWithChokhlaID, getAlluserList, fetchMemberDetails, updatePerson, toggleUserStatus, registerUser, getPolls, createPoll, updatePoll, submitVote, getPollsByVillage, getPollResultsById, getStaticData, getExcelData, getPdfData, getReportFile, getReportDashboard, getReportAnalytics, getPublicChokhlas, } from '../requests/village-family';
 import { createMember } from '../requests/village-family';
 import { removeMember as removeMemberRequest } from '../requests/village-family';
 import { deletePoll } from '../requests/village-family';
@@ -123,6 +123,15 @@ export const useAllChokhlas = () => {
   return useQuery({
     queryKey: ['all-chokhlas'],
     queryFn: getAllChokhlas,
+  });
+}
+
+// Public hook — no auth, safe on public pages like the homepage
+export const usePublicChokhlas = () => {
+  return useQuery({
+    queryKey: ['public-chokhlas'],
+    queryFn: getPublicChokhlas,
+    staleTime: 300_000,
   });
 }
 

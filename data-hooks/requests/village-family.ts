@@ -71,6 +71,12 @@ export const getAllChokhlas = async () => {
   return data;
 }
 
+// Public endpoint — no auth required, safe to call from public pages
+export const getPublicChokhlas = async (): Promise<{ id: string; name: string }[]> => {
+  const { data } = await request.get('/chokhla/public/summary');
+  return data;
+}
+
 export const createChokhla = async (payload: any) => {
   const { data } = await request.post('/chokhla/create', payload);
   return data;

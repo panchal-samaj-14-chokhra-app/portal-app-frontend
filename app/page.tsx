@@ -20,7 +20,7 @@ import {
 import type { SamajNews } from "@/data-hooks/requests/samaj-content"
 import { useFeatureFlags } from "@/data-hooks/mutation-query/useFeatureFlags"
 import { usePortalConfigValue } from "@/data-hooks/mutation-query/usePortalConfig"
-import { useAllChokhlas } from "@/data-hooks/mutation-query/useQueryAndMutation"
+import { usePublicChokhlas } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useHeroFeed, useLikeHeroFeed, useHeroFeedComments, useAddHeroFeedComment } from "@/data-hooks/mutation-query/useHeroFeed"
 import type { HeroFeed } from "@/data-hooks/requests/hero-feed"
 import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
@@ -306,8 +306,8 @@ export default function CommunityPortal() {
 
   const { data: newsFeed,  isLoading: newsLoading }  = useSamajNews({ take: "5" })
   const { data: pressFeed } = useSamajPress({ take: "3" })
-  const { data: chokhlasData } = useAllChokhlas()
-  const chokhlaNames: string[] = chokhlasData?.map((c: any) => c.name).filter(Boolean) ?? []
+  const { data: chokhlasData } = usePublicChokhlas()
+  const chokhlaNames: string[] = chokhlasData?.map((c) => c.name).filter(Boolean) ?? []
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 10)
