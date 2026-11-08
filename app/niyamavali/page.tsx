@@ -68,50 +68,62 @@ function ArticleReader({ articleId }: { articleId: string }) {
     else navigator.clipboard.writeText(url).catch(() => {})
   }
 
-  return (
-    <div>
-      {/* Article header — break-after:avoid keeps it attached to first section */}
-      <div className="mb-6 rounded-2xl overflow-hidden shadow-sm print:break-after-avoid"
-        style={{ background: "linear-gradient(135deg, #c2410c 0%, #ea580c 60%, #f97316 100%)" }}>
-        <div className="px-6 pt-6 pb-5 text-white">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div className="p-2 bg-white/20 rounded-lg shrink-0">
-                <ScrollText className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                {article.articleNumber && (
-                  <span className="inline-block text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-semibold mb-2">
-                    अनुच्छेद {article.articleNumber}
-                  </span>
-                )}
-                <h1 className="text-xl sm:text-2xl font-extrabold leading-snug">{article.title}</h1>
-              </div>
+  const header = (
+    <div className="mb-6 rounded-2xl overflow-hidden shadow-sm"
+      style={{ background: "linear-gradient(135deg, #c2410c 0%, #ea580c 60%, #f97316 100%)" }}>
+      <div className="px-6 pt-6 pb-5 text-white">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="p-2 bg-white/20 rounded-lg shrink-0">
+              <ScrollText className="w-5 h-5" />
             </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button onClick={handleShare}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/30 transition-colors text-white text-xs font-medium"
-                title="शेयर करें">
-                <Share2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">शेयर</span>
-              </button>
+            <div className="min-w-0">
+              {article.articleNumber && (
+                <span className="inline-block text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-semibold mb-2">
+                  अनुच्छेद {article.articleNumber}
+                </span>
+              )}
+              <h1 className="text-xl sm:text-2xl font-extrabold leading-snug">{article.title}</h1>
             </div>
           </div>
+          <div className="flex items-center gap-1 shrink-0 print:hidden">
+            <button onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/30 transition-colors text-white text-xs font-medium"
+              title="शेयर करें">
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">शेयर</span>
+            </button>
+          </div>
         </div>
-        {/* Decorative bottom wave */}
-        <div className="h-3" style={{
-          background: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 20'%3E%3Cpath d='M0,10 C300,20 900,0 1200,10 L1200,20 L0,20 Z' fill='%23fffbf7'/%3E%3C/svg%3E\") center/cover no-repeat",
-        }} />
+      </div>
+      {/* Decorative bottom wave */}
+      <div className="h-3 print:hidden" style={{
+        background: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 20'%3E%3Cpath d='M0,10 C300,20 900,0 1200,10 L1200,20 L0,20 Z' fill='%23fffbf7'/%3E%3C/svg%3E\") center/cover no-repeat",
+      }} />
+    </div>
+  )
+
+  if (!article.sections?.length) {
+    return (
+      <div>
+        {header}
+        <div className="text-center py-16 text-gray-400 text-sm">इस लेख में अभी कोई अनुभाग नहीं है।</div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* Header + first section wrapped together — prevents blank page on print */}
+      <div className="print:break-inside-avoid">
+        {header}
+        <SectionCard title={article.sections[0].title} content={article.sections[0].content} index={0} />
       </div>
 
-      {/* Sections */}
-      {article.sections?.length ? (
-        article.sections.map((sec, i) => (
-          <SectionCard key={sec.id} title={sec.title} content={sec.content} index={i} />
-        ))
-      ) : (
-        <div className="text-center py-16 text-gray-400 text-sm">इस लेख में अभी कोई अनुभाग नहीं है।</div>
-      )}
+      {/* Remaining sections */}
+      {article.sections.slice(1).map((sec, i) => (
+        <SectionCard key={sec.id} title={sec.title} content={sec.content} index={i + 1} />
+      ))}
     </div>
   )
 }
@@ -628,30 +640,13 @@ function NiyamavaliInner() {
           /* preserve gradient colours */
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-          /* article header must stay with the content below it */
-          .print\\:break-after-avoid { break-after: avoid !important; }
-
-          /* section cards must not split across pages */
+          /* header+first-section wrapper must not split */
           .print\\:break-inside-avoid { break-inside: avoid !important; }
 
           /* images */
           img { max-width: 100% !important; height: auto !important; border-radius: 4px !important; }
 
           h1, h2, h3 { break-after: avoid; }
-
-          /* hide share button inside article header on print */
-          button { display: none !important; }
-
-          /* print cover line at top */
-          main::before {
-            content: "पंचाल समाज नियमावली — चौदह चौखरा";
-            display: block;
-            font-size: 9pt;
-            color: #888;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 4pt;
-            margin-bottom: 12pt;
-          }
         }
       `}</style>
     </div>
