@@ -22,7 +22,7 @@ function OrnamentDivider() {
 // ── Section renderer ──────────────────────────────────────────────────────────
 function SectionCard({ title, content, index }: { title: string; content: string; index: number }) {
   return (
-    <div className="mb-6 rounded-xl border border-orange-100 bg-white shadow-sm overflow-hidden">
+    <div className="mb-6 rounded-xl border border-orange-100 bg-white shadow-sm overflow-hidden print:break-inside-avoid">
       {/* Section header with traditional left border */}
       <div className="flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
         <span className="w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-sm">
@@ -70,8 +70,8 @@ function ArticleReader({ articleId }: { articleId: string }) {
 
   return (
     <div>
-      {/* Article header */}
-      <div className="mb-6 rounded-2xl overflow-hidden shadow-sm"
+      {/* Article header — break-after:avoid keeps it attached to first section */}
+      <div className="mb-6 rounded-2xl overflow-hidden shadow-sm print:break-after-avoid"
         style={{ background: "linear-gradient(135deg, #c2410c 0%, #ea580c 60%, #f97316 100%)" }}>
         <div className="px-6 pt-6 pb-5 text-white">
           <div className="flex items-start justify-between gap-3">
@@ -625,22 +625,22 @@ function NiyamavaliInner() {
             width: 100% !important;
           }
 
-          /* article header banner */
-          [style*="linear-gradient"] {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
+          /* preserve gradient colours */
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-          /* section cards */
-          .rounded-xl { border: 1px solid #ddd !important; break-inside: avoid; }
+          /* article header must stay with the content below it */
+          .print\\:break-after-avoid { break-after: avoid !important; }
+
+          /* section cards must not split across pages */
+          .print\\:break-inside-avoid { break-inside: avoid !important; }
 
           /* images */
           img { max-width: 100% !important; height: auto !important; border-radius: 4px !important; }
 
-          /* page break before each section card if near page end */
-          .mb-6 { break-inside: avoid; }
-
           h1, h2, h3 { break-after: avoid; }
+
+          /* hide share button inside article header on print */
+          button { display: none !important; }
 
           /* print cover line at top */
           main::before {
