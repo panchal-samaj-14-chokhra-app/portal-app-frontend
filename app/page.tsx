@@ -465,18 +465,20 @@ export default function CommunityPortal() {
                 ))}
               </div>
 
-              {/* Digital Services Grid */}
+              {/* Digital Services Chips */}
               <div className="pt-1">
                 <p className="text-[10px] font-bold tracking-widest uppercase mb-2.5" style={{ color: "#8B0000", opacity: 0.5 }}>डिजिटल सेवाएं</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {SERVICES.map(svc => (
+                <div className="flex flex-wrap gap-2">
+                  {SERVICES.map((svc, i) => (
                     <Link key={svc.title} href={svc.href}
                       {...((svc as any).external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                      className="group flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-xl bg-white/80 border border-orange-100 hover:bg-white hover:border-orange-300 hover:shadow-md transition-all text-center backdrop-blur-sm">
-                      <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl ${svc.color} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
-                        <svc.icon className="w-4 h-4" />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-semibold text-gray-700 group-hover:text-orange-700 leading-tight">{svc.title}</span>
+                      className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all hover:scale-105 hover:shadow-sm active:scale-[0.98]"
+                      style={{
+                        background: i % 2 === 0 ? "rgba(139,0,0,0.05)" : "rgba(217,164,65,0.08)",
+                        borderColor: i % 2 === 0 ? "rgba(139,0,0,0.25)" : "rgba(217,164,65,0.45)",
+                      }}>
+                      <svc.icon className="w-3 h-3 shrink-0" style={{ color: i % 2 === 0 ? "#8B0000" : "#92400e" }} />
+                      <span className="text-xs font-bold tracking-wide" style={{ color: i % 2 === 0 ? "#8B0000" : "#92400e" }}>{svc.title}</span>
                     </Link>
                   ))}
                 </div>
