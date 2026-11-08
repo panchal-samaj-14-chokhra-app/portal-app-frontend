@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { BookOpen, Menu, X, Share2, Printer, ChevronRight, Loader2, ScrollText, ArrowLeft, List, AlertCircle, CheckCircle2, UserX, User } from "lucide-react"
+import { BookOpen, Menu, X, Share2, Download, ChevronRight, Loader2, ScrollText, ArrowLeft, List, AlertCircle, CheckCircle2, UserX, User } from "lucide-react"
 import Link from "next/link"
 import { useNiyamavaliArticles, useNiyamavaliArticle } from "@/data-hooks/mutation-query/useNiyamavali"
 import { NIYAMAVALI_GROUPS } from "@/data-hooks/requests/niyamavali"
@@ -88,18 +88,12 @@ function ArticleReader({ articleId }: { articleId: string }) {
                 <h1 className="text-xl sm:text-2xl font-extrabold leading-snug">{article.title}</h1>
               </div>
             </div>
-            <div className="flex items-center gap-1 shrink-0 print:hidden">
+            <div className="flex items-center gap-1 shrink-0">
               <button onClick={handleShare}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/30 transition-colors text-white text-xs font-medium"
                 title="शेयर करें">
                 <Share2 className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">शेयर</span>
-              </button>
-              <button onClick={() => window.print()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/30 transition-colors text-white text-xs font-medium"
-                title="प्रिंट">
-                <Printer className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">प्रिंट</span>
               </button>
             </div>
           </div>
@@ -366,6 +360,26 @@ function NiyamavaliInner() {
   const { data: articles, isLoading } = useNiyamavaliArticles()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [grievanceOpen, setGrievanceOpen] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
+
+  const handleDownloadPdf = async () => {
+    if (pdfLoading) return
+    try {
+      setPdfLoading(true)
+      const { default: request } = await import("@/config/request")
+      const res = await request.get("/niyamavali/articles/pdf", { responseType: "blob" })
+      const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }))
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "panchal-samaj-niyamavali.pdf"
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert("PDF डाउनलोड नहीं हो सका, दोबारा कोशिश करें।")
+    } finally {
+      setPdfLoading(false)
+    }
+  }
   const aParam = sp.get("a") || ""
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -418,6 +432,14 @@ function NiyamavaliInner() {
               <p className="text-orange-200 text-xs hidden md:block">पंचाल समाज चौदह चौखरा — सामाजिक संविधान</p>
             </div>
           </div>
+          {/* Download PDF button */}
+          <button onClick={handleDownloadPdf} disabled={pdfLoading}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors text-white font-bold text-xs sm:text-sm disabled:opacity-60">
+            {pdfLoading
+              ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              : <Download className="w-4 h-4 shrink-0" />}
+            <span className="hidden sm:inline">PDF डाउनलोड</span>
+          </button>
           {/* Grievance button */}
           <button onClick={() => setGrievanceOpen(true)}
             className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-orange-700 hover:bg-orange-50 transition-colors shadow-sm font-bold text-xs sm:text-sm">
@@ -590,15 +612,7 @@ function NiyamavaliInner() {
       {/* Grievance modal */}
       <GrievanceModal open={grievanceOpen} onClose={() => setGrievanceOpen(false)} />
 
-      {/* Print styles */}
       <style>{`
-        @media print {
-          header, aside, .print\\:hidden { display: none !important; }
-          main { padding: 8px !important; }
-          body { background: white !important; }
-          .rounded-2xl { border-radius: 8px !important; }
-          @page { margin: 1cm; }
-        }
         @media (max-width: 400px) {
           .xs\\:inline { display: inline !important; }
         }
