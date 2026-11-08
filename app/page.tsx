@@ -434,11 +434,11 @@ export default function CommunityPortal() {
 
               {/* Heading */}
               <div>
-                <h1 className="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold leading-tight"
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold leading-normal"
                   style={{ color: "#8B0000" }}>
                   {portalName}
                 </h1>
-                <h1 className="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold leading-tight"
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold leading-normal mt-1"
                   style={{ background: "linear-gradient(90deg,#F47700,#D9A441)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   {portalSubtitle}
                 </h1>
