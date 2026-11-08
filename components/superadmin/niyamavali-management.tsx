@@ -166,7 +166,7 @@ function SectionsPanel({ article, onBack }: { article: NiyamavaliArticle; onBack
       </Card>
 
       <Dialog open={open} onOpenChange={v => !v && closeForm()}>
-        <DialogContent className="max-w-3xl max-h-[94vh] overflow-y-auto">
+        <DialogContent className="max-w-[960px] w-[96vw] max-h-[96vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "अनुभाग संपादित करें" : "नया अनुभाग जोड़ें"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-3 gap-3">
