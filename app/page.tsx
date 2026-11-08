@@ -10,7 +10,7 @@ import {
   Phone, Mail, Facebook, Twitter, Youtube, Instagram,
   Home, GraduationCap, Database, UserCircle,
   Briefcase, Gift, Download,
-  ChevronDown, Share2, MessageCircle,
+  Share2, MessageCircle,
   ChevronLeft, ChevronRight as ChevRight,
   Calendar, Loader2, MapPin, Send,
 } from "lucide-react"
@@ -302,7 +302,6 @@ export default function CommunityPortal() {
   const [menuOpen,  setMenuOpen]  = useState(false)
   const [scrolled,  setScrolled]  = useState(false)
   const [activeNav, setActiveNav] = useState("/")
-  const [showSvc,   setShowSvc]   = useState(false)
 
   const { data: flags } = useFeatureFlags()
   const portalName     = usePortalConfigValue("portal_name",     "पंचाल समाज")
@@ -381,7 +380,7 @@ export default function CommunityPortal() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────── */}
-      <section id="home" className="relative pt-[60px] min-h-screen flex flex-col justify-center overflow-hidden"
+      <section id="home" className="relative pt-[56px] overflow-hidden"
         style={{ background: "linear-gradient(135deg, #FFFAF4 0%, #FFF3E2 60%, #fff7e6 100%)" }}>
 
         {/* Mandala decoration — top left */}
@@ -418,11 +417,11 @@ export default function CommunityPortal() {
 
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 py-12 w-full relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="max-w-7xl mx-auto px-4 pt-5 pb-4 w-full relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-start">
 
-            {/* ── Left: Text ── */}
-            <div className="space-y-6 order-2 lg:order-1">
+            {/* ── Left: Text + Services ── */}
+            <div className="space-y-4 order-2 lg:order-1">
 
               {/* Gold divider + tagline */}
               <div className="flex items-center gap-3">
@@ -435,11 +434,11 @@ export default function CommunityPortal() {
 
               {/* Heading */}
               <div>
-                <h1 className="text-4xl sm:text-5xl lg:text-[3.2rem] font-extrabold leading-tight"
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold leading-tight"
                   style={{ color: "#8B0000" }}>
                   {portalName}
                 </h1>
-                <h1 className="text-4xl sm:text-5xl lg:text-[3.2rem] font-extrabold leading-tight"
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold leading-tight"
                   style={{ background: "linear-gradient(90deg,#F47700,#D9A441)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   {portalSubtitle}
                 </h1>
@@ -466,35 +465,26 @@ export default function CommunityPortal() {
                 ))}
               </div>
 
-              {/* CTA */}
-              <div className="flex flex-wrap gap-3 pt-1">
-                <button
-                  onClick={() => {
-                    setShowSvc(v => !v)
-                    setTimeout(() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
-                  }}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
-                  style={{ background: "linear-gradient(135deg, #8B0000 0%, #c2410c 60%, #F47700 100%)", boxShadow: "0 4px 20px rgba(139,0,0,0.3)" }}>
-                  डिजिटल सेवाएं
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSvc ? "rotate-180" : ""}`} />
-                </button>
-                <Link href="/admin/matrimonial"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{ borderColor: "#8B0000", color: "#8B0000", background: "rgba(139,0,0,0.05)" }}>
-                  <Heart className="w-4 h-4" />
-                  वैवाहिक परिचय
-                </Link>
-                <Link href="/education"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{ borderColor: "#6633CC", color: "#6633CC", background: "rgba(102,51,204,0.05)" }}>
-                  <GraduationCap className="w-4 h-4" />
-                  शिक्षा पोर्टल
-                </Link>
+              {/* Digital Services Grid */}
+              <div className="pt-1">
+                <p className="text-[10px] font-bold tracking-widest uppercase mb-2.5" style={{ color: "#8B0000", opacity: 0.5 }}>डिजिटल सेवाएं</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {SERVICES.map(svc => (
+                    <Link key={svc.title} href={svc.href}
+                      {...((svc as any).external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className="group flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-xl bg-white/80 border border-orange-100 hover:bg-white hover:border-orange-300 hover:shadow-md transition-all text-center backdrop-blur-sm">
+                      <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl ${svc.color} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
+                        <svc.icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] font-semibold text-gray-700 group-hover:text-orange-700 leading-tight">{svc.title}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* ── Right: Hero Feed Slider ── */}
-            <div className="order-1 lg:order-2 w-full max-w-xs mx-auto lg:mx-0 lg:ml-auto">
+            <div className="order-1 lg:order-2 w-full max-w-[300px] sm:max-w-xs mx-auto lg:mx-0 lg:ml-auto">
               <div className="relative">
                 {/* Glow ring behind card */}
                 <div className="absolute -inset-4 rounded-3xl opacity-25 blur-2xl pointer-events-none"
@@ -519,7 +509,7 @@ export default function CommunityPortal() {
         </div>
 
         {/* Om + gold divider row */}
-        <div className="relative z-10 flex items-center justify-center gap-4 pb-4">
+        <div className="relative z-10 flex items-center justify-center gap-4 py-2">
           <div className="flex-1 max-w-[120px] h-px ml-auto" style={{ background: "linear-gradient(to right, transparent, #D9A441)" }} />
           <div className="w-1.5 h-1.5 rotate-45" style={{ background: "#D9A441" }} />
           <span className="text-2xl font-bold select-none" style={{ color: "#8B0000", opacity: 0.5 }}>ॐ</span>
@@ -536,30 +526,6 @@ export default function CommunityPortal() {
           </svg>
         </div>
       </section>
-
-      {/* ── EXPLORE SERVICES ───────────────────────────────────────────── */}
-      <div id="services"
-        className={`overflow-hidden transition-all duration-500 border-b border-orange-100 ${showSvc ? "max-h-[900px] py-10" : "max-h-0 py-0"}`}
-        style={{ background: "linear-gradient(180deg, #fff7ed 0%, #fffbf5 100%)" }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-xl font-extrabold text-gray-800">समाज की डिजिटल सेवाएं</h2>
-            <p className="text-xs text-gray-400 mt-1">पंचाल समाज चौदह चौखरा के सभी डिजिटल माध्यम</p>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-            {SERVICES.map(svc => (
-              <Link key={svc.title} href={svc.href}
-                {...((svc as any).external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                className="flex flex-col items-center gap-2 bg-white rounded-2xl p-4 shadow-sm border border-orange-50 hover:border-orange-200 hover:shadow-md transition-all group text-center">
-                <div className={`w-10 h-10 rounded-xl ${svc.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                  <svc.icon className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-medium text-gray-700 group-hover:text-orange-700 leading-tight">{svc.title}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* ── NEWS FEED ──────────────────────────────────────────────────── */}
       {isEnabled("news_feed") && <section id="feed" className="py-12 sm:py-16 px-4"
