@@ -383,12 +383,14 @@ function NiyamavaliInner() {
   const aParam = sp.get("a") || ""
   const overlayRef = useRef<HTMLDivElement>(null)
 
-  // Resolve active article: param can be order-number (readable) or cuid (legacy)
+  // Resolve active article: wait for articles to load before resolving
+  // so we never send a raw order-number like "2" to the backend as an ID
   const activeId = (() => {
-    if (!articles?.length) return aParam
+    if (isLoading || !articles) return ""
+    if (!articles.length) return aParam
     const byOrder = articles.find(a => String(a.order + 1) === aParam)
     if (byOrder) return byOrder.id
-    return aParam // fallback to raw id
+    return aParam // fallback to raw cuid (legacy links)
   })()
 
   // Auto-select first article on load
