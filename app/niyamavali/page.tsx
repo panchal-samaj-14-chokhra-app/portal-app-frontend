@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { BookOpen, Menu, X, Share2, Download, ChevronRight, Loader2, ScrollText, ArrowLeft, List, AlertCircle, CheckCircle2, UserX, User } from "lucide-react"
+import { BookOpen, Menu, X, Share2, Download, ChevronRight, Loader2, ScrollText, ArrowLeft, List, AlertCircle, CheckCircle2, UserX, User, Printer } from "lucide-react"
 import Link from "next/link"
 import { useNiyamavaliArticles, useNiyamavaliArticle } from "@/data-hooks/mutation-query/useNiyamavali"
 import { NIYAMAVALI_GROUPS } from "@/data-hooks/requests/niyamavali"
@@ -360,26 +360,8 @@ function NiyamavaliInner() {
   const { data: articles, isLoading } = useNiyamavaliArticles()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [grievanceOpen, setGrievanceOpen] = useState(false)
-  const [pdfLoading, setPdfLoading] = useState(false)
 
-  const handleDownloadPdf = async () => {
-    if (pdfLoading) return
-    try {
-      setPdfLoading(true)
-      const { default: request } = await import("@/config/request")
-      const res = await request.get("/niyamavali/articles/pdf", { responseType: "blob" })
-      const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }))
-      const a = document.createElement("a")
-      a.href = url
-      a.download = "panchal-samaj-niyamavali.pdf"
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      alert("PDF डाउनलोड नहीं हो सका, दोबारा कोशिश करें।")
-    } finally {
-      setPdfLoading(false)
-    }
-  }
+  const handlePrint = () => window.print()
   const aParam = sp.get("a") || ""
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -434,12 +416,10 @@ function NiyamavaliInner() {
               <p className="text-orange-200 text-xs hidden md:block">पंचाल समाज चौदह चौखरा — सामाजिक संविधान</p>
             </div>
           </div>
-          {/* Download PDF button */}
-          <button onClick={handleDownloadPdf} disabled={pdfLoading}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors text-white font-bold text-xs sm:text-sm disabled:opacity-60">
-            {pdfLoading
-              ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-              : <Download className="w-4 h-4 shrink-0" />}
+          {/* Print / Download PDF button */}
+          <button onClick={handlePrint}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors text-white font-bold text-xs sm:text-sm">
+            <Download className="w-4 h-4 shrink-0" />
             <span className="hidden sm:inline">PDF डाउनलोड</span>
           </button>
           {/* Grievance button */}
@@ -617,6 +597,61 @@ function NiyamavaliInner() {
       <style>{`
         @media (max-width: 400px) {
           .xs\\:inline { display: inline !important; }
+        }
+
+        @media print {
+          @page {
+            size: A4;
+            margin: 18mm 20mm;
+          }
+
+          /* hide everything except the article content */
+          header, aside, footer,
+          .print\\:hidden,
+          [class*="print:hidden"] { display: none !important; }
+
+          body {
+            background: #fff !important;
+            font-family: 'Noto Sans Devanagari', 'Hind', sans-serif !important;
+            font-size: 11pt !important;
+            color: #111 !important;
+            line-height: 1.9 !important;
+          }
+
+          /* make main full-width */
+          main {
+            padding: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+
+          /* article header banner */
+          [style*="linear-gradient"] {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* section cards */
+          .rounded-xl { border: 1px solid #ddd !important; break-inside: avoid; }
+
+          /* images */
+          img { max-width: 100% !important; height: auto !important; border-radius: 4px !important; }
+
+          /* page break before each section card if near page end */
+          .mb-6 { break-inside: avoid; }
+
+          h1, h2, h3 { break-after: avoid; }
+
+          /* print cover line at top */
+          main::before {
+            content: "पंचाल समाज नियमावली — चौदह चौखरा";
+            display: block;
+            font-size: 9pt;
+            color: #888;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4pt;
+            margin-bottom: 12pt;
+          }
         }
       `}</style>
     </div>
