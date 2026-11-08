@@ -247,37 +247,50 @@ function NewsCard({ item }: { item: SamajNews }) {
     else navigator.clipboard.writeText(url).then(() => alert("लिंक कॉपी हो गया!"))
   }
 
-  const date = new Date(item.publishedAt).toLocaleDateString("hi-IN", { day: "numeric", month: "short", year: "numeric" })
+  const date = new Date(item.publishedAt).toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" })
   return (
-    <Link href={`/news/${item.id}`} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer group block overflow-hidden">
+    <article className="group bg-white rounded-2xl border border-orange-100 ring-1 ring-orange-50 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300 overflow-hidden flex flex-col">
       {item.imageUrl && (
-        <div className="overflow-hidden bg-gray-50">
-          <Image src={item.imageUrl} alt={item.title} width={600} height={300}
-            className="w-full h-auto group-hover:scale-[1.02] transition-transform duration-300" unoptimized />
-        </div>
+        <Link href={`/news/${item.id}`} className="block overflow-hidden bg-gray-100 aspect-[16/9]">
+          <Image src={item.imageUrl} alt={item.title} width={800} height={450}
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" unoptimized />
+        </Link>
       )}
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{item.tag}</span>
-          <span className="text-gray-400 text-xs">{date}</span>
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-center gap-2 mb-3">
+          {item.tag && <span className="bg-orange-100 text-orange-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wide">{item.tag}</span>}
+          <span className="text-gray-500 text-xs font-medium">{date}</span>
         </div>
-        <h4 className="font-bold text-gray-800 text-sm mb-1.5 group-hover:text-orange-700 transition-colors leading-snug line-clamp-2">{item.title}</h4>
-        {item.summary && <p className="text-gray-400 text-xs leading-relaxed line-clamp-2 mb-3">{item.summary}</p>}
-        <div className="flex items-center gap-1 pt-2 border-t border-gray-50">
-          <button onClick={handleLike}
-            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${liked ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}>
-            <Heart className={`w-3 h-3 ${liked ? "fill-red-500" : ""}`} />
-            {localLikes > 0 && localLikes}
-          </button>
-          <span className="flex items-center gap-1 text-xs text-gray-400 px-2 py-1">
-            <MessageCircle className="w-3 h-3" />{item._count?.comments || 0}
-          </span>
-          <button onClick={handleShare} className="text-gray-400 hover:text-green-600 p-1 rounded-lg ml-auto">
-            <Share2 className="w-3 h-3" />
-          </button>
+        <Link href={`/news/${item.id}`} className="flex-1 mb-2">
+          <h2 className="font-extrabold text-orange-700 text-base sm:text-lg leading-snug group-hover:text-orange-900 transition-colors line-clamp-2">
+            {item.title}
+          </h2>
+        </Link>
+        {item.summary && (
+          <p className="text-gray-700 text-sm leading-relaxed line-clamp-3 mb-4">{item.summary}</p>
+        )}
+        <div className="flex items-center justify-between pt-3 border-t border-orange-50 mt-auto">
+          <div className="flex items-center gap-1">
+            <button onClick={handleLike} disabled={liked}
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors ${liked ? "text-red-500 bg-red-50" : "text-gray-500 hover:text-red-500 hover:bg-red-50"}`}>
+              <Heart className={`w-3.5 h-3.5 ${liked ? "fill-red-500" : ""}`} />
+              {localLikes > 0 && <span>{localLikes}</span>}
+            </button>
+            <span className="flex items-center gap-1.5 text-gray-500 text-xs px-2.5 py-1.5">
+              <MessageCircle className="w-3.5 h-3.5" />{item._count?.comments || 0}
+            </span>
+            <button onClick={handleShare}
+              className="flex items-center gap-1.5 text-gray-500 hover:text-green-600 text-xs px-2.5 py-1.5 rounded-lg hover:bg-green-50 transition-colors">
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <Link href={`/news/${item.id}`}
+            className="flex items-center gap-1 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 px-4 py-1.5 rounded-lg transition-colors">
+            पढ़ें <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
-    </Link>
+    </article>
   )
 }
 
@@ -550,27 +563,54 @@ export default function CommunityPortal() {
 
       {/* ── NEWS FEED ──────────────────────────────────────────────────── */}
       {isEnabled("news_feed") && <section id="feed" className="py-12 sm:py-16 px-4"
-        style={{ background: "linear-gradient(180deg, #fffbf5 0%, #ffffff 100%)" }}>
+        style={{ background: "linear-gradient(180deg, #fffbf5 0%, #fff7ed 60%, #ffffff 100%)" }}>
         <div className="max-w-5xl mx-auto">
+          {/* Section Header */}
           <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-extrabold text-gray-900">समाज समाचार</h2>
-              <p className="text-xs text-gray-400 mt-0.5">पंचाल समाज की ताज़ा खबरें</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                <Newspaper className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-extrabold text-gray-900">समाज समाचार</h2>
+                <p className="text-xs text-gray-400 mt-0.5">पंचाल समाज की ताज़ा खबरें</p>
+              </div>
             </div>
             <Link href="/news"
-              className="flex items-center gap-1.5 text-orange-600 text-sm font-semibold hover:text-orange-800 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-xl transition-colors">
+              className="hidden sm:flex items-center gap-1.5 text-orange-600 text-sm font-semibold hover:text-orange-800 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-xl transition-colors">
               सभी देखें <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
+
           {newsLoading && (
-            <div className="text-center py-10 text-orange-400"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-orange-400">
+              <Loader2 className="w-7 h-7 animate-spin" />
+              <p className="text-sm text-gray-500">समाचार लोड हो रहे हैं...</p>
+            </div>
           )}
           {!newsLoading && (!newsFeed || newsFeed.length === 0) && (
-            <div className="text-center py-10 text-gray-400 text-sm">अभी कोई समाचार नहीं है।</div>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
+                <Newspaper className="w-8 h-8 text-orange-300" />
+              </div>
+              <p className="text-gray-500 text-sm">अभी कोई समाचार नहीं है।</p>
+            </div>
           )}
           {newsFeed && newsFeed.length > 0 && (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {newsFeed.map(item => <NewsCard key={item.id} item={item} />)}
+            </div>
+          )}
+
+          {/* View All Button */}
+          {!newsLoading && newsFeed && newsFeed.length > 0 && (
+            <div className="text-center mt-10">
+              <Link href="/news"
+                className="inline-flex items-center gap-2 text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 active:bg-orange-800 px-7 py-3 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                <Newspaper className="w-4 h-4" />
+                सभी समाचार पढ़ें
+                <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
           )}
         </div>
