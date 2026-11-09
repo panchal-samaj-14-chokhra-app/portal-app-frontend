@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from "next/server"
 // BACKEND_URL is a server-only env var — never sent to the browser
 const BACKEND = (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_REQUEST_URL ?? "").replace(/\/$/, "")
 
-// Increase body size limit for file uploads (default 1MB is too small)
-export const config = { api: { bodyParser: false, responseLimit: false } }
-
 async function proxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params
   const segment = path.join("/")
