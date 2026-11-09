@@ -20,8 +20,7 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
 
   const init: RequestInit = { method: req.method, headers, cache: "no-store" }
   if (req.method !== "GET" && req.method !== "HEAD") {
-    // Use arrayBuffer so binary file uploads are not corrupted
-    init.body = await req.arrayBuffer()
+    init.body = await req.blob()
   }
 
   try {
@@ -32,7 +31,8 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
       headers: { "Content-Type": res.headers.get("content-type") || "application/json" },
     })
   } catch (err) {
-    return NextResponse.json({ success: false, error: "proxy_error" }, { status: 502 })
+    console.error("[proxy] fetch error:", url, err)
+    return NextResponse.json({ success: false, message: "proxy_error", detail: String(err) }, { status: 502 })
   }
 }
 
