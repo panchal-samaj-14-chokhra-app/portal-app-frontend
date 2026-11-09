@@ -195,7 +195,7 @@ function GrievanceModal({ open, onClose }: { open: boolean; onClose: () => void 
       }
       photos.forEach(f => form.append("images", f))
 
-      const { data } = await (await import("@/config/request")).default.post(
+      const { data } = await (await import("@/config/public-request")).default.post(
         "/submissions/grievance", form, { headers: { "Content-Type": "multipart/form-data" } }
       )
       setRefNo(data?.data?.ref ?? "—")
