@@ -55,7 +55,7 @@ export type GrievancePayload = {
 export const submitGrievancePublic = async (payload: GrievancePayload): Promise<{ ref: string }> => {
   const form = new FormData()
   Object.entries(payload).forEach(([k, v]) => { if (v) form.append(k, v) })
-  const { data } = await publicRequest.post("/submissions/grievance", form, {
+  const { data } = await request.post("/submissions/grievance", form, {
     headers: { "Content-Type": "multipart/form-data" },
   })
   return data.data
