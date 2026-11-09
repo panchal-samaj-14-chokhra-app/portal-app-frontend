@@ -1,4 +1,5 @@
 import request from "@/config/request"
+import publicRequest from "@/config/public-request"
 
 export type SubmissionKind = "testimonial" | "grievance"
 export type SubmissionStatus = "new" | "in_progress" | "resolved"
@@ -54,7 +55,7 @@ export type GrievancePayload = {
 export const submitGrievancePublic = async (payload: GrievancePayload): Promise<{ ref: string }> => {
   const form = new FormData()
   Object.entries(payload).forEach(([k, v]) => { if (v) form.append(k, v) })
-  const { data } = await request.post("/submissions/grievance", form, {
+  const { data } = await publicRequest.post("/submissions/grievance", form, {
     headers: { "Content-Type": "multipart/form-data" },
   })
   return data.data

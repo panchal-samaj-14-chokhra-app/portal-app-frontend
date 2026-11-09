@@ -20,7 +20,8 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
 
   const init: RequestInit = { method: req.method, headers, cache: "no-store" }
   if (req.method !== "GET" && req.method !== "HEAD") {
-    init.body = await req.text()
+    // Use arrayBuffer so binary file uploads are not corrupted
+    init.body = await req.arrayBuffer()
   }
 
   try {
