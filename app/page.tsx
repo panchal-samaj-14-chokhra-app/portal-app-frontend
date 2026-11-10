@@ -12,7 +12,7 @@ import {
   Briefcase, Gift, Download,
   Share2, MessageCircle,
   ChevronLeft, ChevronRight as ChevRight,
-  Calendar, Loader2, MapPin, Send,
+  Calendar, Loader2, MapPin, Send, Users,
 } from "lucide-react"
 import {
   useSamajNews, useSamajPress, useLikeSamajNews,
@@ -49,6 +49,7 @@ const SERVICES = [
   { icon: FileText,      color: "bg-teal-100 text-teal-700",      title: "प्रेस विज्ञप्ति",        href: "/press-release" },
   { icon: Newspaper,     color: "bg-blue-100 text-blue-700",      title: "समाज समाचार",           href: "#feed" },
   { icon: Calendar,      color: "bg-indigo-100 text-indigo-700",  title: "कार्यक्रम",             href: "/events" },
+  { icon: Users,         color: "bg-rose-100 text-rose-700",      title: "कार्यकारिणी",           href: "/karyakarni" },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
