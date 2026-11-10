@@ -13,7 +13,7 @@ export interface VillageDetails {
 }
 
 export async function getVillageDetailsServer(id: string): Promise<VillageDetails[]> {
-    const url = `${process.env.NEXT_PUBLIC_REQUEST_URL}/chokhla/getvillage/${id}`;
+    const url = `${process.env.NEXT_PUBLIC_REQUEST_URL}/chokhla/public/villages/${id}`;
     console.log(url, "ur;;;");
 
     const res = await fetch(url, {
