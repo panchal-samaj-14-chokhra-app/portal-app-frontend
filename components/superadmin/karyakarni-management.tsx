@@ -88,10 +88,12 @@ function MembersPanel({ session, onBack }: { session: KaryakarniSession; onBack:
 
   // Chokhla + Village dropdowns
   const { data: chokhlasRaw } = useAllChokhlas()
-  const chokhlas: { id: string; name: string }[] = chokhlasRaw?.data ?? chokhlasRaw ?? []
+  // getAllChokhlas returns { data: [...] } or just [...] depending on backend
+  const chokhlas: { id: string; name: string }[] = Array.isArray(chokhlasRaw) ? chokhlasRaw : (chokhlasRaw?.data ?? [])
   const selectedChokhlaId = form.chokhlaId || ""
   const { data: villagesRaw } = useGetAllVillageswithChokhlaID(selectedChokhlaId)
-  const villages: { id: string; villageName: string }[] = villagesRaw?.data ?? villagesRaw ?? []
+  // getAllVillagesWithChokhlaID returns a plain array
+  const villages: { id: string; name: string }[] = Array.isArray(villagesRaw) ? villagesRaw : (villagesRaw?.data ?? [])
 
   const openCreate = () => { setEditing(null); setForm({ ...EMPTY_MEMBER, type: session.type as any, satraId: session.id }); setOpen(true) }
   const openEdit   = (m: KaryakarniMember) => { setEditing(m.id); setForm({ ...m }); setOpen(true) }
@@ -203,7 +205,7 @@ function MembersPanel({ session, onBack }: { session: KaryakarniSession; onBack:
                   className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white disabled:opacity-50 disabled:cursor-not-allowed">
                   <option value="">— गांव चुनें —</option>
                   {villages.map((v: any) => (
-                    <option key={v.id} value={v.id}>{v.villageName}</option>
+                    <option key={v.id} value={v.id}>{v.name}</option>
                   ))}
                 </select>
               </div>
