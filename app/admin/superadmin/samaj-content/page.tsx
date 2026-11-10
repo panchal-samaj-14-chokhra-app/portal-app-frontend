@@ -1330,16 +1330,6 @@ export default function SamajContentPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-orange-100">
-          <active.icon className="w-5 h-5 text-orange-600" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">समाज पोर्टल प्रबंधन</h2>
-          <p className="text-sm text-gray-500">{active.desc}</p>
-        </div>
-      </div>
-
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
