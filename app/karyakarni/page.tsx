@@ -4,20 +4,20 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Phone } from "lucide-react"
-import { useKaryakarni, useSessions } from "@/data-hooks/mutation-query/useKaryakarni"
-import type { KaryakarniMember } from "@/data-hooks/requests/karyakarni"
+import { useSessions, useKaryakarni } from "@/data-hooks/mutation-query/useKaryakarni"
+import type { KaryakarniMember, KaryakarniSession } from "@/data-hooks/requests/karyakarni"
 
 const SECTIONS = [
   { id: "choudah_chokhara", label: "चौदह चोखरा कार्यकारिणी" },
   { id: "chokhara",         label: "चोखरा कार्यकारिणी" },
 ]
 
+// ── Member card ───────────────────────────────────────────────────────────────
+
 function MemberCard({ member }: { member: KaryakarniMember }) {
   const initial = member.name?.trim()?.[0]?.toUpperCase() || "?"
-
   return (
     <div className="flex flex-col items-center text-center bg-white border border-[#8B0000]/10 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-      {/* Avatar */}
       <div className="relative mb-3">
         {member.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -31,41 +31,66 @@ function MemberCard({ member }: { member: KaryakarniMember }) {
           </div>
         )}
       </div>
-
-      {/* Name + location */}
       <h3 className="font-bold text-gray-800 text-sm leading-tight">
         {member.name}{member.location ? `, ${member.location}` : ""}
       </h3>
-
-      {/* Designation + org */}
       {(member.designation || member.organization) && (
         <div className="mt-2 px-3 py-1.5 rounded-lg text-xs leading-snug"
           style={{ background: "rgba(139,0,0,0.06)", color: "#8B0000" }}>
           <span className="font-bold">{member.designation}</span>
-          {member.organization ? (
-            <><br /><span className="font-normal text-gray-600">{member.organization}</span></>
-          ) : null}
+          {member.organization ? <><br /><span className="font-normal text-gray-600">{member.organization}</span></> : null}
         </div>
       )}
-
-      {/* Phone */}
       {member.phone && (
         <a href={`tel:${member.phone}`}
           className="mt-3 flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#8B0000] transition-colors">
-          <Phone className="w-3 h-3" />
-          {member.phone}
+          <Phone className="w-3 h-3" />{member.phone}
         </a>
       )}
     </div>
   )
 }
 
+// ── Session card — loads its own members ──────────────────────────────────────
+
+function SessionCard({ session }: { session: KaryakarniSession }) {
+  const { data: members, isLoading } = useKaryakarni(session.type, session.id)
+
+  return (
+    <div className="mb-10">
+      {/* Session header */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-1 h-7 rounded-full shrink-0" style={{ background: "#D9A441" }} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-lg font-bold text-[#8B0000]">{session.name}</h3>
+          {session.isActive && (
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700">
+              सक्रिय सत्र
+            </span>
+          )}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 py-8 text-gray-400 text-sm">
+          <div className="w-5 h-5 rounded-full border-2 border-[#8B0000] border-t-transparent animate-spin" />
+          लोड हो रहा है...
+        </div>
+      ) : !members?.length ? (
+        <p className="text-gray-400 text-sm py-6 text-center">इस सत्र में अभी कोई सदस्य नहीं है।</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {members.map(m => <MemberCard key={m.id} member={m} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Section view — all sessions for one type ──────────────────────────────────
+
 function SectionView({ type }: { type: string }) {
-  // Find the active session for this type, then load only its members
-  const { data: sessions, isLoading: sessionsLoading } = useSessions(type)
-  const activeSession = sessions?.find(s => s.isActive) ?? sessions?.[0] ?? null
-  const { data: members, isLoading: membersLoading } = useKaryakarni(type, activeSession?.id)
-  const isLoading = sessionsLoading || membersLoading
+  const { data: sessions, isLoading } = useSessions(type)
 
   if (isLoading) {
     return (
@@ -76,27 +101,25 @@ function SectionView({ type }: { type: string }) {
     )
   }
 
-  if (!members?.length) {
+  if (!sessions?.length) {
     return (
       <div className="text-center py-16 text-gray-400 text-sm">
-        अभी कोई सदस्य उपलब्ध नहीं है।
+        अभी कोई सत्र उपलब्ध नहीं है।
       </div>
     )
   }
 
+  // Show active session first, then rest
+  const sorted = [...sessions].sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0))
+
   return (
-    <>
-      {activeSession && (
-        <p className="text-xs text-center text-gray-400 mb-5">
-          सत्र: <span className="font-semibold text-[#8B0000]">{activeSession.name}</span>
-        </p>
-      )}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {members.map(m => <MemberCard key={m.id} member={m} />)}
-      </div>
-    </>
+    <div>
+      {sorted.map(s => <SessionCard key={s.id} session={s} />)}
+    </div>
   )
 }
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function KaryakarniPage() {
   const [active, setActive] = useState("choudah_chokhara")
