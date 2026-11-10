@@ -289,6 +289,10 @@ function SessionsList({
   const update  = useUpdateSession()
   const remove  = useDeleteSession()
 
+  // Chokhla list for chokhara type
+  const { data: chokhlasRaw } = useAllChokhlas()
+  const chokhlas: { id: string; name: string }[] = Array.isArray(chokhlasRaw) ? chokhlasRaw : (chokhlasRaw?.data ?? [])
+
   const [open, setOpen]       = useState(false)
   const [form, setForm]       = useState<Partial<KaryakarniSession>>(EMPTY_SESSION)
   const [editing, setEditing] = useState<string | null>(null)
@@ -301,6 +305,7 @@ function SessionsList({
 
   const handleSave = () => {
     if (!form.name?.trim()) return toast({ title: "सत्र का नाम आवश्यक है", variant: "destructive" })
+    if (type === "chokhara" && !form.chokhlaId) return toast({ title: "चोखरा चुनना आवश्यक है", variant: "destructive" })
     const payload = { ...form, type }
     const cb = {
       onSuccess: () => { toast({ title: editing ? "सत्र अपडेट हुआ" : "नया सत्र बना", variant: "success" }); closeForm() },
@@ -344,6 +349,9 @@ function SessionsList({
                         ? <span className="flex items-center gap-1 text-xs text-green-600 font-semibold"><CheckCircle className="w-3 h-3" />सक्रिय</span>
                         : <span className="flex items-center gap-1 text-xs text-gray-400"><Circle className="w-3 h-3" />समाप्त</span>}
                     </div>
+                    {s.chokhlaName && (
+                      <p className="text-xs text-[#8B0000] font-medium mt-0.5">{s.chokhlaName}</p>
+                    )}
                     <p className="text-xs text-gray-400 mt-0.5">
                       {s._count?.members ?? 0} सदस्य
                     </p>
@@ -370,6 +378,21 @@ function SessionsList({
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{editing ? "सत्र संपादित करें" : "नया सत्र बनाएं"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
+            {/* Chokhla selector — only for chokhara type */}
+            {type === "chokhara" && (
+              <div className="space-y-1.5">
+                <Label>चोखरा चुनें *</Label>
+                <select
+                  value={form.chokhlaId || ""}
+                  onChange={e => setForm(f => ({ ...f, chokhlaId: e.target.value || null }))}
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white">
+                  <option value="">— चोखरा चुनें —</option>
+                  {chokhlas.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>सत्र का नाम *</Label>
               <Input value={form.name || ""} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}

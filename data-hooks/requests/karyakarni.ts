@@ -5,6 +5,8 @@ export interface KaryakarniSession {
   id: string
   name: string
   type: "choudah_chokhara" | "chokhara"
+  chokhlaId?: string | null
+  chokhlaName?: string | null
   isActive: boolean
   createdAt: string
   _count?: { members: number }
