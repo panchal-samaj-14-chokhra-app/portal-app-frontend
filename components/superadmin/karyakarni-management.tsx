@@ -14,6 +14,7 @@ import {
   useSessions, useCreateSession, useUpdateSession, useDeleteSession,
   useKaryakarniAdmin, useCreateKaryakarniMember, useUpdateKaryakarniMember, useDeleteKaryakarniMember,
 } from "@/data-hooks/mutation-query/useKaryakarni"
+import { useAllChokhlas, useGetAllVillageswithChokhlaID } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { uploadBlogImage } from "@/data-hooks/requests/blog"
 import type { KaryakarniMember, KaryakarniSession } from "@/data-hooks/requests/karyakarni"
 
@@ -84,6 +85,13 @@ function MembersPanel({ session, onBack }: { session: KaryakarniSession; onBack:
   const [editing, setEditing] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null)
   const saving = create.isPending || update.isPending
+
+  // Chokhla + Village dropdowns
+  const { data: chokhlasRaw } = useAllChokhlas()
+  const chokhlas: { id: string; name: string }[] = chokhlasRaw?.data ?? chokhlasRaw ?? []
+  const selectedChokhlaId = form.chokhlaId || ""
+  const { data: villagesRaw } = useGetAllVillageswithChokhlaID(selectedChokhlaId)
+  const villages: { id: string; villageName: string }[] = villagesRaw?.data ?? villagesRaw ?? []
 
   const openCreate = () => { setEditing(null); setForm({ ...EMPTY_MEMBER, type: session.type as any, satraId: session.id }); setOpen(true) }
   const openEdit   = (m: KaryakarniMember) => { setEditing(m.id); setForm({ ...m }); setOpen(true) }
@@ -167,10 +175,40 @@ function MembersPanel({ session, onBack }: { session: KaryakarniSession; onBack:
                 <Input value={form.name || ""} onChange={e => set("name", e.target.value)} placeholder="धुलजी भाई पंचाल" />
               </div>
               <div className="space-y-1.5">
-                <Label>स्थान / गांव</Label>
+                <Label>स्थान (टेक्स्ट)</Label>
                 <Input value={form.location || ""} onChange={e => set("location", e.target.value)} placeholder="पालोदा" />
               </div>
             </div>
+
+            {/* Chokhla + Village dropdowns */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>चोखरा</Label>
+                <select
+                  value={form.chokhlaId || ""}
+                  onChange={e => { set("chokhlaId", e.target.value || null); set("villageId", null) }}
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white">
+                  <option value="">— चोखरा चुनें —</option>
+                  {chokhlas.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>गांव</Label>
+                <select
+                  value={(form as any).villageId || ""}
+                  onChange={e => set("villageId" as any, e.target.value || null)}
+                  disabled={!selectedChokhlaId}
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white disabled:opacity-50 disabled:cursor-not-allowed">
+                  <option value="">— गांव चुनें —</option>
+                  {villages.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.villageName}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <Label>पद *</Label>
               <Input value={form.designation || ""} onChange={e => set("designation", e.target.value)} placeholder="अध्यक्ष" />

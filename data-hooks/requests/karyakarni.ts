@@ -21,6 +21,7 @@ export interface KaryakarniMember {
   imageUrl?: string | null
   type: "choudah_chokhara" | "chokhara"
   chokhlaId?: string | null
+  villageId?: string | null
   satraId?: string | null
   order: number
   createdAt: string
