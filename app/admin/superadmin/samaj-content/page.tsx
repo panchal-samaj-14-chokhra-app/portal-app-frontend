@@ -37,20 +37,22 @@ import {
 } from "@/data-hooks/mutation-query/useHeroFeed"
 import type { HeroFeed } from "@/data-hooks/requests/hero-feed"
 import { FEED_TYPES } from "@/data-hooks/requests/hero-feed"
-import { Heart, LayoutTemplate } from "lucide-react"
+import { Heart, LayoutTemplate, UserCog } from "lucide-react"
 import { usePortalConfig, useUpdatePortalConfig } from "@/data-hooks/mutation-query/usePortalConfig"
+import KaryakarniManagement from "@/components/superadmin/karyakarni-management"
 
-type Tab = "hero" | "news" | "press" | "events" | "posts" | "feed" | "grievances" | "flags"
+type Tab = "hero" | "news" | "press" | "events" | "posts" | "feed" | "grievances" | "flags" | "karyakarni"
 
 const TABS: { id: Tab; label: string; icon: any; desc: string }[] = [
-  { id: "hero",       label: "होमपेज हीरो",     icon: LayoutTemplate,  desc: "होमपेज का शीर्षक, उपशीर्षक, स्थान एवं टैगलाइन" },
-  { id: "news",       label: "समाचार",           icon: Newspaper,       desc: "समाज के समाचार एवं सूचनाएं" },
-  { id: "press",      label: "प्रेस विज्ञप्ति",  icon: FileText,        desc: "आधिकारिक विज्ञप्तियां" },
-  { id: "events",     label: "कार्यक्रम",        icon: Calendar,        desc: "आगामी एवं बीते आयोजन" },
-  { id: "posts",      label: "पोस्ट मॉडरेशन",   icon: MessageSquare,   desc: "सदस्यों की पोस्ट प्रबंधन" },
-  { id: "feed",       label: "हीरो फीड",         icon: Heart,           desc: "होमपेज हीरो सेक्शन — बधाई · जन्मदिवस · शोक संदेश" },
-  { id: "grievances", label: "शिकायतें",         icon: AlertTriangle,   desc: "नियमावली पृष्ठ से प्राप्त शिकायतें" },
-  { id: "flags",      label: "फ़ीचर फ्लैग्स",    icon: ToggleLeft,      desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
+  { id: "hero",        label: "होमपेज हीरो",     icon: LayoutTemplate,  desc: "होमपेज का शीर्षक, उपशीर्षक, स्थान एवं टैगलाइन" },
+  { id: "news",        label: "समाचार",           icon: Newspaper,       desc: "समाज के समाचार एवं सूचनाएं" },
+  { id: "press",       label: "प्रेस विज्ञप्ति",  icon: FileText,        desc: "आधिकारिक विज्ञप्तियां" },
+  { id: "events",      label: "कार्यक्रम",        icon: Calendar,        desc: "आगामी एवं बीते आयोजन" },
+  { id: "posts",       label: "पोस्ट मॉडरेशन",   icon: MessageSquare,   desc: "सदस्यों की पोस्ट प्रबंधन" },
+  { id: "feed",        label: "हीरो फीड",         icon: Heart,           desc: "होमपेज हीरो सेक्शन — बधाई · जन्मदिवस · शोक संदेश" },
+  { id: "grievances",  label: "शिकायतें",         icon: AlertTriangle,   desc: "नियमावली पृष्ठ से प्राप्त शिकायतें" },
+  { id: "karyakarni",  label: "कार्यकारिणी",      icon: UserCog,         desc: "चौदह चोखरा व चोखरा कार्यकारिणी समिति के सदस्य" },
+  { id: "flags",       label: "फ़ीचर फ्लैग्स",    icon: ToggleLeft,      desc: "समाज पोर्टल फ़ीचर चालू / बंद करें" },
 ]
 
 function fmtDate(d?: string) {
@@ -1349,7 +1351,8 @@ export default function SamajContentPage() {
       {tab === "events"     && <EventsPanel />}
       {tab === "posts"      && <PostsPanel />}
       {tab === "feed"       && <HeroFeedPanel />}
-      {tab === "grievances" && <GrievancesPanel />}
+      {tab === "grievances"  && <GrievancesPanel />}
+      {tab === "karyakarni" && <KaryakarniManagement />}
       {tab === "flags"  && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <SectionFeatureFlags
