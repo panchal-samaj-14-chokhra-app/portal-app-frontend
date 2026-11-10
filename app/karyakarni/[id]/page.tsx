@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { use } from "react"
 import { ArrowLeft, Phone } from "lucide-react"
 import { useSessions, useKaryakarni } from "@/data-hooks/mutation-query/useKaryakarni"
 import type { KaryakarniMember, KaryakarniSession } from "@/data-hooks/requests/karyakarni"
@@ -83,8 +82,8 @@ function SessionCard({ session }: { session: KaryakarniSession }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function ChokhraKaryakarniPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function ChokhraKaryakarniPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const { data: sessions, isLoading } = useSessions("chokhara")
 
   // Filter sessions belonging to this chokhla
