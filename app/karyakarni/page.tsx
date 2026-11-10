@@ -41,6 +41,11 @@ function MemberCard({ member }: { member: KaryakarniMember }) {
           {member.organization ? <><br /><span className="font-normal text-gray-600">{member.organization}</span></> : null}
         </div>
       )}
+      {(member.chokhlaName || member.villageName) && (
+        <p className="mt-2 text-xs text-gray-500 leading-snug">
+          {[member.chokhlaName, member.villageName].filter(Boolean).join(" · ")}
+        </p>
+      )}
       {member.phone && (
         <a href={`tel:${member.phone}`}
           className="mt-3 flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#8B0000] transition-colors">

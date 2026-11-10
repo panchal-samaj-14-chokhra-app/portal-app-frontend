@@ -23,6 +23,8 @@ export interface KaryakarniMember {
   chokhlaId?: string | null
   villageId?: string | null
   satraId?: string | null
+  chokhlaName?: string | null
+  villageName?: string | null
   order: number
   createdAt: string
 }

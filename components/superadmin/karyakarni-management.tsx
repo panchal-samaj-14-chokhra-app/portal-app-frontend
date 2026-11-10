@@ -155,6 +155,9 @@ function MembersPanel({ session, onBack }: { session: KaryakarniSession; onBack:
                       {m.organization ? `, ${m.organization}` : ""}
                     </p>
                   )}
+                  {(m.chokhlaName || m.villageName) && (
+                    <p className="mt-1 text-xs text-gray-400">{[m.chokhlaName, m.villageName].filter(Boolean).join(" · ")}</p>
+                  )}
                   {m.phone && <p className="mt-2 text-xs text-gray-400">📞 {m.phone}</p>}
                   <div className="flex gap-2 mt-3 pt-3 border-t border-[#8B0000]/10 w-full justify-center">
                     <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600 hover:bg-orange-50" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
