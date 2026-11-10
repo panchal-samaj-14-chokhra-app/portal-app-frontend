@@ -318,7 +318,6 @@ export default function CommunityPortal() {
   const { data: newsFeed,  isLoading: newsLoading }  = useSamajNews({ take: "5" })
   const { data: pressFeed } = useSamajPress({ take: "3" })
   const { data: chokhlasData } = usePublicChokhlas()
-  const chokhlaNames: string[] = chokhlasData?.map((c) => c.name).filter(Boolean) ?? []
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 10)
@@ -452,16 +451,16 @@ export default function CommunityPortal() {
 
               {/* Chokhla pills */}
               <div className="flex flex-wrap gap-1.5">
-                {chokhlaNames.map((name, i) => (
-                  <span key={name}
-                    className="px-2.5 py-1 text-xs font-semibold rounded-full border transition-all hover:scale-105 cursor-default"
+                {(chokhlasData ?? []).map((c, i) => (
+                  <Link key={c.id} href={`/community-hub/${encodeURIComponent(c.name)}/${c.id}`}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-full border transition-all hover:scale-105 cursor-pointer"
                     style={{
                       background: i % 2 === 0 ? "rgba(139,0,0,0.06)" : "rgba(217,164,65,0.1)",
                       borderColor: i % 2 === 0 ? "rgba(139,0,0,0.2)" : "rgba(217,164,65,0.35)",
                       color: i % 2 === 0 ? "#8B0000" : "#92400e",
                     }}>
-                    {name}
-                  </span>
+                    {c.name}
+                  </Link>
                 ))}
               </div>
 
