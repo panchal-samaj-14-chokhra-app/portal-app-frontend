@@ -1,17 +1,47 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
+  getSessions, getSession, createSession, updateSession, deleteSession,
   getKaryakarni, getKaryakarniAdmin,
   createKaryakarniMember, updateKaryakarniMember, deleteKaryakarniMember,
 } from "@/data-hooks/requests/karyakarni"
-import type { KaryakarniMember } from "@/data-hooks/requests/karyakarni"
+import type { KaryakarniMember, KaryakarniSession } from "@/data-hooks/requests/karyakarni"
 
 const KEY = ["karyakarni"]
+const SESSION_KEY = [...KEY, "sessions"]
 
-export const useKaryakarni = (type?: string) =>
-  useQuery({ queryKey: [...KEY, type], queryFn: () => getKaryakarni(type ? { type } : undefined), staleTime: 60_000 })
+// ── Sessions ──────────────────────────────────────────────────────────────────
 
-export const useKaryakarniAdmin = (type?: string) =>
-  useQuery({ queryKey: [...KEY, "admin", type], queryFn: () => getKaryakarniAdmin(type ? { type } : undefined) })
+export const useSessions = (type?: string) =>
+  useQuery({ queryKey: [...SESSION_KEY, type], queryFn: () => getSessions(type ? { type } : undefined), staleTime: 60_000 })
+
+export const useSession = (id: string) =>
+  useQuery({ queryKey: [...SESSION_KEY, id], queryFn: () => getSession(id), enabled: !!id })
+
+export function useCreateSession() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: createSession, onSuccess: () => qc.invalidateQueries({ queryKey: SESSION_KEY }) })
+}
+
+export function useUpdateSession() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string } & Partial<KaryakarniSession>) => updateSession(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: SESSION_KEY }),
+  })
+}
+
+export function useDeleteSession() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: deleteSession, onSuccess: () => qc.invalidateQueries({ queryKey: SESSION_KEY }) })
+}
+
+// ── Members ───────────────────────────────────────────────────────────────────
+
+export const useKaryakarni = (type?: string, satraId?: string) =>
+  useQuery({ queryKey: [...KEY, type, satraId], queryFn: () => getKaryakarni({ ...(type && { type }), ...(satraId && { satraId }) }), staleTime: 60_000 })
+
+export const useKaryakarniAdmin = (type?: string, satraId?: string) =>
+  useQuery({ queryKey: [...KEY, "admin", type, satraId], queryFn: () => getKaryakarniAdmin({ ...(type && { type }), ...(satraId && { satraId }) }) })
 
 export function useCreateKaryakarniMember() {
   const qc = useQueryClient()
