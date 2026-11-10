@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Phone } from "lucide-react"
-import { useKaryakarni } from "@/data-hooks/mutation-query/useKaryakarni"
+import { useKaryakarni, useSessions } from "@/data-hooks/mutation-query/useKaryakarni"
 import type { KaryakarniMember } from "@/data-hooks/requests/karyakarni"
 
 const SECTIONS = [
@@ -61,7 +61,11 @@ function MemberCard({ member }: { member: KaryakarniMember }) {
 }
 
 function SectionView({ type }: { type: string }) {
-  const { data: members, isLoading } = useKaryakarni(type)
+  // Find the active session for this type, then load only its members
+  const { data: sessions, isLoading: sessionsLoading } = useSessions(type)
+  const activeSession = sessions?.find(s => s.isActive) ?? sessions?.[0] ?? null
+  const { data: members, isLoading: membersLoading } = useKaryakarni(type, activeSession?.id)
+  const isLoading = sessionsLoading || membersLoading
 
   if (isLoading) {
     return (
@@ -81,9 +85,16 @@ function SectionView({ type }: { type: string }) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      {members.map(m => <MemberCard key={m.id} member={m} />)}
-    </div>
+    <>
+      {activeSession && (
+        <p className="text-xs text-center text-gray-400 mb-5">
+          सत्र: <span className="font-semibold text-[#8B0000]">{activeSession.name}</span>
+        </p>
+      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {members.map(m => <MemberCard key={m.id} member={m} />)}
+      </div>
+    </>
   )
 }
 
