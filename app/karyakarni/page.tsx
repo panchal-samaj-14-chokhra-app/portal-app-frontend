@@ -1,16 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Phone } from "lucide-react"
 import { useSessions, useKaryakarni } from "@/data-hooks/mutation-query/useKaryakarni"
 import type { KaryakarniMember, KaryakarniSession } from "@/data-hooks/requests/karyakarni"
-
-const SECTIONS = [
-  { id: "choudah_chokhara", label: "चौदह चोखरा कार्यकारिणी" },
-  { id: "chokhara",         label: "चोखरा कार्यकारिणी" },
-]
 
 // ── Member card ───────────────────────────────────────────────────────────────
 
@@ -127,8 +121,6 @@ function SectionView({ type }: { type: string }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function KaryakarniPage() {
-  const [active, setActive] = useState("choudah_chokhara")
-
   return (
     <div className="min-h-screen" style={{ background: "#FDF8F0" }}>
       {/* Header */}
@@ -159,20 +151,7 @@ export default function KaryakarniPage() {
           <p className="text-gray-500 text-sm mt-1">पंचाल समाज चौदह चोखरा की कार्यकारिणी समिति के सदस्य</p>
         </div>
 
-        {/* Section tabs */}
-        <div className="flex gap-1 bg-white border border-[#8B0000]/10 rounded-xl p-1 mb-8 shadow-sm">
-          {SECTIONS.map(s => (
-            <button key={s.id} onClick={() => setActive(s.id)}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
-              style={active === s.id
-                ? { background: "#8B0000", color: "#fff" }
-                : { color: "#6b7280" }}>
-              {s.label}
-            </button>
-          ))}
-        </div>
-
-        <SectionView key={active} type={active} />
+        <SectionView type="choudah_chokhara" />
       </main>
 
       {/* Footer */}
