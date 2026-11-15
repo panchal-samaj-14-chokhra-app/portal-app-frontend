@@ -70,6 +70,7 @@ export type SamajEvent = {
   venue?: string | null
   imageUrl?: string | null
   contact?: string | null
+  registrationLink?: string | null
   status: string
   createdAt: string
   updatedAt: string

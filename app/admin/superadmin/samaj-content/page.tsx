@@ -32,6 +32,8 @@ import {
   useSamajPosts, useUpdateSamajPost, useDeleteSamajPost,
 } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajNews, SamajPressRelease, SamajEvent } from "@/data-hooks/requests/samaj-content"
+import { fetchPublishedForms } from "@/data-hooks/requests/survey"
+import type { SurveyForm } from "@/data-hooks/requests/survey"
 import {
   useHeroFeedAdmin, useCreateHeroFeed, useUpdateHeroFeed, useDeleteHeroFeed,
 } from "@/data-hooks/mutation-query/useHeroFeed"
@@ -586,11 +588,22 @@ function EventsPanel() {
   const [form, setForm]       = useState<Partial<SamajEvent>>({})
   const [editing, setEditing] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null)
+  const [linkMode, setLinkMode] = useState<"survey" | "custom">("survey")
   const saving = create.isPending || update.isPending
 
-  const openCreate = () => { setEditing(null); setForm({}); setOpen(true) }
-  const openEdit   = (item: SamajEvent) => { setEditing(item.id); setForm({ ...item }); setOpen(true) }
-  const closeForm  = () => { setOpen(false); setEditing(null); setForm({}) }
+  const { data: surveyForms = [] } = useQuery<SurveyForm[]>({
+    queryKey: ["published-survey-forms"],
+    queryFn: fetchPublishedForms,
+    enabled: open,
+  })
+
+  const openCreate = () => { setEditing(null); setForm({}); setLinkMode("survey"); setOpen(true) }
+  const openEdit   = (item: SamajEvent) => {
+    setEditing(item.id); setForm({ ...item })
+    setLinkMode(item.registrationLink?.startsWith("/survey") || surveyForms.some(f => item.registrationLink?.includes(f.id)) ? "survey" : "custom")
+    setOpen(true)
+  }
+  const closeForm  = () => { setOpen(false); setEditing(null); setForm({}); setLinkMode("survey") }
   const handleSave = () => {
     if (!form.title || !form.date) return
     const cb = {
@@ -693,6 +706,49 @@ function EventsPanel() {
             <div className="space-y-1.5">
               <Label>विवरण</Label>
               <Textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="कार्यक्रम का विवरण..." rows={3} />
+            </div>
+
+            {/* Registration link */}
+            <div className="space-y-2 border border-orange-100 rounded-xl p-3 bg-orange-50/50">
+              <Label className="text-sm font-semibold text-gray-700">पंजीकरण लिंक (वैकल्पिक)</Label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setLinkMode("survey"); setForm(f => ({ ...f, registrationLink: "" })) }}
+                  className={`flex-1 text-xs py-1.5 rounded-lg border font-medium transition-colors ${linkMode === "survey" ? "bg-orange-600 text-white border-orange-600" : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"}`}
+                >
+                  सर्वे फॉर्म चुनें
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLinkMode("custom"); setForm(f => ({ ...f, registrationLink: "" })) }}
+                  className={`flex-1 text-xs py-1.5 rounded-lg border font-medium transition-colors ${linkMode === "custom" ? "bg-orange-600 text-white border-orange-600" : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"}`}
+                >
+                  कस्टम URL
+                </button>
+              </div>
+              {linkMode === "survey" ? (
+                <select
+                  value={form.registrationLink || ""}
+                  onChange={e => setForm(f => ({ ...f, registrationLink: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                >
+                  <option value="">— कोई नहीं —</option>
+                  {surveyForms.map(sf => (
+                    <option key={sf.id} value={`/survey/${sf.id}`}>{sf.title}</option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  value={form.registrationLink || ""}
+                  onChange={e => setForm(f => ({ ...f, registrationLink: e.target.value }))}
+                  placeholder="https://... या /survey/..."
+                  className="text-sm"
+                />
+              )}
+              {form.registrationLink && (
+                <p className="text-xs text-green-600">✓ लिंक सेट: {form.registrationLink}</p>
+              )}
             </div>
           </div>
           <DialogFooter>

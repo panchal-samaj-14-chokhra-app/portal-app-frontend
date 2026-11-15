@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { CalendarDays, MapPin, Phone, Calendar, Loader2 } from "lucide-react"
+import { CalendarDays, MapPin, Phone, Calendar, Loader2, ClipboardList } from "lucide-react"
 import { useSamajEvents } from "@/data-hooks/mutation-query/useSamajContent"
 import type { SamajEvent } from "@/data-hooks/requests/samaj-content"
 import PageHeader from "@/components/ui/PageHeader"
@@ -75,6 +75,17 @@ function EventCard({ event, past }: { event: SamajEvent; past?: boolean }) {
           </ul>
           {event.description && (
             <p className="mt-3 text-sm text-gray-500 leading-relaxed whitespace-pre-line border-t border-gray-50 pt-3">{event.description}</p>
+          )}
+          {event.registrationLink && (
+            <div className="mt-3 pt-3 border-t border-gray-50">
+              <Link
+                href={event.registrationLink}
+                className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+              >
+                <ClipboardList className="w-4 h-4" />
+                पंजीकरण करें
+              </Link>
+            </div>
           )}
         </div>
       </div>
