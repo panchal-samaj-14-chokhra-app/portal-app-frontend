@@ -52,7 +52,9 @@ export default function SurveyFormBuilder({
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
 
   const addQuestion = () => {
-    const q: SurveyQuestion = { label: "", type: "short_answer", required: false, options: null }
+    // Stable client-side ID so showIf can reference this question before first save
+    const tempId = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10)
+    const q: SurveyQuestion = { id: tempId, label: "", type: "short_answer", required: false, options: null }
     setQuestions([...questions, q])
     setExpandedIdx(questions.length)
   }
@@ -108,6 +110,13 @@ export default function SurveyFormBuilder({
         <FormPreview title={title} description={description} eventName={eventName} questions={questions} />
       </div>
     )
+  }
+
+  // helper used in condition UI
+  const isVisibleInBuilder = (q: SurveyQuestion): boolean => {
+    if (!q.showIf) return true
+    // can't evaluate visibility without real answer state; always show in editor
+    return true
   }
 
   return (
@@ -241,7 +250,7 @@ export default function SurveyFormBuilder({
                   {/* Conditional logic — only when previous questions with IDs + options exist */}
                   {(() => {
                     const eligible = questions.slice(0, idx).filter(
-                      pq => pq.id && ["multiple_choice", "dropdown", "checkboxes"].includes(pq.type) && (pq.options || []).length > 0
+                      pq => ["multiple_choice", "dropdown", "checkboxes"].includes(pq.type) && (pq.options || []).length > 0
                     )
                     if (!eligible.length) return null
                     const refQ = q.showIf ? questions.find(pq => pq.id === q.showIf!.questionId) : null
@@ -254,7 +263,7 @@ export default function SurveyFormBuilder({
                         <div className="flex items-center gap-2 mb-2">
                           <Switch
                             checked={!!q.showIf}
-                            onCheckedChange={v => updateQuestion(idx, { showIf: v ? { questionId: eligible[0].id!, value: "" } : null })}
+                            onCheckedChange={v => updateQuestion(idx, { showIf: v ? { questionId: eligible[0].id ?? "", value: "" } : null })}
                             id={`cond-${idx}`}
                           />
                           <Label htmlFor={`cond-${idx}`} className="text-sm cursor-pointer">शर्त पर दिखाएं</Label>
@@ -316,18 +325,32 @@ export default function SurveyFormBuilder({
   )
 }
 
-// ── Inline preview ─────────────────────────────────────────────────────────────
+// ── Inline preview (interactive — answers drive showIf visibility) ─────────────
+
+function isVisiblePreview(q: SurveyQuestion, answers: Record<string, string>): boolean {
+  if (!q.showIf) return true
+  const ans = answers[q.showIf.questionId]
+  return !!ans && ans === q.showIf.value
+}
 
 function FormPreview({ title, description, eventName, questions }: {
   title: string; description: string; eventName: string; questions: SurveyQuestion[]
 }) {
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const setAns = (id: string, val: string) => setAnswers(prev => ({ ...prev, [id]: val }))
+  const hasConditions = questions.some(q => q.showIf)
+
   return (
     <div className="max-w-2xl mx-auto space-y-4 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
       {eventName && <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide">{eventName}</p>}
       <h2 className="text-xl font-bold text-gray-900">{title || "फॉर्म शीर्षक"}</h2>
       {description && <p className="text-sm text-gray-500">{description}</p>}
+      {hasConditions && (
+        <p className="text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+          💡 यह इंटरैक्टिव पूर्वावलोकन है — विकल्प चुनें और शर्त वाले प्रश्न देखें
+        </p>
+      )}
       <hr />
-      {/* Standard fields */}
       {["नाम", "मोबाइल नंबर", "ईमेल (वैकल्पिक)", "गाँव", "जिला"].map(f => (
         <div key={f}>
           <Label className="text-sm font-medium text-gray-700">{f}</Label>
@@ -335,40 +358,46 @@ function FormPreview({ title, description, eventName, questions }: {
         </div>
       ))}
       {questions.map((q, i) => {
-        const typeMeta = QUESTION_TYPES.find(t => t.value === q.type)!
+        const visible = isVisiblePreview(q, answers)
         return (
-          <div key={i} className="space-y-1">
+          <div key={q.id ?? i} className={`space-y-1 transition-all duration-200 ${visible ? "" : "hidden"}`}>
             <Label className="text-sm font-medium text-gray-700">
-              {q.label || "प्रश्न"} {q.required && <span className="text-red-500 ml-0.5">*</span>}
+              {i + 1}. {q.label || "प्रश्न"} {q.required && <span className="text-red-500 ml-0.5">*</span>}
+              {q.showIf && <span className="ml-2 text-xs text-blue-500 font-normal">(शर्त)</span>}
             </Label>
             {(q.type === "short_answer" || q.type === "phone" || q.type === "email" || q.type === "number") && (
               <div className="h-9 rounded-md border border-gray-200 bg-gray-50" />
             )}
-            {q.type === "long_answer" && (
-              <div className="h-20 rounded-md border border-gray-200 bg-gray-50" />
-            )}
-            {q.type === "date" && (
-              <div className="h-9 w-40 rounded-md border border-gray-200 bg-gray-50" />
-            )}
+            {q.type === "long_answer" && <div className="h-20 rounded-md border border-gray-200 bg-gray-50" />}
+            {q.type === "date" && <div className="h-9 w-40 rounded-md border border-gray-200 bg-gray-50" />}
             {q.type === "file_upload" && (
-              <div className="h-10 rounded-md border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-400">
-                फ़ाइल चुनें
-              </div>
+              <div className="h-10 rounded-md border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-400">फ़ाइल चुनें</div>
             )}
             {(q.type === "multiple_choice" || q.type === "checkboxes") && (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {(q.options || []).map((opt, oi) => (
-                  <label key={oi} className="flex items-center gap-2 text-sm text-gray-700">
-                    <input type={q.type === "multiple_choice" ? "radio" : "checkbox"} disabled />
+                  <label key={oi} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type={q.type === "multiple_choice" ? "radio" : "checkbox"}
+                      name={`prev-${q.id ?? i}`}
+                      checked={answers[q.id ?? ""] === opt}
+                      onChange={() => setAns(q.id ?? "", opt)}
+                      className="accent-orange-500"
+                    />
                     {opt || `विकल्प ${oi + 1}`}
                   </label>
                 ))}
               </div>
             )}
             {q.type === "dropdown" && (
-              <div className="h-9 rounded-md border border-gray-200 bg-gray-50 flex items-center px-3 text-xs text-gray-400">
-                {(q.options?.[0]) || "विकल्प चुनें"} ▾
-              </div>
+              <select
+                value={answers[q.id ?? ""] || ""}
+                onChange={e => setAns(q.id ?? "", e.target.value)}
+                className="mt-1 w-full border border-gray-200 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">— चुनें —</option>
+                {(q.options || []).map((opt, oi) => <option key={oi} value={opt}>{opt}</option>)}
+              </select>
             )}
           </div>
         )
