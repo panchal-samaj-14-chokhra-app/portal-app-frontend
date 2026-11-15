@@ -50,7 +50,7 @@ const SERVICES = [
   { icon: Newspaper,     color: "bg-blue-100 text-blue-700",      title: "समाज समाचार",           href: "#feed" },
   { icon: Calendar,      color: "bg-indigo-100 text-indigo-700",  title: "कार्यक्रम",             href: "/events" },
   { icon: Users,         color: "bg-rose-100 text-rose-700",      title: "कार्यकारिणी",           href: "/karyakarni" },
-  { icon: ClipboardList, color: "bg-orange-100 text-orange-700",  title: "पंजीकरण / सर्वे",       href: "/registration" },
+  { icon: ClipboardList, color: "bg-orange-100 text-orange-700",  title: "पंजीकरण / सर्वे",       href: "/survey" },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════

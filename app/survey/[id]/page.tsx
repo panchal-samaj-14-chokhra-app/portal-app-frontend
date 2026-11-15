@@ -155,7 +155,7 @@ export default function FillFormPage() {
       <div className="text-center space-y-3">
         <AlertCircle className="w-10 h-10 text-red-400 mx-auto" />
         <p className="text-red-600">{error}</p>
-        <Link href="/registration" className="text-orange-600 underline text-sm">वापस जाएं</Link>
+        <Link href="/survey" className="text-orange-600 underline text-sm">वापस जाएं</Link>
       </div>
     </div>
   )
@@ -166,7 +166,7 @@ export default function FillFormPage() {
         <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
         <h2 className="text-xl font-bold text-gray-900">फॉर्म सफलतापूर्वक सबमिट हुआ!</h2>
         <p className="text-gray-500 text-sm">आपकी जानकारी सुरक्षित रूप से दर्ज कर ली गई है।</p>
-        <Link href="/registration" className="inline-block mt-2 px-6 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
+        <Link href="/survey" className="inline-block mt-2 px-6 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
           वापस जाएं
         </Link>
       </div>
@@ -178,7 +178,7 @@ export default function FillFormPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-600 to-orange-500 py-8 px-4">
         <div className="max-w-2xl mx-auto">
-          <Link href="/registration" className="inline-flex items-center gap-1 text-orange-100 text-sm mb-3 hover:text-white">
+          <Link href="/survey" className="inline-flex items-center gap-1 text-orange-100 text-sm mb-3 hover:text-white">
             <ArrowLeft className="w-4 h-4" /> वापस
           </Link>
           {form?.eventName && <p className="text-orange-200 text-xs font-semibold uppercase tracking-wide">{form.eventName}</p>}

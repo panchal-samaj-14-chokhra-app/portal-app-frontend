@@ -59,7 +59,7 @@ export default function RegistrationPage() {
                   </p>
                 </div>
                 <Link
-                  href={`/registration/${form.id}`}
+                  href={`/survey/${form.id}`}
                   className="flex items-center justify-center gap-2 w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm py-2.5 rounded-xl transition-colors"
                 >
                   फॉर्म भरें
