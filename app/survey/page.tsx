@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ClipboardList, Loader2, Calendar, AlertCircle, ArrowRight, Share2, Check } from "lucide-react"
+import { ClipboardList, Loader2, Calendar, AlertCircle, ArrowRight, Share2, Check, Home } from "lucide-react"
 import Link from "next/link"
 import publicRequest from "@/config/public-request"
 import type { SurveyForm } from "@/data-hooks/requests/survey"
@@ -59,7 +59,10 @@ export default function SurveyListPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-600 to-orange-500 py-10 px-4 text-center">
+      <div className="bg-gradient-to-r from-orange-600 to-orange-500 py-10 px-4 text-center relative">
+        <Link href="/" className="absolute left-4 top-4 inline-flex items-center gap-1.5 text-orange-100 hover:text-white text-sm font-medium">
+          <Home className="w-4 h-4" /> होम
+        </Link>
         <div className="flex justify-center mb-3">
           <ClipboardList className="w-10 h-10 text-white" />
         </div>
