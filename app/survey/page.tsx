@@ -1,15 +1,41 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ClipboardList, Loader2, ChevronRight, Calendar, AlertCircle, ArrowRight } from "lucide-react"
+import { ClipboardList, Loader2, Calendar, AlertCircle, ArrowRight, Share2, Check } from "lucide-react"
 import Link from "next/link"
 import publicRequest from "@/config/public-request"
 import type { SurveyForm } from "@/data-hooks/requests/survey"
 
-export default function RegistrationPage() {
+// Generate a readable URL slug from a title
+function toSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[ऀ-ॿ]+/g, (m) => {
+      // transliterate common Hindi words to rough latin for URL readability
+      const map: Record<string, string> = {
+        "पंचाल": "panchal", "पंचल": "panchal", "समाज": "samaj", "चौदह": "choudah",
+        "चोखरा": "chokhra", "प्रतिभा": "pratibha", "सम्मान": "samman",
+        "समारोह": "samaroh", "सर्वे": "survey", "पंजीकरण": "panjikaran",
+        "वार्षिक": "varshik", "अधिवेशन": "adhiveshan",
+      }
+      return map[m] || m.replace(/[^\w]/g, "")
+    })
+    .replace(/[^\w-]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-|-$/g, "")
+    || "form"
+}
+
+function formSlugUrl(form: SurveyForm): string {
+  const slug = toSlug(form.title)
+  return `/survey/${slug}-${form.id}`
+}
+
+export default function SurveyListPage() {
   const [forms, setForms] = useState<SurveyForm[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
     publicRequest.get("/surveys/public")
@@ -17,6 +43,18 @@ export default function RegistrationPage() {
       .catch(() => setError("फॉर्म लोड करने में त्रुटि हुई"))
       .finally(() => setLoading(false))
   }, [])
+
+  const handleShare = (form: SurveyForm) => {
+    const url = `${window.location.origin}${formSlugUrl(form)}`
+    if (navigator.share) {
+      navigator.share({ title: form.title, url })
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopiedId(form.id)
+        setTimeout(() => setCopiedId(null), 2000)
+      })
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
@@ -58,13 +96,24 @@ export default function RegistrationPage() {
                     {new Date(form.createdAt).toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" })}
                   </p>
                 </div>
-                <Link
-                  href={`/survey/${form.id}`}
-                  className="flex items-center justify-center gap-2 w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm py-2.5 rounded-xl transition-colors"
-                >
-                  फॉर्म भरें
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                <div className="flex gap-2">
+                  <Link
+                    href={formSlugUrl(form)}
+                    className="flex items-center justify-center gap-1.5 flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm py-2 rounded-xl transition-colors"
+                  >
+                    फॉर्म भरें <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                  <button
+                    onClick={() => handleShare(form)}
+                    title="शेयर करें"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 border border-orange-200 text-orange-600 hover:bg-orange-50 rounded-xl transition-colors text-sm font-medium"
+                  >
+                    {copiedId === form.id
+                      ? <><Check className="w-4 h-4 text-green-600" /><span className="text-green-600 text-xs">कॉपी!</span></>
+                      : <><Share2 className="w-4 h-4" /><span className="text-xs">शेयर</span></>
+                    }
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -10,8 +10,21 @@ import type { SurveyForm, SurveyQuestion } from "@/data-hooks/requests/survey"
 interface Village { id: string; name: string; district?: string }
 interface Chokhla { id: string; name: string; district?: string }
 
+// cuid is 25 chars starting with 'c'; extract from end of slug URL param
+function extractId(slug: string): string {
+  const parts = slug.split("-")
+  // find last segment that looks like a cuid (starts with 'c', length ~25)
+  for (let i = parts.length - 1; i >= 0; i--) {
+    if (parts[i].length >= 20 && /^[a-z0-9]+$/.test(parts[i])) {
+      return parts.slice(i).join("-")
+    }
+  }
+  return slug
+}
+
 export default function FillFormPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id: slugParam } = useParams<{ id: string }>()
+  const id = extractId(slugParam)
   const router = useRouter()
 
   const [form, setForm] = useState<SurveyForm | null>(null)
