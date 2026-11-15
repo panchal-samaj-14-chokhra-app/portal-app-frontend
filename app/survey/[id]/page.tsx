@@ -7,6 +7,14 @@ import Link from "next/link"
 import publicRequest from "@/config/public-request"
 import type { SurveyForm, SurveyQuestion } from "@/data-hooks/requests/survey"
 
+function isVisible(q: SurveyQuestion, answers: Record<string, string | string[]>): boolean {
+  if (!q.showIf) return true
+  const { questionId, value } = q.showIf
+  const ans = answers[questionId]
+  if (!ans) return false
+  return Array.isArray(ans) ? ans.includes(value) : ans === value
+}
+
 interface Village { id: string; name: string; district?: string }
 interface Chokhla { id: string; name: string; district?: string }
 
@@ -113,8 +121,9 @@ export default function FillFormPage() {
     if (!name.trim()) return setSubmitError("नाम दर्ज करें")
     if (!/^\d{10}$/.test(mobile)) return setSubmitError("सही 10 अंकों का मोबाइल नंबर दर्ज करें")
 
-    // Required question check
+    // Required question check (skip hidden questions)
     for (const q of form?.questions || []) {
+      if (!isVisible(q, answers)) continue
       if (!q.required) continue
       if (q.type === "file_upload") {
         if (!fileUploads[q.id!]?.url) return setSubmitError(`"${q.label}" अनिवार्य है — फ़ाइल अपलोड करें`)
@@ -139,15 +148,17 @@ export default function FillFormPage() {
         email: email.trim() || undefined,
         villageId: selectedVillage || undefined,
         district: district.trim() || undefined,
-        answers: (form?.questions || []).map(q => ({
-          questionId: q.id!,
-          value: q.type === "file_upload"
-            ? undefined
-            : Array.isArray(answers[q.id!])
-              ? (answers[q.id!] as string[]).join(", ")
-              : (answers[q.id!] as string) || "",
-          fileUrl: q.type === "file_upload" ? (fileUploads[q.id!]?.url || undefined) : undefined,
-        })),
+        answers: (form?.questions || [])
+          .filter(q => isVisible(q, answers))
+          .map(q => ({
+            questionId: q.id!,
+            value: q.type === "file_upload"
+              ? undefined
+              : Array.isArray(answers[q.id!])
+                ? (answers[q.id!] as string[]).join(", ")
+                : (answers[q.id!] as string) || "",
+            fileUrl: q.type === "file_upload" ? (fileUploads[q.id!]?.url || undefined) : undefined,
+          })),
       })
       setSubmitted(true)
     } catch (e: any) {
@@ -248,17 +259,20 @@ export default function FillFormPage() {
           {(form?.questions || []).length > 0 && (
             <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-5 shadow-sm">
               <h3 className="font-semibold text-gray-700 text-sm">प्रश्नावली</h3>
-              {form!.questions!.map((q, i) => (
-                <DynamicField
-                key={q.id} question={q} index={i}
-                value={answers[q.id!]}
-                onChange={val => setAnswer(q.id!, val)}
-                onToggle={opt => toggleCheckbox(q.id!, opt)}
-                fileState={fileUploads[q.id!]}
-                onFileChange={file => uploadFile(q.id!, file)}
-                onFileRemove={() => removeFile(q.id!)}
-              />
-              ))}
+              {form!.questions!.map((q, i) => {
+                if (!isVisible(q, answers)) return null
+                return (
+                  <DynamicField
+                    key={q.id} question={q} index={i}
+                    value={answers[q.id!]}
+                    onChange={val => setAnswer(q.id!, val)}
+                    onToggle={opt => toggleCheckbox(q.id!, opt)}
+                    fileState={fileUploads[q.id!]}
+                    onFileChange={file => uploadFile(q.id!, file)}
+                    onFileRemove={() => removeFile(q.id!)}
+                  />
+                )
+              })}
             </div>
           )}
 

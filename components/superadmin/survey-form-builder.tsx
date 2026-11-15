@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Eye, Save, X } from "lucide-react"
+import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Eye, Save, X, GitBranch } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import type { SurveyQuestion, QuestionType } from "@/data-hooks/requests/survey"
+import type { SurveyQuestion, QuestionType, ShowIf } from "@/data-hooks/requests/survey"
 
 const QUESTION_TYPES: { value: QuestionType; label: string; hasOptions: boolean }[] = [
   { value: "short_answer",    label: "लघु उत्तर",        hasOptions: false },
@@ -168,6 +168,7 @@ export default function SurveyFormBuilder({
                 <span className="flex-1 text-sm text-gray-800 truncate">{q.label || <span className="text-gray-400 italic">प्रश्न का लेबल</span>}</span>
                 <Badge variant="outline" className="text-xs flex-shrink-0">{typeMeta.label}</Badge>
                 {q.required && <Badge className="text-xs bg-red-100 text-red-700 border-red-200 flex-shrink-0">अनिवार्य</Badge>}
+                {q.showIf && <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex-shrink-0">शर्त</Badge>}
                 <div className="flex gap-1 flex-shrink-0">
                   <button onClick={e => { e.stopPropagation(); moveQuestion(idx, idx - 1) }} className="p-1 hover:bg-gray-100 rounded" title="ऊपर">
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -236,6 +237,62 @@ export default function SurveyFormBuilder({
                     />
                     <Label htmlFor={`req-${idx}`} className="text-sm cursor-pointer">अनिवार्य प्रश्न</Label>
                   </div>
+
+                  {/* Conditional logic — only when previous questions with IDs + options exist */}
+                  {(() => {
+                    const eligible = questions.slice(0, idx).filter(
+                      pq => pq.id && ["multiple_choice", "dropdown", "checkboxes"].includes(pq.type) && (pq.options || []).length > 0
+                    )
+                    if (!eligible.length) return null
+                    const refQ = q.showIf ? questions.find(pq => pq.id === q.showIf!.questionId) : null
+                    return (
+                      <div className="pt-1 border-t border-gray-100">
+                        <div className="flex items-center gap-2 mb-2">
+                          <GitBranch className="w-3.5 h-3.5 text-gray-400" />
+                          <Label className="text-xs font-semibold text-gray-600">शर्त (Condition)</Label>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Switch
+                            checked={!!q.showIf}
+                            onCheckedChange={v => updateQuestion(idx, { showIf: v ? { questionId: eligible[0].id!, value: "" } : null })}
+                            id={`cond-${idx}`}
+                          />
+                          <Label htmlFor={`cond-${idx}`} className="text-sm cursor-pointer">शर्त पर दिखाएं</Label>
+                        </div>
+                        {q.showIf && (
+                          <div className="space-y-2 pl-3 border-l-2 border-orange-200">
+                            <div>
+                              <Label className="text-xs text-gray-500">जब यह प्रश्न</Label>
+                              <select
+                                value={q.showIf.questionId}
+                                onChange={e => updateQuestion(idx, { showIf: { questionId: e.target.value, value: "" } })}
+                                className="mt-1 w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                              >
+                                {eligible.map(pq => (
+                                  <option key={pq.id} value={pq.id!}>
+                                    {questions.indexOf(pq) + 1}. {pq.label || "अनाम प्रश्न"}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">का मान हो</Label>
+                              <select
+                                value={q.showIf.value}
+                                onChange={e => updateQuestion(idx, { showIf: { ...q.showIf!, value: e.target.value } })}
+                                className="mt-1 w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                              >
+                                <option value="">— विकल्प चुनें —</option>
+                                {(refQ?.options || []).map((opt, oi) => (
+                                  <option key={oi} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </div>

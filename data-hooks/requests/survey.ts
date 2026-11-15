@@ -12,12 +12,18 @@ export type QuestionType =
   | "phone"
   | "email"
 
+export interface ShowIf {
+  questionId: string
+  value: string
+}
+
 export interface SurveyQuestion {
   id?: string
   formId?: string
   label: string
   type: QuestionType
   options?: string[] | null
+  showIf?: ShowIf | null
   required: boolean
   order?: number
 }
