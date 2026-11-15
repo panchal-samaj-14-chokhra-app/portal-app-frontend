@@ -11,7 +11,7 @@ import {
 } from "@/data-hooks/mutation-query/useQueryAndMutation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart, Newspaper, BookOpen } from "lucide-react"
+import { LogOut, Home, Building2, Users, User, Menu, Vote, FileText, Landmark, Briefcase, Heart, Newspaper, BookOpen, ClipboardList } from "lucide-react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -43,6 +43,7 @@ import AddUserForm from "@/components/superadmin/add-user-form"
 import Polls from "@/components/superadmin/polls"
 import SamajContentPage from "@/app/admin/superadmin/samaj-content/page"
 import NiyamavaliManagement from "@/components/superadmin/niyamavali-management"
+import SurveyManagement from "@/components/superadmin/survey-management"
 
 
 const SIDEBAR_TABS = [
@@ -57,6 +58,7 @@ const SIDEBAR_TABS = [
   { key: "matrimonial", label: "वैवाहिक", icon: Heart, shortLabel: "वैवाहिक" },
   { key: "samaj-portal", label: "समाज पोर्टल", icon: Newspaper, shortLabel: "पोर्टल" },
   { key: "niyamavali", label: "नियमावली", icon: BookOpen, shortLabel: "नियम" },
+  { key: "surveys", label: "सर्वे / फॉर्म", icon: ClipboardList, shortLabel: "सर्वे" },
 ]
 
 interface CreatedData {
@@ -265,6 +267,8 @@ function SuperAdmin() {
         return <SamajContentPage />
       case "niyamavali":
         return <NiyamavaliManagement />
+      case "surveys":
+        return <SurveyManagement />
       default:
         return null
     }
