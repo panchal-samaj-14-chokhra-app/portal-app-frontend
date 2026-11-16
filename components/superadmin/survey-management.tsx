@@ -130,6 +130,10 @@ export default function SurveyManagement() {
         )
         .map((q: any) => ({ id: q.id, label: q.label, options: q.options as string[] }))
 
+    // Permanent filter options from actual response data
+    const villages = [...new Set(responses.map((r: any) => r.village?.name).filter(Boolean))] as string[]
+    const districts = [...new Set(responses.map((r: any) => r.district).filter(Boolean))] as string[]
+
     // Clear all helper
     const hasFilters = search || filterDateFrom || filterDateTo || Object.values(filterQ).some(Boolean)
     const clearAll = () => { setSearch(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterQ({}); setPage(1) }
@@ -138,10 +142,12 @@ export default function SurveyManagement() {
     const filtered = responses.filter((r: any) => {
       const q = search.toLowerCase()
       if (q && !r.respondentName.toLowerCase().includes(q) && !r.mobileNumber.includes(q)) return false
+      if (filterQ["__village"] && r.village?.name !== filterQ["__village"]) return false
+      if (filterQ["__district"] && r.district !== filterQ["__district"]) return false
       if (filterDateFrom && new Date(r.submittedAt).toLocaleDateString("en-CA") < filterDateFrom) return false
       if (filterDateTo && new Date(r.submittedAt).toLocaleDateString("en-CA") > filterDateTo) return false
       for (const [qId, val] of Object.entries(filterQ)) {
-        if (!val) continue
+        if (!val || qId.startsWith("__")) continue
         const ans = r.answers.find((a: any) => a.questionId === qId)
         if (!ans || ans.value !== val) return false
       }
@@ -208,19 +214,43 @@ export default function SurveyManagement() {
                   placeholder="नाम या मोबाइल से खोजें..."
                   className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
               </div>
-              {/* Dynamic question filters */}
+              {/* Permanent filters: village + district */}
+              <div className="grid grid-cols-2 gap-2">
+                <select value={filterQ["__village"] || ""}
+                  onChange={e => { setFilterQ(prev => ({ ...prev, __village: e.target.value })); setPage(1) }}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                  <option value="">सभी गाँव</option>
+                  {villages.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+                <select value={filterQ["__district"] || ""}
+                  onChange={e => { setFilterQ(prev => ({ ...prev, __district: e.target.value })); setPage(1) }}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                  <option value="">सभी जिले</option>
+                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              {/* Dynamic question filters — auto-generated from this form's dropdown/radio/checkbox questions */}
               {filterableQs.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {filterableQs.map(fq => (
-                    <select key={fq.id}
-                      value={filterQ[fq.id] || ""}
-                      onChange={e => { setFilterQ(prev => ({ ...prev, [fq.id]: e.target.value })); setPage(1) }}
-                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 truncate">
-                      <option value="">सभी — {fq.label}</option>
-                      {fq.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  ))}
-                </div>
+                <>
+                  <div className="flex items-center gap-2 pt-1">
+                    <div className="h-px flex-1 bg-gray-100" />
+                    <span className="text-[10px] text-gray-400 font-medium px-1 whitespace-nowrap">
+                      ↓ इस फॉर्म के अनुसार फ़िल्टर (हर सर्वे में अलग)
+                    </span>
+                    <div className="h-px flex-1 bg-gray-100" />
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {filterableQs.map(fq => (
+                      <select key={fq.id}
+                        value={filterQ[fq.id] || ""}
+                        onChange={e => { setFilterQ(prev => ({ ...prev, [fq.id]: e.target.value })); setPage(1) }}
+                        className="border border-orange-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50/40">
+                        <option value="">सभी — {fq.label}</option>
+                        {fq.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    ))}
+                  </div>
+                </>
               )}
               {/* Date range */}
               <div className="grid grid-cols-2 gap-2">
