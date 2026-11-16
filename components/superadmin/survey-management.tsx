@@ -33,8 +33,7 @@ export default function SurveyManagement() {
   const [responsesFormId, setResponsesFormId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [search, setSearch] = useState("")
-  const [filterVillage, setFilterVillage] = useState("")
-  const [filterDistrict, setFilterDistrict] = useState("")
+  const [filterQ, setFilterQ] = useState<Record<string, string>>({})
   const [filterDateFrom, setFilterDateFrom] = useState("")
   const [filterDateTo, setFilterDateTo] = useState("")
   const [page, setPage] = useState(1)
@@ -52,6 +51,12 @@ export default function SurveyManagement() {
     queryKey: ["survey-responses", responsesFormId],
     queryFn: () => fetchFormResponses(responsesFormId!),
     enabled: !!responsesFormId,
+  })
+
+  const { data: responsesForm } = useQuery({
+    queryKey: ["survey-form", responsesFormId],
+    queryFn: () => fetchAdminForm(responsesFormId!),
+    enabled: !!responsesFormId && view === "responses",
   })
 
   const createMut = useMutation({
@@ -115,18 +120,31 @@ export default function SurveyManagement() {
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
     const weekCount = responses.filter((r: any) => new Date(r.submittedAt) >= weekAgo).length
 
-    // Unique filter options
-    const villages = [...new Set(responses.map((r: any) => r.village?.name).filter(Boolean))] as string[]
-    const districts = [...new Set(responses.map((r: any) => r.district).filter(Boolean))] as string[]
+    // Dynamic filterable questions: dropdown/radio/checkbox with options
+    const filterableQs: { id: string; label: string; options: string[] }[] =
+      (responsesForm?.questions || [])
+        .filter((q: any) =>
+          ["dropdown", "radio", "checkbox", "mcq", "select"].includes(q.type) &&
+          Array.isArray(q.options) && q.options.length > 0 &&
+          !q.showIf  // only top-level questions as primary filters
+        )
+        .map((q: any) => ({ id: q.id, label: q.label, options: q.options as string[] }))
+
+    // Clear all helper
+    const hasFilters = search || filterDateFrom || filterDateTo || Object.values(filterQ).some(Boolean)
+    const clearAll = () => { setSearch(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterQ({}); setPage(1) }
 
     // Filter + search
     const filtered = responses.filter((r: any) => {
       const q = search.toLowerCase()
       if (q && !r.respondentName.toLowerCase().includes(q) && !r.mobileNumber.includes(q)) return false
-      if (filterVillage && r.village?.name !== filterVillage) return false
-      if (filterDistrict && r.district !== filterDistrict) return false
       if (filterDateFrom && new Date(r.submittedAt).toLocaleDateString("en-CA") < filterDateFrom) return false
       if (filterDateTo && new Date(r.submittedAt).toLocaleDateString("en-CA") > filterDateTo) return false
+      for (const [qId, val] of Object.entries(filterQ)) {
+        if (!val) continue
+        const ans = r.answers.find((a: any) => a.questionId === qId)
+        if (!ans || ans.value !== val) return false
+      }
       return true
     })
 
@@ -143,7 +161,7 @@ export default function SurveyManagement() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => { setView("list"); setResponsesFormId(null); setSearch(""); setFilterVillage(""); setFilterDistrict(""); setFilterDateFrom(""); setFilterDateTo(""); setPage(1) }}>
+          <Button variant="outline" size="sm" onClick={() => { setView("list"); setResponsesFormId(null); setSearch(""); setFilterQ({}); setFilterDateFrom(""); setFilterDateTo(""); setPage(1) }}>
             <ArrowLeft className="w-4 h-4 mr-1" /> वापस
           </Button>
           <h2 className="text-base font-bold text-gray-800 flex-1 truncate">{form?.title}</h2>
@@ -180,9 +198,8 @@ export default function SurveyManagement() {
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span className="text-sm font-medium text-gray-600">फ़िल्टर करें</span>
-                {(search || filterVillage || filterDistrict || filterDateFrom || filterDateTo) && (
-                  <button onClick={() => { setSearch(""); setFilterVillage(""); setFilterDistrict(""); setFilterDateFrom(""); setFilterDateTo(""); setPage(1) }}
-                    className="ml-auto text-xs text-orange-600 hover:underline">सभी हटाएं</button>
+                {hasFilters && (
+                  <button onClick={clearAll} className="ml-auto text-xs text-orange-600 hover:underline">सभी हटाएं</button>
                 )}
               </div>
               <div className="relative">
@@ -191,17 +208,22 @@ export default function SurveyManagement() {
                   placeholder="नाम या मोबाइल से खोजें..."
                   className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <select value={filterVillage} onChange={e => { setFilterVillage(e.target.value); setPage(1) }}
-                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-                  <option value="">सभी गाँव</option>
-                  {villages.map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
-                <select value={filterDistrict} onChange={e => { setFilterDistrict(e.target.value); setPage(1) }}
-                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-                  <option value="">सभी जिले</option>
-                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+              {/* Dynamic question filters */}
+              {filterableQs.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {filterableQs.map(fq => (
+                    <select key={fq.id}
+                      value={filterQ[fq.id] || ""}
+                      onChange={e => { setFilterQ(prev => ({ ...prev, [fq.id]: e.target.value })); setPage(1) }}
+                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 truncate">
+                      <option value="">सभी — {fq.label}</option>
+                      {fq.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  ))}
+                </div>
+              )}
+              {/* Date range */}
+              <div className="grid grid-cols-2 gap-2">
                 <input type="date" value={filterDateFrom} onChange={e => { setFilterDateFrom(e.target.value); setPage(1) }}
                   className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
                 <input type="date" value={filterDateTo} onChange={e => { setFilterDateTo(e.target.value); setPage(1) }}
