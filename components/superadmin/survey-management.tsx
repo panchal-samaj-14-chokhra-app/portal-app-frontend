@@ -1,16 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  Plus, Edit2, Trash2, Eye, BarChart2, Globe, EyeOff, Loader2,
-  Download, ArrowLeft, CheckCircle, XCircle,
+  Plus, Edit2, Trash2, BarChart2, Globe, EyeOff, Loader2,
+  Download, ArrowLeft, Search, Filter, ChevronLeft, ChevronRight,
+  Users, CalendarDays, TrendingUp, ExternalLink,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
@@ -23,6 +22,8 @@ import {
 } from "@/data-hooks/requests/survey"
 import SurveyFormBuilder from "./survey-form-builder"
 
+const PAGE_SIZE = 20
+
 type View = "list" | "builder" | "responses"
 
 export default function SurveyManagement() {
@@ -31,6 +32,13 @@ export default function SurveyManagement() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [responsesFormId, setResponsesFormId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+  const [filterVillage, setFilterVillage] = useState("")
+  const [filterDistrict, setFilterDistrict] = useState("")
+  const [filterDateFrom, setFilterDateFrom] = useState("")
+  const [filterDateTo, setFilterDateTo] = useState("")
+  const [page, setPage] = useState(1)
+  const [expandedRow, setExpandedRow] = useState<string | null>(null)
 
   const { data: forms = [], isLoading } = useQuery({ queryKey: ["survey-forms"], queryFn: fetchAdminForms })
 
@@ -98,13 +106,47 @@ export default function SurveyManagement() {
   // ── Responses view ────────────────────────────────────────────────────────────
   if (view === "responses" && responsesFormId) {
     const form = forms.find(f => f.id === responsesFormId)
+
+    // Analytics
+    const today = new Date().toLocaleDateString("en-CA")
+    const todayCount = responses.filter((r: any) =>
+      new Date(r.submittedAt).toLocaleDateString("en-CA") === today
+    ).length
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
+    const weekCount = responses.filter((r: any) => new Date(r.submittedAt) >= weekAgo).length
+
+    // Unique filter options
+    const villages = [...new Set(responses.map((r: any) => r.village?.name).filter(Boolean))] as string[]
+    const districts = [...new Set(responses.map((r: any) => r.district).filter(Boolean))] as string[]
+
+    // Filter + search
+    const filtered = responses.filter((r: any) => {
+      const q = search.toLowerCase()
+      if (q && !r.respondentName.toLowerCase().includes(q) && !r.mobileNumber.includes(q)) return false
+      if (filterVillage && r.village?.name !== filterVillage) return false
+      if (filterDistrict && r.district !== filterDistrict) return false
+      if (filterDateFrom && new Date(r.submittedAt).toLocaleDateString("en-CA") < filterDateFrom) return false
+      if (filterDateTo && new Date(r.submittedAt).toLocaleDateString("en-CA") > filterDateTo) return false
+      return true
+    })
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+    const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+    // Question columns from first response
+    const questionCols: { id: string; label: string }[] = responses[0]?.answers?.map((a: any) => ({
+      id: a.questionId, label: a.question?.label || a.questionId
+    })) || []
+
     return (
       <div className="space-y-4">
+        {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => { setView("list"); setResponsesFormId(null) }}>
+          <Button variant="outline" size="sm" onClick={() => { setView("list"); setResponsesFormId(null); setSearch(""); setFilterVillage(""); setFilterDistrict(""); setFilterDateFrom(""); setFilterDateTo(""); setPage(1) }}>
             <ArrowLeft className="w-4 h-4 mr-1" /> वापस
           </Button>
-          <h2 className="text-lg font-bold text-gray-800 flex-1">{form?.title} — प्रतिक्रियाएं ({responses.length})</h2>
+          <h2 className="text-base font-bold text-gray-800 flex-1 truncate">{form?.title}</h2>
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={!responses.length}>
             <Download className="w-4 h-4 mr-1" /> CSV
           </Button>
@@ -112,35 +154,157 @@ export default function SurveyManagement() {
 
         {loadingResponses ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div>
-        ) : !responses.length ? (
-          <div className="text-center py-16 text-gray-400">अभी कोई प्रतिक्रिया नहीं मिली</div>
         ) : (
-          <div className="space-y-4">
-            {responses.map((r: any, ri: number) => (
-              <div key={r.id} className="border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
-                  <div>
-                    <p className="font-semibold text-gray-900">{r.respondentName}</p>
-                    <p className="text-sm text-gray-500">{r.mobileNumber} {r.email ? `· ${r.email}` : ""}</p>
-                    <p className="text-sm text-gray-500">{r.village?.name || ""} {r.district ? `· ${r.district}` : ""}</p>
-                  </div>
-                  <span className="text-xs text-gray-400">{new Date(r.submittedAt).toLocaleString("hi-IN")}</span>
-                </div>
-                <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
-                  {r.answers.map((a: any) => (
-                    <div key={a.id} className="text-sm">
-                      <span className="font-medium text-gray-600">{a.question?.label}: </span>
-                      {a.fileUrl ? (
-                        <a href={a.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">फ़ाइल देखें</a>
-                      ) : (
-                        <span className="text-gray-800">{a.value || "—"}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          <>
+            {/* Analytics cards */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 text-center">
+                <Users className="w-5 h-5 text-orange-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-orange-700">{responses.length}</p>
+                <p className="text-xs text-gray-500">कुल प्रतिक्रियाएं</p>
               </div>
-            ))}
-          </div>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center">
+                <CalendarDays className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-blue-700">{todayCount}</p>
+                <p className="text-xs text-gray-500">आज</p>
+              </div>
+              <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center">
+                <TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-green-700">{weekCount}</p>
+                <p className="text-xs text-gray-500">इस सप्ताह</p>
+              </div>
+            </div>
+
+            {/* Search + Filters */}
+            <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className="text-sm font-medium text-gray-600">फ़िल्टर करें</span>
+                {(search || filterVillage || filterDistrict || filterDateFrom || filterDateTo) && (
+                  <button onClick={() => { setSearch(""); setFilterVillage(""); setFilterDistrict(""); setFilterDateFrom(""); setFilterDateTo(""); setPage(1) }}
+                    className="ml-auto text-xs text-orange-600 hover:underline">सभी हटाएं</button>
+                )}
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+                  placeholder="नाम या मोबाइल से खोजें..."
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <select value={filterVillage} onChange={e => { setFilterVillage(e.target.value); setPage(1) }}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                  <option value="">सभी गाँव</option>
+                  {villages.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+                <select value={filterDistrict} onChange={e => { setFilterDistrict(e.target.value); setPage(1) }}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                  <option value="">सभी जिले</option>
+                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                <input type="date" value={filterDateFrom} onChange={e => { setFilterDateFrom(e.target.value); setPage(1) }}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+                <input type="date" value={filterDateTo} onChange={e => { setFilterDateTo(e.target.value); setPage(1) }}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+              </div>
+              <p className="text-xs text-gray-400">{filtered.length} परिणाम मिले</p>
+            </div>
+
+            {/* Table */}
+            {!filtered.length ? (
+              <div className="text-center py-12 text-gray-400">कोई प्रतिक्रिया नहीं मिली</div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs w-8">#</th>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[120px]">नाम</th>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[100px]">मोबाइल</th>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[80px]">गाँव</th>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[80px]">जिला</th>
+                        {questionCols.map(q => (
+                          <th key={q.id} className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[120px] max-w-[180px]">
+                            <span className="line-clamp-2">{q.label}</span>
+                          </th>
+                        ))}
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[90px]">दिनांक</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {pageData.map((r: any, i: number) => {
+                        const answerMap: Record<string, any> = {}
+                        r.answers.forEach((a: any) => { answerMap[a.questionId] = a })
+                        return (
+                          <tr key={r.id} className="hover:bg-orange-50/40 cursor-pointer transition-colors"
+                            onClick={() => setExpandedRow(expandedRow === r.id ? null : r.id)}>
+                            <td className="px-3 py-2.5 text-gray-400 text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                            <td className="px-3 py-2.5 font-medium text-gray-900">{r.respondentName}</td>
+                            <td className="px-3 py-2.5 text-gray-600">{r.mobileNumber}</td>
+                            <td className="px-3 py-2.5 text-gray-600">{r.village?.name || "—"}</td>
+                            <td className="px-3 py-2.5 text-gray-600">{r.district || "—"}</td>
+                            {questionCols.map(q => {
+                              const a = answerMap[q.id]
+                              return (
+                                <td key={q.id} className="px-3 py-2.5 text-gray-700 max-w-[180px]">
+                                  {a?.fileUrl ? (
+                                    <a href={a.fileUrl} target="_blank" rel="noopener noreferrer"
+                                      onClick={e => e.stopPropagation()}
+                                      className="text-blue-600 underline flex items-center gap-1 text-xs">
+                                      <ExternalLink className="w-3 h-3" /> फ़ाइल
+                                    </a>
+                                  ) : (
+                                    <span className="line-clamp-2 text-xs">{a?.value || "—"}</span>
+                                  )}
+                                </td>
+                              )
+                            })}
+                            <td className="px-3 py-2.5 text-gray-400 text-xs whitespace-nowrap">
+                              {new Date(r.submittedAt).toLocaleDateString("hi-IN")}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+                    <span className="text-xs text-gray-500">
+                      {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                        .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                          if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("...")
+                          acc.push(p); return acc
+                        }, [])
+                        .map((p, i) => p === "..." ? (
+                          <span key={i} className="px-1 text-gray-400 text-xs">…</span>
+                        ) : (
+                          <Button key={p} size="icon" variant={p === page ? "default" : "ghost"}
+                            className={`h-7 w-7 text-xs ${p === page ? "bg-orange-600 hover:bg-orange-700 text-white" : ""}`}
+                            onClick={() => setPage(p as number)}>
+                            {p}
+                          </Button>
+                        ))
+                      }
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     )
