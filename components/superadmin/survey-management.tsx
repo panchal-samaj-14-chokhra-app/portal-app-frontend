@@ -132,7 +132,7 @@ export default function SurveyManagement() {
 
     // Permanent filter options from actual response data
     const villages = [...new Set(responses.map((r: any) => r.village?.name).filter(Boolean))] as string[]
-    const districts = [...new Set(responses.map((r: any) => r.district).filter(Boolean))] as string[]
+    const chokhlas = [...new Set(responses.map((r: any) => r.village?.chokhla).filter(Boolean))] as string[]
 
     // Clear all helper
     const hasFilters = search || filterDateFrom || filterDateTo || Object.values(filterQ).some(Boolean)
@@ -143,7 +143,7 @@ export default function SurveyManagement() {
       const q = search.toLowerCase()
       if (q && !r.respondentName.toLowerCase().includes(q) && !r.mobileNumber.includes(q)) return false
       if (filterQ["__village"] && r.village?.name !== filterQ["__village"]) return false
-      if (filterQ["__district"] && r.district !== filterQ["__district"]) return false
+      if (filterQ["__chokhla"] && r.village?.chokhla !== filterQ["__chokhla"]) return false
       if (filterDateFrom && new Date(r.submittedAt).toLocaleDateString("en-CA") < filterDateFrom) return false
       if (filterDateTo && new Date(r.submittedAt).toLocaleDateString("en-CA") > filterDateTo) return false
       for (const [qId, val] of Object.entries(filterQ)) {
@@ -222,11 +222,11 @@ export default function SurveyManagement() {
                   <option value="">सभी गाँव</option>
                   {villages.map(v => <option key={v} value={v}>{v}</option>)}
                 </select>
-                <select value={filterQ["__district"] || ""}
-                  onChange={e => { setFilterQ(prev => ({ ...prev, __district: e.target.value })); setPage(1) }}
+                <select value={filterQ["__chokhla"] || ""}
+                  onChange={e => { setFilterQ(prev => ({ ...prev, __chokhla: e.target.value })); setPage(1) }}
                   className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-                  <option value="">सभी जिले</option>
-                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                  <option value="">सभी चौखला</option>
+                  {chokhlas.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               {/* Dynamic question filters — auto-generated from this form's dropdown/radio/checkbox questions */}
