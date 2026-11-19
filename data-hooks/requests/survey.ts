@@ -92,6 +92,10 @@ export const fetchFormResponses = async (id: string, params?: Record<string, str
   return data
 }
 
+export const deleteFormResponse = async (formId: string, responseId: string): Promise<void> => {
+  await request.delete(`/surveys/${formId}/responses/${responseId}`)
+}
+
 // ── Public ─────────────────────────────────────────────────────────────────────
 
 export const fetchPublishedForms = async (): Promise<SurveyForm[]> => {

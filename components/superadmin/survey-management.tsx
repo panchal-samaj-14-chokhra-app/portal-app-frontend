@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Plus, Edit2, Trash2, BarChart2, Globe, EyeOff, Loader2,
   Download, ArrowLeft, Search, Filter, ChevronLeft, ChevronRight,
-  Users, CalendarDays, TrendingUp, ExternalLink,
+  Users, CalendarDays, TrendingUp, ExternalLink, Eye, X, FileText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
   fetchAdminForms, fetchAdminForm, createSurveyForm, updateSurveyForm,
-  saveSurveyQuestions, deleteSurveyForm, fetchFormResponses,
+  saveSurveyQuestions, deleteSurveyForm, fetchFormResponses, deleteFormResponse,
   type SurveyForm, type SurveyQuestion,
 } from "@/data-hooks/requests/survey"
 import SurveyFormBuilder from "./survey-form-builder"
@@ -37,7 +37,8 @@ export default function SurveyManagement() {
   const [filterDateFrom, setFilterDateFrom] = useState("")
   const [filterDateTo, setFilterDateTo] = useState("")
   const [page, setPage] = useState(1)
-  const [expandedRow, setExpandedRow] = useState<string | null>(null)
+  const [viewingResponse, setViewingResponse] = useState<any | null>(null)
+  const [deleteResponseId, setDeleteResponseId] = useState<string | null>(null)
 
   const { data: forms = [], isLoading } = useQuery({ queryKey: ["survey-forms"], queryFn: fetchAdminForms })
 
@@ -91,15 +92,30 @@ export default function SurveyManagement() {
     else createMut.mutate({ meta, questions })
   }
 
+  const deleteResponseMut = useMutation({
+    mutationFn: (responseId: string) => deleteFormResponse(responsesFormId!, responseId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["survey-responses", responsesFormId] })
+      qc.invalidateQueries({ queryKey: ["survey-forms"] })
+      setDeleteResponseId(null)
+      if (viewingResponse && viewingResponse.id === deleteResponseId) setViewingResponse(null)
+    },
+  })
+
   const exportCsv = () => {
     if (!responses.length) return
     const form = forms.find(f => f.id === responsesFormId)
-    const questions = responses[0]?.answers?.map((a: any) => a.question?.label) || []
-    const headers = ["नाम", "मोबाइल", "ईमेल", "गाँव", "जिला", "दिनांक", ...questions]
+    const qLabels = responses[0]?.answers?.map((a: any) => a.question?.label || a.questionId) || []
+    const headers = ["नाम", "मोबाइल", "ईमेल", "चोखला", "गाँव", "जिला", "दिनांक", ...qLabels]
     const rows = responses.map((r: any) => [
-      r.respondentName, r.mobileNumber, r.email || "", r.village?.name || "", r.district || "",
+      r.respondentName,
+      r.mobileNumber,
+      r.email || "",
+      r.chokhlaName || r.village?.chakola?.name || "",
+      r.village?.name || "",
+      r.district || "",
       new Date(r.submittedAt).toLocaleDateString("hi-IN"),
-      ...r.answers.map((a: any) => a.value || a.fileUrl || ""),
+      ...r.answers.map((a: any) => a.fileUrl ? a.fileUrl : (a.value || "")),
     ])
     const csv = [headers, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n")
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" })
@@ -120,30 +136,41 @@ export default function SurveyManagement() {
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
     const weekCount = responses.filter((r: any) => new Date(r.submittedAt) >= weekAgo).length
 
-    // Dynamic filterable questions: dropdown/radio/checkbox with options
+    // All question cols with type (from first response's answers, ordered by question.order)
+    const allQuestionCols: { id: string; label: string; type: string }[] =
+      responses[0]?.answers?.map((a: any) => ({
+        id: a.questionId,
+        label: a.question?.label || a.questionId,
+        type: a.question?.type || "short_answer",
+      })) || []
+
+    // Key summary cols: first non-file text answer + first dropdown answer
+    const keyTextCol  = allQuestionCols.find(q => q.type !== "file_upload")
+    const keyDropCol  = allQuestionCols.find(q => q.type === "dropdown" || q.type === "multiple_choice")
+
+    // Dynamic filterable questions (top-level dropdowns only)
     const filterableQs: { id: string; label: string; options: string[] }[] =
       (responsesForm?.questions || [])
         .filter((q: any) =>
-          ["dropdown", "radio", "checkbox", "mcq", "select"].includes(q.type) &&
-          Array.isArray(q.options) && q.options.length > 0 &&
-          !q.showIf  // only top-level questions as primary filters
+          ["dropdown", "multiple_choice"].includes(q.type) &&
+          Array.isArray(q.options) && q.options.length > 0 && !q.showIf
         )
         .map((q: any) => ({ id: q.id, label: q.label, options: q.options as string[] }))
 
-    // Permanent filter options from actual response data
+    // Filter options from actual data — now using chakola (fixed!)
     const villages = [...new Set(responses.map((r: any) => r.village?.name).filter(Boolean))] as string[]
-    const chokhlas = [...new Set(responses.map((r: any) => r.village?.chokhla).filter(Boolean))] as string[]
+    const getChokhla = (r: any) => r.chokhlaName || r.village?.chakola?.name || ""
+    const chokhlas = [...new Set(responses.map(getChokhla).filter(Boolean))] as string[]
 
-    // Clear all helper
     const hasFilters = search || filterDateFrom || filterDateTo || Object.values(filterQ).some(Boolean)
     const clearAll = () => { setSearch(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterQ({}); setPage(1) }
 
-    // Filter + search
+    // Filter + search — chokhla now uses chakola.name
     const filtered = responses.filter((r: any) => {
       const q = search.toLowerCase()
       if (q && !r.respondentName.toLowerCase().includes(q) && !r.mobileNumber.includes(q)) return false
       if (filterQ["__village"] && r.village?.name !== filterQ["__village"]) return false
-      if (filterQ["__chokhla"] && r.village?.chokhla !== filterQ["__chokhla"]) return false
+      if (filterQ["__chokhla"] && getChokhla(r) !== filterQ["__chokhla"]) return false
       if (filterDateFrom && new Date(r.submittedAt).toLocaleDateString("en-CA") < filterDateFrom) return false
       if (filterDateTo && new Date(r.submittedAt).toLocaleDateString("en-CA") > filterDateTo) return false
       for (const [qId, val] of Object.entries(filterQ)) {
@@ -154,20 +181,17 @@ export default function SurveyManagement() {
       return true
     })
 
-    // Pagination
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
     const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-    // Question columns from first response
-    const questionCols: { id: string; label: string }[] = responses[0]?.answers?.map((a: any) => ({
-      id: a.questionId, label: a.question?.label || a.questionId
-    })) || []
 
     return (
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => { setView("list"); setResponsesFormId(null); setSearch(""); setFilterQ({}); setFilterDateFrom(""); setFilterDateTo(""); setPage(1) }}>
+          <Button variant="outline" size="sm" onClick={() => {
+            setView("list"); setResponsesFormId(null);
+            setSearch(""); setFilterQ({}); setFilterDateFrom(""); setFilterDateTo(""); setPage(1)
+          }}>
             <ArrowLeft className="w-4 h-4 mr-1" /> वापस
           </Button>
           <h2 className="text-base font-bold text-gray-800 flex-1 truncate">{form?.title}</h2>
@@ -214,7 +238,6 @@ export default function SurveyManagement() {
                   placeholder="नाम या मोबाइल से खोजें..."
                   className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
               </div>
-              {/* Permanent filters: village + district */}
               <div className="grid grid-cols-2 gap-2">
                 <select value={filterQ["__village"] || ""}
                   onChange={e => { setFilterQ(prev => ({ ...prev, __village: e.target.value })); setPage(1) }}
@@ -225,34 +248,22 @@ export default function SurveyManagement() {
                 <select value={filterQ["__chokhla"] || ""}
                   onChange={e => { setFilterQ(prev => ({ ...prev, __chokhla: e.target.value })); setPage(1) }}
                   className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-                  <option value="">सभी चौखला</option>
+                  <option value="">सभी चोखरा</option>
                   {chokhlas.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              {/* Dynamic question filters — auto-generated from this form's dropdown/radio/checkbox questions */}
               {filterableQs.length > 0 && (
-                <>
-                  <div className="flex items-center gap-2 pt-1">
-                    <div className="h-px flex-1 bg-gray-100" />
-                    <span className="text-[10px] text-gray-400 font-medium px-1 whitespace-nowrap">
-                      ↓ इस फॉर्म के अनुसार फ़िल्टर (हर सर्वे में अलग)
-                    </span>
-                    <div className="h-px flex-1 bg-gray-100" />
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {filterableQs.map(fq => (
-                      <select key={fq.id}
-                        value={filterQ[fq.id] || ""}
-                        onChange={e => { setFilterQ(prev => ({ ...prev, [fq.id]: e.target.value })); setPage(1) }}
-                        className="border border-orange-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50/40">
-                        <option value="">सभी — {fq.label}</option>
-                        {fq.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
-                    ))}
-                  </div>
-                </>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {filterableQs.map(fq => (
+                    <select key={fq.id} value={filterQ[fq.id] || ""}
+                      onChange={e => { setFilterQ(prev => ({ ...prev, [fq.id]: e.target.value })); setPage(1) }}
+                      className="border border-orange-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50/40">
+                      <option value="">सभी — {fq.label}</option>
+                      {fq.options.filter(Boolean).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  ))}
+                </div>
               )}
-              {/* Date range */}
               <div className="grid grid-cols-2 gap-2">
                 <input type="date" value={filterDateFrom} onChange={e => { setFilterDateFrom(e.target.value); setPage(1) }}
                   className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
@@ -272,16 +283,21 @@ export default function SurveyManagement() {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs w-8">#</th>
-                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[120px]">नाम</th>
-                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[100px]">मोबाइल</th>
-                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[80px]">गाँव</th>
-                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[80px]">जिला</th>
-                        {questionCols.map(q => (
-                          <th key={q.id} className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[120px] max-w-[180px]">
-                            <span className="line-clamp-2">{q.label}</span>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[130px]">नाम</th>
+                        {keyTextCol && (
+                          <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[120px]">
+                            <span className="line-clamp-1">{keyTextCol.label}</span>
                           </th>
-                        ))}
-                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[90px]">दिनांक</th>
+                        )}
+                        {keyDropCol && keyDropCol.id !== keyTextCol?.id && (
+                          <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[140px]">
+                            <span className="line-clamp-1">{keyDropCol.label}</span>
+                          </th>
+                        )}
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[80px]">गाँव</th>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[80px]">चोखरा</th>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs min-w-[85px]">दिनांक</th>
+                        <th className="text-left px-3 py-2.5 font-semibold text-gray-600 text-xs w-20">क्रिया</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -289,31 +305,49 @@ export default function SurveyManagement() {
                         const answerMap: Record<string, any> = {}
                         r.answers.forEach((a: any) => { answerMap[a.questionId] = a })
                         return (
-                          <tr key={r.id} className="hover:bg-orange-50/40 cursor-pointer transition-colors"
-                            onClick={() => setExpandedRow(expandedRow === r.id ? null : r.id)}>
+                          <tr key={r.id} className="hover:bg-orange-50/30 transition-colors">
                             <td className="px-3 py-2.5 text-gray-400 text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                            <td className="px-3 py-2.5 font-medium text-gray-900">{r.respondentName}</td>
-                            <td className="px-3 py-2.5 text-gray-600">{r.mobileNumber}</td>
-                            <td className="px-3 py-2.5 text-gray-600">{r.village?.name || "—"}</td>
-                            <td className="px-3 py-2.5 text-gray-600">{r.district || "—"}</td>
-                            {questionCols.map(q => {
-                              const a = answerMap[q.id]
-                              return (
-                                <td key={q.id} className="px-3 py-2.5 text-gray-700 max-w-[180px]">
-                                  {a?.fileUrl ? (
-                                    <a href={a.fileUrl} target="_blank" rel="noopener noreferrer"
-                                      onClick={e => e.stopPropagation()}
-                                      className="text-blue-600 underline flex items-center gap-1 text-xs">
-                                      <ExternalLink className="w-3 h-3" /> फ़ाइल
-                                    </a>
-                                  ) : (
-                                    <span className="line-clamp-2 text-xs">{a?.value || "—"}</span>
-                                  )}
-                                </td>
-                              )
-                            })}
+                            <td className="px-3 py-2.5">
+                              <p className="font-medium text-gray-900 text-xs">{r.respondentName}</p>
+                              <p className="text-gray-400 text-[11px]">{r.mobileNumber}</p>
+                            </td>
+                            {keyTextCol && (
+                              <td className="px-3 py-2.5 text-gray-700 text-xs">
+                                {answerMap[keyTextCol.id]?.value || "—"}
+                              </td>
+                            )}
+                            {keyDropCol && keyDropCol.id !== keyTextCol?.id && (
+                              <td className="px-3 py-2.5 text-xs">
+                                {answerMap[keyDropCol.id]?.value
+                                  ? <span className="inline-block bg-orange-100 text-orange-700 rounded-full px-2 py-0.5 text-[11px] font-medium line-clamp-1">
+                                      {answerMap[keyDropCol.id].value}
+                                    </span>
+                                  : <span className="text-gray-400">—</span>
+                                }
+                              </td>
+                            )}
+                            <td className="px-3 py-2.5 text-gray-600 text-xs">{r.village?.name || "—"}</td>
+                            <td className="px-3 py-2.5 text-gray-600 text-xs">{getChokhla(r) || "—"}</td>
                             <td className="px-3 py-2.5 text-gray-400 text-xs whitespace-nowrap">
                               {new Date(r.submittedAt).toLocaleDateString("hi-IN")}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => setViewingResponse(r)}
+                                  className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 hover:text-blue-700 transition-colors"
+                                  title="विवरण देखें"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteResponseId(r.id)}
+                                  className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                                  title="हटाएं"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         )
@@ -356,8 +390,71 @@ export default function SurveyManagement() {
                 )}
               </div>
             )}
+
+            {/* View Response Modal */}
+            {viewingResponse && (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50"
+                onClick={() => setViewingResponse(null)}>
+                <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl"
+                  onClick={e => e.stopPropagation()}>
+                  {/* Modal header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <div>
+                      <p className="font-bold text-gray-900">{viewingResponse.respondentName}</p>
+                      <p className="text-xs text-gray-500">{viewingResponse.mobileNumber} · {viewingResponse.village?.name || ""}{(viewingResponse.chokhlaName || viewingResponse.village?.chakola?.name) ? ` · ${viewingResponse.chokhlaName || viewingResponse.village?.chakola?.name}` : ""}</p>
+                    </div>
+                    <button onClick={() => setViewingResponse(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  {/* Modal body */}
+                  <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+                    {viewingResponse.answers.map((a: any) => (
+                      <div key={a.questionId} className="space-y-0.5">
+                        <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                          {a.question?.label || a.questionId}
+                        </p>
+                        {a.fileUrl ? (
+                          <a href={a.fileUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-blue-600 text-sm hover:underline">
+                            <FileText className="w-4 h-4" />
+                            फ़ाइल देखें / डाउनलोड
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <p className="text-sm text-gray-800">{a.value || <span className="text-gray-400 italic">—</span>}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
+                    सबमिट: {new Date(viewingResponse.submittedAt).toLocaleString("hi-IN")}
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
+
+        {/* Delete response confirmation */}
+        <AlertDialog open={!!deleteResponseId} onOpenChange={o => !o && setDeleteResponseId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>प्रतिक्रिया हटाएं?</AlertDialogTitle>
+              <AlertDialogDescription>यह प्रतिक्रिया स्थायी रूप से हट जाएगी।</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>रद्द करें</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteResponseId && deleteResponseMut.mutate(deleteResponseId)}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteResponseMut.isPending}
+              >
+                {deleteResponseMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "हां, हटाएं"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     )
   }

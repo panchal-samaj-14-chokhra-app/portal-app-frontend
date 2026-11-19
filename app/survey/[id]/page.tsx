@@ -141,6 +141,7 @@ export default function FillFormPage() {
 
     setSubmitting(true)
     try {
+      const chokhlaObj = chokhlas.find(c => c.id === selectedChokhla)
       await publicRequest.post("/surveys/responses", {
         formId: id,
         respondentName: name.trim(),
@@ -148,6 +149,7 @@ export default function FillFormPage() {
         email: email.trim() || undefined,
         villageId: selectedVillage || undefined,
         district: district.trim() || undefined,
+        chokhlaName: chokhlaObj?.name || undefined,
         answers: (form?.questions || [])
           .filter(q => isVisible(q, answers))
           .map(q => ({
